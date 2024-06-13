@@ -178,6 +178,9 @@ public class MaterialData implements IMaterialData {
 						
 						c.setMaterialNumber(pn);
 						c.setsHOP_WO_SN(detail.getSn());
+						if(c.getsHOP_WO_SN() == null) {
+							c.setsHOP_WO_SN("");
+						}
 						c.setTaskCard(header.getTaskCard());						
 						c.setwO_Location(w.getLocation());
 						
@@ -263,12 +266,12 @@ public class MaterialData implements IMaterialData {
 					
 					MT_TRAX_SND_I10_4110 requisition = new MT_TRAX_SND_I10_4110();
 					requisition.setOrder(orders);
-					
+					Wo w = null;
 					
 					
 					if(detail.getPicklistHeader().getWo() != null) {
 						String rfo = null;
-						Wo w = getWo(detail.getPicklistHeader().getWo());
+						w = getWo(detail.getPicklistHeader().getWo());
 						if(	w.getModule().equalsIgnoreCase("SHOP") && w.getRfoNo() != null) {
 							rfo = w.getRfoNo();
 						}
@@ -337,7 +340,11 @@ public class MaterialData implements IMaterialData {
 					c.setTrax_PicklistNumber(String.valueOf(detail.getPicklistHeader().getPicklist()));
 					c.setTrax_PicklistLine(String.valueOf(detail.getId().getPicklistLine()));
 					
-					
+					c.setMaterialNumber(pn);
+					c.setsHOP_WO_SN(detail.getSn());
+					c.setTaskCard(detail.getPicklistHeader().getTaskCard());						
+					c.setwO_Location(w.getLocation());
+				
 					
 					c.setReservationNumber(detail.getExternalCustRes());
 					c.setReservationItem(detail.getExternalCustResItem());
