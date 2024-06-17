@@ -70,7 +70,7 @@ public class InstallRemoveSvoData {
 	String exceuted;
 	private Connection con;
 	
-	final String MaxRecord = System.getProperty("UpdateTaskCardStatus_MaxRecord");
+	final String MaxRecord = System.getProperty("InstallRemoveSVO_MaxRecord");
 	//public InterfaceLockMaster lock;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 
