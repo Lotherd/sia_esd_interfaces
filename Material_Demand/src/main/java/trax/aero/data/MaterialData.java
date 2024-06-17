@@ -342,6 +342,9 @@ public class MaterialData implements IMaterialData {
 					
 					c.setMaterialNumber(pn);
 					c.setsHOP_WO_SN(detail.getSn());
+					if(c.getsHOP_WO_SN() == null) {
+						c.setsHOP_WO_SN("");
+					}
 					c.setTaskCard(detail.getPicklistHeader().getTaskCard());						
 					c.setwO_Location(w.getLocation());
 				
