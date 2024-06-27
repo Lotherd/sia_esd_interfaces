@@ -32,7 +32,7 @@ public class ImportZepartserController {
 			String fromEmail = System.getProperty("fromEmail");
 			String host = System.getProperty("fromHost");
 			String port = System.getProperty("fromPort");
-			String toEmail = System.getProperty("TaskCard_toEmail");
+			String toEmail = System.getProperty("Zepartser_toEmail");
 	        ArrayList<String>  emailsList = new ArrayList<String>(Arrays.asList(toEmail.split(",")));
 			Email email = new SimpleEmail();
 			email.setHostName(host);
