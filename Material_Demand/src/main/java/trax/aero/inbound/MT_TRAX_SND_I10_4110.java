@@ -138,7 +138,7 @@ import javax.xml.bind.annotation.XmlType;
  * 
  * 
  */
-@XmlRootElement(name="MT_TRAX_SND_I10_4110", namespace="http://singaporeair.com/mro/ESDTRAX")
+@XmlRootElement(name="MT_TRAX_I10_4110", namespace="http://singaporeair.com/mro/ESDTRAX")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class MT_TRAX_SND_I10_4110 {
 

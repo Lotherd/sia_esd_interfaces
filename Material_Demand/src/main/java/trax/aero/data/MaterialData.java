@@ -44,7 +44,7 @@ public class MaterialData implements IMaterialData {
 	
 	private static final int X_MINUTES = new Integer(System.getProperty("MaterialStatusImport_Time")) * 60 * 1000;
 	
-	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
+	@PersistenceContext(unitName = "TraxESD") private EntityManager em;
 	
 	EmailSender emailer = null;
 	String error = "";	
@@ -148,7 +148,7 @@ public class MaterialData implements IMaterialData {
 					if(detail.getId().getTransaction().equalsIgnoreCase("REQUIRE")) {
 						
 					
-						if(detail.getInterfaceSyncFlag() != null &&  detail.getInterfaceSyncFlag().equalsIgnoreCase("S")) {
+						if(detail.getInterfaceSyncFlag() != null ||  detail.getInterfaceSyncFlag().equalsIgnoreCase("S")) {
 							continue;
 						}
 						OrderComponent c = new OrderComponent();
@@ -181,8 +181,17 @@ public class MaterialData implements IMaterialData {
 						if(c.getsHOP_WO_SN() == null) {
 							c.setsHOP_WO_SN("");
 						}
-						c.setTaskCard(header.getTaskCard());						
+						c.setTaskCard(header.getTaskCard());
+						if(card != null) {
+							c.setTaskCard(card.getId().getTaskCard());
+						}else {
+							c.setTaskCard("");
+						}
+						
 						c.setwO_Location(w.getLocation());
+						if(c.getwO_Location() == null) {
+							c.setwO_Location("");
+						}
 						
 						c.setQuantity(detail.getQty().toString());
 						c.setTrax_PicklistNumber(String.valueOf(header.getPicklist()));
@@ -195,6 +204,12 @@ public class MaterialData implements IMaterialData {
 						   c.getReservationItem() != null && !c.getReservationItem().isEmpty()) {
 							continue;
 						}
+						
+						
+						c.setDeletionIndicator("");
+						c.setReservationNumber("");
+						c.setReservationItem("");
+						
 						boolean match = false;
 						
 						for(MT_TRAX_SND_I10_4110 r: requisitions) {
@@ -220,7 +235,7 @@ public class MaterialData implements IMaterialData {
 					
 					continue;
 				}
-				
+				logger.info("SIZE" +component.size() );
 				ord.setOrderComponent(component);
 				requisition.getOrder().add(ord);
 				requisitions.add(requisition);
@@ -243,7 +258,7 @@ public class MaterialData implements IMaterialData {
 		if(updates != null && updates.size() > 0)
 		{
 			
-			logger.info("updates");
+			
 			for(PicklistDistribution detail : updates)
 			{
 				if(detail.getId().getTransaction().equalsIgnoreCase("REQUIRE")) {
@@ -257,8 +272,7 @@ public class MaterialData implements IMaterialData {
 					if(detail.getInterfaceSyncFlag() != null &&  detail.getInterfaceSyncFlag().equalsIgnoreCase("S")) {
 						continue;
 					}
-					
-					
+	
 					OrderComponent c = new OrderComponent();
 					Order ord = new Order();
 					component = new ArrayList<OrderComponent>();
@@ -311,7 +325,8 @@ public class MaterialData implements IMaterialData {
 					}else {
 						continue;
 					}
-					logger.info("CREATED DATE " + detail.getCreatedDate() + " >  CAL DATE " + cal.getTime());
+					//logger.info("CREATED DATE " + detail.getCreatedDate() + " >  CAL DATE " + cal.getTime());
+					logger.info("update " + detail.getId().getPicklist() + " " + detail.getId().getPicklistLine() + " " +  detail.getId().getTransaction());
 					
 					String pn = detail.getPn();
 					
@@ -329,12 +344,17 @@ public class MaterialData implements IMaterialData {
 					if(detail.getStatus() != null && !detail.getStatus().isEmpty() && 
 							detail.getStatus().equalsIgnoreCase("CANCEL")) {
 						c.setDeletionIndicator("X");
+					}else {
+						c.setDeletionIndicator("");
 					}
 					
 					if(detail.getExternalCustToQty() != null 
 							&& detail.getExternalCustToQty().equals(detail.getQtyPicked())) {
 						c.setDeletionIndicator("F");
+					}else {
+						c.setDeletionIndicator("");
 					}
+					
 					
 					c.setQuantity(detail.getQty().toString());
 					c.setTrax_PicklistNumber(String.valueOf(detail.getPicklistHeader().getPicklist()));
@@ -345,12 +365,25 @@ public class MaterialData implements IMaterialData {
 					if(c.getsHOP_WO_SN() == null) {
 						c.setsHOP_WO_SN("");
 					}
-					c.setTaskCard(detail.getPicklistHeader().getTaskCard());						
+					c.setTaskCard(detail.getPicklistHeader().getTaskCard());
+					if(card != null) {
+						c.setTaskCard(card.getId().getTaskCard());
+					}else {
+						c.setTaskCard("");
+					}
 					c.setwO_Location(w.getLocation());
-				
+					if(c.getwO_Location() == null) {
+						c.setwO_Location("");
+					}
 					
 					c.setReservationNumber(detail.getExternalCustRes());
+					if(c.getReservationNumber() == null) {
+						c.setReservationNumber("");
+					}
 					c.setReservationItem(detail.getExternalCustResItem());
+					if(c.getReservationItem() == null) {
+						c.setReservationItem("");
+					}
 					ord.setOrderComponent(component);
 					
 					//requisition.setOrder(order);
@@ -393,6 +426,7 @@ public class MaterialData implements IMaterialData {
 						
 					
 					component.add(c);
+					logger.info("SIZE" +component.size() );
 					ord.setOrderComponent(component);
 					requisition.getOrder().add(ord);
 					requisitions.add(requisition);
@@ -420,7 +454,8 @@ public class MaterialData implements IMaterialData {
 						os = os + "( OrderNumber: "+ r.getSAP_OrderNumber()+ "),";
 					}
 					markSentFailed(requisition);
-					emailer.sendEmail("Trax was unable to call SAP Orders:\n" +orders);
+					emailer.sendEmail("Trax was unable to call SAP Orders:\n" +os);
+					logError("Trax was unable to call SAP Orders:\n" +os);
 				}else {
 					markSent(requisition);
 				}
@@ -489,7 +524,7 @@ public class MaterialData implements IMaterialData {
 	
 	
 	private void markSentFailed(MT_TRAX_SND_I10_4110 data) {
-try {
+		try {
 			
 			for(Order o : data.getOrder()) {
 				for(OrderComponent c: o.getOrderComponent()) {
@@ -538,107 +573,71 @@ try {
 	
 	
 
-	public void acceptReq(MT_TRAX_I10_TRAX reqs)
+	public void acceptReq(MT_TRAX_I10_TRAX r)
 	
 	{
+		for(trax.aero.outbound.Order reqs : r.getOrder()) {
+
+			for(trax.aero.outbound.OrderComponent oc : reqs.getOrderComponent()) {
+				PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
+				.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
+				.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
+				.setParameter("tra", "REQUIRE")
+				.getSingleResult();
+				//require.setInterfaceSyncFlag(null);
+				require.setInterfaceSyncDate(null);
+				require.setInterfaceModifiedDate(new Date());
+				require.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
+				require.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
+				insertData(require);
+		
+				try {
+					PicklistDistribution req = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
+							.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
+							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
+							.setParameter("tra", "DISTRIBU")
+							.getSingleResult();
+					req.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
+					req.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
+					req.setInterfaceModifiedDate(new Date());
+					insertData(require);
+				
+				}catch(Exception e) {
+					logger.severe(e.toString());
+				}
+			}
+			
 			if(reqs.getEXCEPTION_ID() != null && reqs.getEXCEPTION_ID().equalsIgnoreCase("53"))
 			{
+				
 				logger.info("IDOCStatus 53");
-				PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-								.setParameter("pick", Long.valueOf(reqs.getPICKLIST()))
-								.setParameter("line", Long.valueOf(reqs.getPICKLIST_LINE()))
-								.setParameter("tra", "REQUIRE")
-								.getSingleResult();
-						//require.setInterfaceSyncFlag(null);
-						require.setInterfaceSyncDate(null);
-						require.setInterfaceModifiedDate(new Date());
-						require.setExternalCustRes(reqs.getEXTERNAL_CUST_RES());
-						require.setExternalCustResItem(reqs.getEXTERNAL_CUST_RES_ITEM());
-						insertData(require);
-						
-						try {
-							PicklistDistribution req = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-									.setParameter("pick", Long.valueOf(reqs.getPICKLIST()))
-									.setParameter("line", Long.valueOf(reqs.getPICKLIST_LINE()))
-									.setParameter("tra", "DISTRIBU")
-									.getSingleResult();
-							req.setExternalCustRes(reqs.getEXTERNAL_CUST_RES());
-							req.setExternalCustResItem(reqs.getEXTERNAL_CUST_RES_ITEM());
-							req.setInterfaceModifiedDate(new Date());
-							insertData(require);
-						
-						}catch(Exception e) {
-							logger.severe(e.toString());
-						}
+				
 			}else if(reqs.getEXCEPTION_DETAIL() != null){
 				logger.info("IDOCStatus 51");
 				String orders = "";
-						PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-								.setParameter("pick", Long.valueOf(reqs.getPICKLIST()))
-								.setParameter("line", Long.valueOf(reqs.getPICKLIST_LINE()))
-								.setParameter("tra", "REQUIRE")
-								.getSingleResult();
 						
-						require.setInterfaceSyncDate(null);
-						require.setInterfaceSyncFlag("Y");
-						require.setInterfaceModifiedDate(new Date());
-						require.setExternalCustRes(reqs.getEXTERNAL_CUST_RES());
-						require.setExternalCustResItem(reqs.getEXTERNAL_CUST_RES_ITEM());
-						insertData(require);
-						orders = orders + "( RequistionNumber: "+ reqs.getEXTERNAL_CUST_RES() + " Requistionline: "+ reqs.getEXTERNAL_CUST_RES_ITEM() + "),";
-						
-						try {
-							PicklistDistribution req = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-									.setParameter("pick", Long.valueOf(reqs.getPICKLIST()))
-									.setParameter("line", Long.valueOf(reqs.getPICKLIST_LINE()))
-									.setParameter("tra", "DISTRIBU")
-									.getSingleResult();
-							req.setInterfaceModifiedDate(new Date());
-							req.setExternalCustRes(reqs.getEXTERNAL_CUST_RES());
-							req.setExternalCustResItem(reqs.getEXTERNAL_CUST_RES_ITEM());
-							insertData(require);
-						}catch(Exception e) {
-							logger.severe(e.toString());
-						}
-	
+				for(trax.aero.outbound.OrderComponent oc : reqs.getOrderComponent()) {
+					orders = orders + "( RequistionNumber: "+ oc.getEXTERNAL_CUST_RES() 
+					+ " Requistionline: "+ oc.getEXTERNAL_CUST_RES_ITEM() + "),";
+				}	
+			
 				emailer.sendEmail("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders) ;
+				logError("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders);
 			}else {
 				logger.info("IDOCStatus unkown");
 				String orders = "";
 				
-						PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-								.setParameter("pick", Long.valueOf(reqs.getPICKLIST()))
-								.setParameter("line", Long.valueOf(reqs.getPICKLIST_LINE()))
-								.setParameter("tra", "REQUIRE")
-								.getSingleResult();
-						require.setInterfaceModifiedDate(new Date());
-						require.setInterfaceSyncFlag("Y");
-						require.setInterfaceSyncDate(null);
-						require.setExternalCustRes(reqs.getEXTERNAL_CUST_RES());
-						require.setExternalCustResItem(reqs.getEXTERNAL_CUST_RES_ITEM());
 						
-						insertData(require);
+				for(trax.aero.outbound.OrderComponent oc : reqs.getOrderComponent()) {
+						orders = orders + "( RequistionNumber: "+ oc.getEXTERNAL_CUST_RES()
+						+ " Requistionline: "+ oc.getEXTERNAL_CUST_RES_ITEM() + "),";
+				}		
 						
-						orders = orders + "( RequistionNumber: "+ reqs.getEXTERNAL_CUST_RES()
-						+ " Requistionline: "+ reqs.getEXTERNAL_CUST_RES_ITEM() + "),";
-						
-						
-						try {
-							PicklistDistribution req = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-									.setParameter("pick", Long.valueOf(reqs.getPICKLIST()))
-									.setParameter("line", Long.valueOf(reqs.getPICKLIST_LINE()))
-									.setParameter("tra", "DISTRIBU")
-									.getSingleResult();
-							req.setInterfaceModifiedDate(new Date());
-							req.setExternalCustRes(reqs.getEXTERNAL_CUST_RES());
-							req.setExternalCustResItem(reqs.getEXTERNAL_CUST_RES_ITEM());
-							insertData(require);
-						}catch(Exception e) {
-							logger.severe(e.toString());
-						}
+					
 				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders ) ;
+				logError("Received acknowledgement with NULL Success Error Log\n" +orders);
 			}
-			
+		}	
 	}
 	
 	private <T> void insertData( T data) 

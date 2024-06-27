@@ -18,7 +18,6 @@ public class EmailSender
 	
 	Logger logger = LogManager.getLogger("MaterialDemand_I10");
 	
-	@EJB IMaterialData md;
 	
 	private String toEmail;
 	
@@ -56,8 +55,6 @@ public class EmailSender
 		catch (EmailException e) 
 		{
 			logger.severe(e.toString());
-		}finally {
-			md.logError(error);
 		}
 
 		

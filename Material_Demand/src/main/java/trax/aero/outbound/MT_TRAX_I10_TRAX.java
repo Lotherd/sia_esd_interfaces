@@ -8,6 +8,8 @@
 
 package trax.aero.outbound;
 
+import java.util.ArrayList;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -15,84 +17,32 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 
 
-@XmlRootElement(name="MT_TRAX_I10_TRAX", namespace="http://singaporeair.com/mro/ESDTRAX")
+
+@XmlRootElement(name="MT_TRAX_I10_ACK_4111", namespace="http://singaporeair.com/mro/ESDTRAX")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class MT_TRAX_I10_TRAX
 {
-	@XmlElement(name = "RFO_NO")
-    private String RFO_NO;
 	
-	@XmlElement(name = "EXTERNAL_CUST_RES")
-	private String EXTERNAL_CUST_RES;
+	@XmlElement(name = "ORDER")
+	 private ArrayList<Order> Order;
+
+	    public ArrayList<Order> getOrder ()
+	    {
+	        return Order;
+	    }
+
+	    public void setOrder (ArrayList<Order> order)
+	    {
+	        this.Order = order;
+	    }
 	
-	@XmlElement(name = "EXTERNAL_CUST_RES_ITEM")
-	private String EXTERNAL_CUST_RES_ITEM;
 	
-	@XmlElement(name = "PICKLIST")
-	private String PICKLIST;
 	
-	@XmlElement(name = "PICKLIST_LINE")
-	private String PICKLIST_LINE;
 	
-	@XmlElement(name = "EXCEPTION_ID")
-	private String EXCEPTION_ID;
+
 	
-	@XmlElement(name = "EXCEPTION_DETAIL")
-	private String EXCEPTION_DETAIL;
 
-	public String getRFO_NO() {
-		return RFO_NO;
-	}
+	
 
-	public void setRFO_NO(String RFO_NO) {
-		this.RFO_NO = RFO_NO;
-	}
-
-	public String getEXTERNAL_CUST_RES() {
-		return EXTERNAL_CUST_RES;
-	}
-
-	public void setEXTERNAL_CUST_RES(String EXTERNAL_CUST_RES) {
-		this.EXTERNAL_CUST_RES = EXTERNAL_CUST_RES;
-	}
-
-	public String getEXTERNAL_CUST_RES_ITEM() {
-		return EXTERNAL_CUST_RES_ITEM;
-	}
-
-	public void setEXTERNAL_CUST_RES_ITEM(String EXTERNAL_CUST_RES_ITEM) {
-		this.EXTERNAL_CUST_RES_ITEM = EXTERNAL_CUST_RES_ITEM;
-	}
-
-	public String getPICKLIST() {
-		return PICKLIST;
-	}
-
-	public void setPICKLIST(String PICKLIST) {
-		this.PICKLIST = PICKLIST;
-	}
-
-	public String getPICKLIST_LINE() {
-		return PICKLIST_LINE;
-	}
-
-	public void setPICKLIST_LINE(String PICKLIST_LINE) {
-		this.PICKLIST_LINE = PICKLIST_LINE;
-	}
-
-	public String getEXCEPTION_ID() {
-		return EXCEPTION_ID;
-	}
-
-	public void setEXCEPTION_ID(String EXCEPTION_ID) {
-		this.EXCEPTION_ID = EXCEPTION_ID;
-	}
-
-	public String getEXCEPTION_DETAIL() {
-		return EXCEPTION_DETAIL;
-	}
-
-	public void setEXCEPTION_DETAIL(String EXCEPTION_DETAIL) {
-		this.EXCEPTION_DETAIL = EXCEPTION_DETAIL;
-	}
+	
 }

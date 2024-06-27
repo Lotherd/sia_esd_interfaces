@@ -28,10 +28,10 @@ public class OrderComponent {
 	private String sHOP_WO_SN;
 	@XmlElement(name = "ReservationNumber")
 	private String reservationNumber;
-	@XmlElement(name = "ReservationItem")
+	@XmlElement(name = "ReservationItemNumber")
 	private String reservationItem;
 	
-	@XmlElement(name = "DeletionIndicator")
+	@XmlElement(name = "Indicator")
 	private String deletionIndicator;
    
        
