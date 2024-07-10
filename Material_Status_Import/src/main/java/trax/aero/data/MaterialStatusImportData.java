@@ -36,15 +36,11 @@ import trax.aero.model.PnMaster;
 import trax.aero.model.SystemTranCode;
 import trax.aero.model.WoTaskCard;
 import trax.aero.pojo.MaterialStatusImportMaster;
-import trax.aero.pojo.OpsLineEmail;
+import trax.aero.pojo.Transfer_order;
 import trax.aero.utils.SharePointPoster;
 
 
 //TODO
-//LOCATION?? SIN-ESD
-//TRIGGER INTERFACE 46
-//TRIGGER INTERFACE 10
-
 //LOCATION TRANSFER
 
 
@@ -122,49 +118,35 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			}
 			input.setPN(partNumber_Tool);
 			
-			try 
-			{
-					woTaskCard= getWoTaskCard(input);		
-					if(input.getPICKLIST() != null && input.getPICKLIST_LINE() != null &&
-					!input.getPICKLIST().isEmpty() && !input.getPICKLIST_LINE().isEmpty()) {
-						picklistHeader = getPicklistHeader(input);
-						picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",null);
-						picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null);
-					}else if(!input.getPICKLIST().equalsIgnoreCase("0000000000") && !input.getPICKLIST_LINE().equalsIgnoreCase("0000")){
+			
+			woTaskCard= getWoTaskCard(input);		
+			if(input.getPICKLIST() != null && input.getPICKLIST_LINE() != null &&
+				!input.getPICKLIST().isEmpty() && !input.getPICKLIST_LINE().isEmpty()) {
+					picklistHeader = getPicklistHeader(input);
+					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",null);
+					picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null);
+			}else if(!input.getPICKLIST().equalsIgnoreCase("0000000000") && !input.getPICKLIST_LINE().equalsIgnoreCase("0000")){
 						
-						picklistHeader = getPicklistHeaderRev(input);
-						picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null );
-						picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
+					picklistHeader = getPicklistHeaderRev(input);
+					picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null );
+					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
 						
-					}else {
+			}else {
 						
-						picklistHeader = getPicklistHeaderTaskCard(woTaskCard,input);
-						if(picklistHeader == null ) {
-							picklistHeader= getPicklistHeaderTaskCardFirtOne(woTaskCard, input);
-						}
+					picklistHeader = getPicklistHeaderTaskCard(woTaskCard,input);
+					if(picklistHeader == null ) {
+						picklistHeader= getPicklistHeaderTaskCardFirtOne(woTaskCard, input);
+					}
 						
-						picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null );
-						if(picklistDistributionREQ == null) {
-							throw new Exception ("picklistDistribution REQ is null");
-						}
-						picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
+					picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null );
+					if(picklistDistributionREQ == null) {
+						throw new Exception ("picklistDistribution REQ is null");
+					}
+					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
 						
-					}					
-					pnInventoryDetail = getPnInventoryDetail(input,picklistHeader);
-					
-				}
-				catch(Exception e)
-				{
-					logger.info("Exception 1 caught");
-					e.printStackTrace();
-					logger.info(e.getMessage());	
-					logger.info(e.toString());
-					exceuted = "Can not update Material QTY: "+ input.getPN() +" as ERROR: material or WO Task Card or PickList can not be found";
-					logger.severe(exceuted);
-					MaterialStatusImportController.addError(exceuted);
-					return;
-					
-				}
+			}					
+				pnInventoryDetail = getPnInventoryDetail(input,picklistHeader);
+						
 			
 				if( picklistDistributionDIS.getQty().doubleValue() > pnInventoryDetail.getQtyAvailable().doubleValue() ) {
 					throw new Exception("QTY requested is more than QTY available");
@@ -178,10 +160,9 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 				//LOCATION TRANSFER
 				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "ISSUED");
-				
-				picklistDistributionDIS.setExternalCustTo(input.getTRASNFER_ORDER_NUMBER());
-				picklistDistributionDIS.setExternalCustToQty(input.getTRANSFER_ORDER_QUANTITY());
-				
+					
+				picklistDistributionDIS.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
+				picklistDistributionDIS.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
 				insertData(pnInventoryDetail);
@@ -193,25 +174,27 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				insertData(picklistHeader);
 				
 				
-				if(input.getAttachedDocumentIDOC() != null) 
-				{	
-					woTaskCard = setAttachedDocument(woTaskCard,input);	
-				}
-				
-				if(input.getAttachmentLinkSharepointlink() != null ) 
-				{
+				//
+				for(Transfer_order to : input.getTransfer_order()) {
+					if(to.getAttachedDocumentIDOC() != null) 
+					{	
+						woTaskCard = setAttachedDocument(woTaskCard,to);	
+					}
 					
-					byte[] file = getsharePointfile(new String(input.getAttachmentLinkSharepointlink(), StandardCharsets.UTF_8));
-					String fileName = new String(input.getAttachmentLinkSharepointlink(), StandardCharsets.UTF_8);
-					try {
-						URL url =new URL(new String(input.getAttachmentLinkSharepointlink(), StandardCharsets.UTF_8));
-						fileName = url.getFile().substring(url.getFile().lastIndexOf("/")+1,url.getFile().length());
-					} catch (MalformedURLException e) {
+					if(to.getAttachmentLinkSharepointlink() != null ) 
+					{
 						
-					}					
-					woTaskCard = setAttachmentLink(woTaskCard,input,file,fileName);	
-				}			
-				
+						byte[] file = getsharePointfile(new String(to.getAttachmentLinkSharepointlink(), StandardCharsets.UTF_8));
+						String fileName = new String(to.getAttachmentLinkSharepointlink(), StandardCharsets.UTF_8);
+						try {
+							URL url =new URL(new String(to.getAttachmentLinkSharepointlink(), StandardCharsets.UTF_8));
+							fileName = url.getFile().substring(url.getFile().lastIndexOf("/")+1,url.getFile().length());
+						} catch (MalformedURLException e) {
+							
+						}					
+						woTaskCard = setAttachmentLink(woTaskCard,to,file,fileName);	
+					}			
+				}
 				
 							
 		}else 
@@ -224,42 +207,6 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 	}
 	
-
-	private BigDecimal getPnInevtoryHistoryIssue(PnInventoryDetail pnInventoryDetail, MaterialStatusImportMaster input,
-			WoTaskCard woTaskCard, String string, PicklistDistribution picklistDistributionDIS) {
-		
-		 BigDecimal sum = new BigDecimal(0);
-		
-		try {
-			List<PnInventoryHistory> pihs = em.createQuery("SELECT p FROM PnInventoryHistory p WHERE "
-					+ "p.wo = :woo and p.taskCard = :tas and p.orderNo = :pick and p.orderLine = :pickline "
-					+ " and p.orderType = :pic and p.pn = :pnn")
-					.setParameter("woo", new BigDecimal(woTaskCard.getId().getWo()))
-					.setParameter("tas", woTaskCard.getId().getTaskCard())
-					.setParameter("pick", new BigDecimal( picklistDistributionDIS.getId().getPicklist()))
-					.setParameter("pickline",new BigDecimal( picklistDistributionDIS.getId().getPicklistLine()))
-					.setParameter("pic","PICKLST")
-					.setParameter("pnn", pnInventoryDetail.getPn())
-					.getResultList();
-			logger.info("PnInventoryHistory ISSUE SIZE " +pihs.size());
-			for(PnInventoryHistory pih : pihs) {
-				if(pih.getTransactionType().equalsIgnoreCase("ISSUED")) {
-					sum = sum.add(pih.getQty());
-				}else if(pih.getTransactionType().equalsIgnoreCase("RTS/WO")) {
-					sum = sum.subtract(pih.getQty());
-				}
-			}
-			
-			return sum;
-		}catch (Exception e) {
-			e.printStackTrace();
-			return new BigDecimal(0);
-		}
-		
-		
-	}
-
-
 
 	private PnInventoryDetail getPnInventoryDetail(MaterialStatusImportMaster input, PicklistHeader pick) {
 		PnInventoryDetail pnInventoryDetail = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
@@ -365,7 +312,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					picklistDistribution.getId().setDistributionLine(new Long(2));
 					picklistDistribution.getId().setTransaction(transaction);
 					picklistDistribution.setPn(input.getPN());
-					picklistDistribution.setQty((input.getTRANSFER_ORDER_QUANTITY()));
+					picklistDistribution.setQty((input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY()));
 					picklistDistribution.setPicklistHeader(picklistHeader);
 				}
 				
@@ -410,7 +357,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					picklistDistribution.getId().setDistributionLine(new Long(2));
 					picklistDistribution.getId().setTransaction(transaction);
 					picklistDistribution.setPn(input.getPN());
-					picklistDistribution.setQty((input.getTRANSFER_ORDER_QUANTITY()));
+					picklistDistribution.setQty((input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY()));
 					picklistDistribution.setPicklistHeader(picklistHeader);
 				}
 			}
@@ -461,7 +408,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 							}else {
 								picklistDistribution.setPn(input.getPN());
 							}
-							picklistDistribution.setQty((input.getTRANSFER_ORDER_QUANTITY()));
+							picklistDistribution.setQty((input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY()));
 							picklistDistribution.setPicklistHeader(picklistHeader);
 					}
 					
@@ -619,14 +566,11 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				return false;
 			}
 			
-			if( input.getTRANSFER_ORDER_QUANTITY() == null ) {
-				MaterialStatusImportController.addError("Can not update Material QTY: "+ input.getPN() +" as ERROR TRANSFER_ORDER_QUANTITY");
+			if( input.getTransfer_order() == null ) {
+				MaterialStatusImportController.addError("Can not update Material QTY: "+ input.getPN() +" as ERROR TRANSFER_ORDER");
 				return false;
 			}
-			if( input.getLEGACY_BATCH() == null || input.getLEGACY_BATCH().isEmpty()) {
-				MaterialStatusImportController.addError("Can not update Material QTY: "+ input.getPN() +" as ERROR LEGACY_BATCH");
-				return false;
-			}	
+				
 			
 			if( input.getPN() == null || input.getPN().isEmpty() || getPnInterchangeable(input.getPN()) == null) {
 				MaterialStatusImportController.addError("Part number is empty or does not exist");
@@ -646,9 +590,9 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 	
 	
 
-	private WoTaskCard setAttachedDocument(WoTaskCard woTaskCard, MaterialStatusImportMaster input) {
+	private WoTaskCard setAttachedDocument(WoTaskCard woTaskCard, Transfer_order to) {
 		BlobTable blob = null;
-		String filename = input.getPN()+ "_"+ input.getPICKLIST() +"_IDOC.pdf";
+		String filename = to.getLEGACY_BATCH()+ "_"+woTaskCard.getId().getWo() +"_IDOC.pdf";
 		
 		try 
 		{
@@ -688,7 +632,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		
 		blob.setModifiedBy("TRAX_IFACE");
 		blob.setModifiedDate(new Date());
-		blob.setBlobItem(input.getAttachedDocumentIDOC());
+		blob.setBlobItem(to.getAttachedDocumentIDOC());
 		blob.setBlobDescription(filename);
 		blob.setCustomDescription(filename);
 		
@@ -704,7 +648,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 	
 	}
 	
-	private WoTaskCard setAttachmentLink(WoTaskCard woTaskCard, MaterialStatusImportMaster input, byte[] file, String fileName) {
+	private WoTaskCard setAttachmentLink(WoTaskCard woTaskCard, Transfer_order input, byte[] file, String fileName) {
 		BlobTable blob = null;
 		if(file == null) {
 			try 
@@ -1015,14 +959,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 
 	
 	
-	private PnInventoryDetail getPnInventoryDetailEmpty(PnInventoryDetail pnInventoryDetail,MaterialStatusImportMaster input ) {
+	private PnInventoryDetail getPnInventoryDetailEmpty(PnInventoryDetail pnInventoryDetail,MaterialStatusImportMaster input , Transfer_order to ) {
 		PnInventoryDetail pid = null;
 		try {
 			 pid = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc "
 			 		+ " and p.legacyBatch = :bat and p.createdBy = :create", PnInventoryDetail.class)
 					.setParameter("par", pnInventoryDetail.getPn())
 					.setParameter("loc", pnInventoryDetail.getLocation())
-					.setParameter("bat", input.getLEGACY_BATCH())
+					.setParameter("bat", to.getLEGACY_BATCH())
 					.setParameter("create", "ISSUEIFACE")
 					.getSingleResult();
 			logger.info("Found PnInventoryDetail empty record");
@@ -1077,7 +1021,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		}
 		pid.setModifiedBy("TRAX_IFACE");
 		pid.setModifiedDate(new Date());
-		pid.setLegacyBatch(input.getLEGACY_BATCH());
+		pid.setLegacyBatch(to.getLEGACY_BATCH());
 		
 		logger.info("INSERTING Empty PID RECORD PN: "	+	
 				pid.getPn() + " , PLANT: " + pid.getLocation()		
