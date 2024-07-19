@@ -148,7 +148,7 @@ public class MaterialData implements IMaterialData {
 					if(detail.getId().getTransaction().equalsIgnoreCase("REQUIRE")) {
 						
 					
-						if(detail.getInterfaceSyncFlag() != null ||  detail.getInterfaceSyncFlag().equalsIgnoreCase("S")) {
+						if(detail.getInterfaceSyncFlag() != null &&  detail.getInterfaceSyncFlag().equalsIgnoreCase("S")) {
 							continue;
 						}
 						OrderComponent c = new OrderComponent();
