@@ -193,9 +193,6 @@
           <addDefaultConstructor>true</addDefaultConstructor>
           <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
         </configuration>
-        <executions>tConstructor>true</addDefaultConstructor>
-          <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
-        </configuration>
         <executions>
           
         </executions>
