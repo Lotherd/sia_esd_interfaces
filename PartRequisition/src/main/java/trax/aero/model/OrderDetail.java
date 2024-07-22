@@ -680,8 +680,8 @@ public class OrderDetail implements Serializable {
 	//bi-directional many-to-one association to OrderHeader
 	@ManyToOne
 	@JoinColumns({
-		@JoinColumn(name="ORDER_NUMBER", referencedColumnName="ORDER_NUMBER"),
-		@JoinColumn(name="ORDER_TYPE", referencedColumnName="ORDER_TYPE")
+		@JoinColumn(name="ORDER_NUMBER", referencedColumnName="ORDER_NUMBER", insertable=false, updatable=false),
+		@JoinColumn(name="ORDER_TYPE", referencedColumnName="ORDER_TYPE", insertable=false, updatable=false)
 		})
 	private OrderHeader orderHeader;
 
