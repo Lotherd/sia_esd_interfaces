@@ -351,8 +351,6 @@ public class MaterialData implements IMaterialData {
 					if(detail.getExternalCustToQty() != null 
 							&& detail.getExternalCustToQty().equals(detail.getQtyPicked())) {
 						c.setDeletionIndicator("F");
-					}else {
-						c.setDeletionIndicator("");
 					}
 					
 					

@@ -19,11 +19,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>Material_Demand</groupId>
-  <artifactId>Material_Demand</artifactId>
+  <groupId>Material_Status_Import</groupId>
+  <artifactId>Material_Status_Import</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>war</packaging>
-  <name>Material_Demand TomEE Webapp</name>
+  <name>Material_Status_Import TomEE Webapp</name>
   <url>http://tomee.apache.org</url>
 
   <properties>
@@ -33,70 +33,71 @@
   </properties>
 
   <dependencies>
+     <dependency>
+		    <groupId>javax.ws.rs</groupId>
+		    <artifactId>javax.ws.rs-api</artifactId>
+		    <version>2.1</version>
+		</dependency>
+
+  
     <dependency>
-    <groupId>javax.ws.rs</groupId>
-    <artifactId>javax.ws.rs-api</artifactId>
-    <version>2.1.1</version>
+      <groupId>org.apache.openejb</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>6.0-6</version>
+      <scope>provided</scope>
+    </dependency>
+<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-email</artifactId>
+	    <version>1.2</version>
+	</dependency>
+	<dependency>
+    <groupId>commons-io</groupId>
+    <artifactId>commons-io</artifactId>
+    <version>2.11.0</version>
+</dependency>
+<dependency>
+	    <groupId>org.apache.httpcomponents</groupId>
+	    <artifactId>httpclient</artifactId>
+	    <version>4.3.5</version>
+	</dependency>
+<dependency>
+        <groupId>org.glassfish.jersey.inject</groupId>
+        <artifactId>jersey-hk2</artifactId>
+        <version>3.0.2</version>
+    </dependency>
+<dependency>
+    <groupId>org.glassfish.jersey.core</groupId>
+    <artifactId>jersey-client</artifactId>
+    <version>3.0.2</version>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jersey.core</groupId>
+    <artifactId>jersey-common</artifactId>
+    <version>3.0.2</version>
 </dependency>
     <dependency>
+    <groupId>com.fasterxml.jackson.jaxrs</groupId>
+    <artifactId>jackson-jaxrs-json-provider</artifactId>
+    <version>2.10.0</version>
+</dependency>
+	<dependency>
       <groupId>org.apache.tomee</groupId>
       <artifactId>jakartaee-api</artifactId>
       <version>9.1-M2</version>
       <scope>provided</scope>
     </dependency>
-    					<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-email -->
-<dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-email</artifactId>
-    <version>1.5</version>
-</dependency>
     <dependency>
-    <groupId>org.glassfish</groupId>
-    <artifactId>javax.ejb</artifactId>
-    <version>10.0-b28</version>
+      <groupId>org.apache.openejb</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>6.0-6</version>
+      <scope>provided</scope>
+    </dependency>
+ <dependency>
+      <groupId>ma.glasnost.orika</groupId>
+      <artifactId>orika-core</artifactId>
+      <version>1.4.6</version>
 </dependency>
-<!-- https://mvnrepository.com/artifact/org.eclipse.persistence/javax.persistence -->
-<dependency>
-    <groupId>org.eclipse.persistence</groupId>
-    <artifactId>javax.persistence</artifactId>
-    <version>2.2.1</version>
-</dependency>
-	<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-core</artifactId>
-			<version>2.8.9</version>
-		</dependency>
-		<dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        
-        	  <dependency>
-        <groupId>org.glassfish.jersey.core</groupId>
-        <artifactId>jersey-client</artifactId>
-        <version>3.0.2</version>
-    </dependency>
-    <dependency>
-        <groupId>org.glassfish.jersey.inject</groupId>
-        <artifactId>jersey-hk2</artifactId>
-        <version>3.0.2</version>
-    </dependency>
-    <dependency>
-        <groupId>org.glassfish.jersey.media</groupId>
-        <artifactId>jersey-media-json-binding</artifactId>
-        <version>3.0.2</version>
-    </dependency>
 
     <!-- to test with TomEE and Arquillian
     <dependency>
@@ -177,13 +178,14 @@
       </plugins>
     </pluginManagement>
 
-    <plugins>
+     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -193,6 +195,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
+        <version>3.3.1</version>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
         </configuration>
@@ -214,7 +217,7 @@
           <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
         </configuration>
         <executions>
-          
+         
         </executions>
         <dependencies>
           <dependency>
@@ -226,7 +229,7 @@
         </dependencies>
       </plugin>
     </plugins>
-       <finalName>MaterialDemand_Service</finalName>
+     <finalName>MaterialStatusImport_Service</finalName>
   </build>
 
   <repositories>
