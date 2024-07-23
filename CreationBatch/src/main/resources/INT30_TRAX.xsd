@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://singaporeair.com/mro/ESDTRAX"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://singaporeair.com/mro/ESDTRAX">
+    <xsd:element name="MT_TRAX_RCV_I30_4128_RES" type="DT_TRAX_RCV_I30_4128_RES"/>
+    <xsd:complexType name="DT_TRAX_RCV_I30_4128_RES">
+        <xsd:sequence>
+            <xsd:element name="LEGACY_BATCH" minOccurs="0">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:maxLength value="12"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="PN">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:maxLength value="35"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="EXCEPTION_ID">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:maxLength value="10"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+            <xsd:element name="EXCEPTION_DETAIL">
+                <xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:maxLength value="1000"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>

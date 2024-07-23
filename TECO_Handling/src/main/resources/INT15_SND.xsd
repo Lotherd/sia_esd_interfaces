@@ -1,0 +1,72 @@
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://singaporeair.com/mro/ESDTRAX" targetNamespace="http://singaporeair.com/mro/ESDTRAX">
+   <xsd:element name="MT_TRAX_SND_I15_4125_REQ" type="DT_TRAX_SND_I15_4125_REQ" />
+   <xsd:complexType name="DT_TRAX_SND_I15_4125_REQ">
+      <xsd:sequence>
+         <xsd:element name="SAP_order_number">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="15" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="TRAX_WO_number">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="8" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="WO_Completion_Date">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="8" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="WO_Completion_time">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="6" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Task_card_status">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="10" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Reason_for_TECO_reversal" type="xsd:string" minOccurs="0" />
+         <xsd:element name="Notification_Number" minOccurs="0">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="12" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="TC_number" minOccurs="0">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="35" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Transaction" minOccurs="0">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="30" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Flag" minOccurs="0">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="1" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+      </xsd:sequence>
+   </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,153 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://singaporeair.com/mro/TRAX" targetNamespace="http://singaporeair.com/mro/TRAX">
+   <xsd:element name="MT_TRAX_I39_I40_4064" type="DT_TRAX_I39_I40_4064" />
+   <xsd:complexType name="DT_TRAX_I39_I40_4064">
+      <xsd:sequence>
+         <xsd:element name="Order_Header">
+            <xsd:complexType>
+               <xsd:sequence>
+                  <xsd:element name="Order_number">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="12" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Operation_number">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="4" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Work_Center" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="8" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Plant" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="4" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Personnel_number" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="8" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Actual_work">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="8" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Unit_for_work">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="3" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Activity_type_for_confirmation">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="6" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Posting_date">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="10" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Final_confirmation" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="1" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Indicator_No_remaining_work" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="1" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Accounting_indicator" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="2" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Actual_start_date">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="10" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Actual_start_time">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="10" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Actual_finish_date">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="10" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Actual_finish_time">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="10" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="General_flag" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="1" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Confirmation_text" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="40" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="Defect_text" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="998" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="WO_ActualTransaction" minOccurs="0">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="30" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+               </xsd:sequence>
+            </xsd:complexType>
+         </xsd:element>
+      </xsd:sequence>
+   </xsd:complexType>
+</xsd:schema>

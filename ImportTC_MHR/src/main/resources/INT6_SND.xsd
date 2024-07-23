@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://singaporeair.com/mro/ESDTRAX"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns="http://singaporeair.com/mro/ESDTRAX">
+    <xsd:element name="MT_TRAX_SND_I6_4108_REQ" type="DT_TRAX_SND_I6_4108_REQ"/>
+    <xsd:complexType name="DT_TRAX_SND_I6_4108_REQ">
+        <xsd:sequence>
+            <xsd:element name="Order">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="TRAX_WO" minOccurs="0">
+                            <xsd:simpleType>
+                                <xsd:restriction base="xsd:string">
+                                    <xsd:maxLength value="8"/>
+                                </xsd:restriction>
+                            </xsd:simpleType>
+                        </xsd:element>
+                        <xsd:element name="SAP_OrderNumber">
+                            <xsd:simpleType>
+                                <xsd:restriction base="xsd:string">
+                                    <xsd:maxLength value="35"/>
+                                </xsd:restriction>
+                            </xsd:simpleType>
+                        </xsd:element>
+                        <xsd:element name="Operation" maxOccurs="unbounded">
+                            <xsd:complexType>
+                                <xsd:sequence>
+                                    <xsd:element name="TC_Category">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:string">
+                                                <xsd:maxLength value="8"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:element>
+                                    <xsd:element name="TC_Number">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:string">
+                                                <xsd:maxLength value="35"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:element>
+                                    <xsd:element name="TC_Description">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:string">
+                                                <xsd:maxLength value="5000"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:element>
+                                    <xsd:element name="StandardManHours">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:string">
+                                                <xsd:maxLength value="8"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:element>
+                                    <xsd:element name="OperationNumber" minOccurs="0">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:string">
+                                                <xsd:maxLength value="10"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:element>
+                                    <xsd:element name="DeletionIndicator" minOccurs="0">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:string">
+                                                <xsd:minLength value="1"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:element>
+                                </xsd:sequence>
+                            </xsd:complexType>
+                        </xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,35 @@
+<persistence version="2.0"
+	xmlns="http://java.sun.com/xml/ns/persistence"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+	<persistence-unit name="TraxStandaloneDS"
+		transaction-type="JTA">
+		<jta-data-source>TraxStandaloneDS</jta-data-source>
+		<class>trax.aero.model.RelationMaster</class>
+		<class>trax.aero.model.RelationMasterPK</class>
+		<class>trax.aero.model.SystemTranCode</class>
+		<class>trax.aero.model.SystemTranCodePK</class>
+		<class>trax.aero.model.SystemTranConfig</class>
+		<class>trax.aero.model.SystemTranConfigPK</class>
+		<class>trax.aero.model.EmployeeControl</class>
+		<class>trax.aero.model.InterfaceLockMaster</class>
+		<class>trax.aero.model.EmployeeControlPK</class>
+		<class>trax.aero.model.EmployeeAuthorization</class>
+		<class>trax.aero.model.EmployeeAuthorizationApv</class>
+		<class>trax.aero.model.EmployeeAuthorizationApvPK</class>
+		<class>trax.aero.model.EmployeeAuthPreReq</class>
+		<class>trax.aero.model.EmployeeAuthPreReqPK</class>
+		<class>trax.aero.model.EmployeeSkillEffectivity</class>
+		<class>trax.aero.model.EmployeeSkill</class>
+		<class>trax.aero.model.EmployeeSkillPK</class>
+		<class>trax.aero.model.EmployeeSkillEffectivityPK</class>
+		<class>trax.aero.model.BlobTable</class>
+        <class>trax.aero.model.BlobTablePK</class>
+		
+		<shared-cache-mode>NONE</shared-cache-mode>
+		<properties>
+			<property name="hibernate.dialect"
+				value="org.hibernate.dialect.Oracle10gDialect" />
+		</properties>
+	</persistence-unit>
+</persistence>

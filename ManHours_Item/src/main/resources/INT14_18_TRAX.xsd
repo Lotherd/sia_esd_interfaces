@@ -1,0 +1,54 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://singaporeair.com/mro/ESDTRAX" targetNamespace="http://singaporeair.com/mro/ESDTRAX">
+   <xsd:complexType name="DT_TRAX_RCV_I14_I18_4126_RES">
+      <xsd:sequence>
+         <xsd:element name="RFO_NO">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="8" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Error_code">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="10" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Remarks">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="1000" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="WO_number">
+            <xsd:simpleType>
+               <xsd:restriction base="xsd:string">
+                  <xsd:maxLength value="8" />
+               </xsd:restriction>
+            </xsd:simpleType>
+         </xsd:element>
+         <xsd:element name="Operation" maxOccurs="unbounded">
+            <xsd:complexType>
+               <xsd:sequence>
+                  <xsd:element name="Operation_number">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="10" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+                  <xsd:element name="TASK_CARD">
+                     <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                           <xsd:maxLength value="35" />
+                        </xsd:restriction>
+                     </xsd:simpleType>
+                  </xsd:element>
+               </xsd:sequence>
+            </xsd:complexType>
+         </xsd:element>
+      </xsd:sequence>
+   </xsd:complexType>
+</xsd:schema>
