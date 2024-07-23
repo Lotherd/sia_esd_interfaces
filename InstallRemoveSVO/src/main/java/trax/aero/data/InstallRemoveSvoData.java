@@ -188,37 +188,37 @@ public class InstallRemoveSvoData {
 		
 		ArrayList<I19_Request> list = new ArrayList<I19_Request>();
 		
-		String sql =
-		"SELECT\r\n" + 
-		"    \"A3\".\"PN\"                    \"PN\",\r\n" + 
-		"    \"A3\".\"SN\"                    \"SN\",\r\n" + 
-		"    \"A3\".\"SN\"                    \"SN\",\r\n" + 
-		"    \"A3\".\"REMOVE_INSTALLED_DATE\" \"REMOVE_INSTALLED_DATE\",\r\n" + 
-		"    \"A3\".\"LOCATION\"              \"LOCATION\",\r\n" + 
-		"    'LICENCE_TYPE'               \"'LICENCE_TYPE'\",\r\n" + 
-		"    \"A3\".\"REMOVE_AS_SERVICEABLE\" \"REMOVE_AS_SERVICEABLE\",\r\n" + 
-		"    \"A3\".\"INTERNAL_EXTERNAL\"     \"INTERNAL_EXTERNAL\",\r\n" + 
-		"    \"A3\".\"TRANSACTION_TYPE\"      \"TRANSACTION_TYPE\",\r\n" + 
-		"    \"A3\".\"REMOVAL_REASON\"        \"REMOVAL_REASON\",\r\n" + 
-		"    \"A3\".\"NOTES\"                 \"NOTES\",\r\n" + 
-		"    \"A1\".\"CUSTOMER\"              \"CUSTOMER\",\r\n" + 
-		"    \"A3\".\"RFO_NO\"                \"RFO_NO\",\r\n" + 
-		"    \"A2\".\"LEGACY_BATCH\"          \"LEGACY_BATCH\",\r\n" + 
-		"    \"A3\".\"QTY\"                   \"QTY\",\r\n" + 
-		"    \"A3\".\"WO\"                    \"WO\",\r\n" + 
-		"    \"A3\".\"TASK_CARD\"             \"TASK_CARD\",\r\n" + 
-		"    \"A3\".\"TRANSACTION_NO\"           \"TRANSACTION\"\r\n" + 
-		"FROM\r\n" + 
-		"    \"PN_INVENTORY_HISTORY\" \"A3\",\r\n" + 
-		"    \"PN_INVENTORY_DETAIL\"  \"A2\",\r\n" + 
-		"    \"WO\"                   \"A1\"\r\n" + 
-		"WHERE\r\n" + 
-		"    \"A3\".\"SVO_NO\" IS NULL\r\n" + 
-		"    AND \"A3\".\"WO\" IS NOT NULL\r\n" + 
-		"    AND \"A3\".\"TASK_CARD\" IS NOT NULL\r\n" + 
-		"    AND \"A3\".\"TRANSACTION_TYPE\" LIKE '%A/C%'\r\n" + 
-		"    AND \"A3\".\"BATCH\" = \"A2\".\"BATCH\"\r\n" + 
-		"    AND \"A1\".\"WO\" = \"A3\".\"WO\"";
+		String sql= "SELECT \n" + 
+			    "    A3.PN AS PN,\n" + 
+			    "    A3.SN AS SN,\n" + 
+			    "    A3.SN AS SN,\n" + 
+			    "    A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE,\n" + 
+			    "    A3.LOCATION AS LOCATION,\n" + 
+			    "    'LICENCE_TYPE' AS LICENCE_TYPE,\n" + 
+			    "    A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE,\n" + 
+			    "    A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL,\n" + 
+			    "    A3.TRANSACTION_TYPE AS TRANSACTION_TYPE,\n" + 
+			    "    A3.REMOVAL_REASON AS REMOVAL_REASON,\n" + 
+			    "    A3.NOTES AS NOTES,\n" + 
+			    "    A1.CUSTOMER AS CUSTOMER,\n" + 
+			    "    A3.RFO_NO AS RFO_NO,\n" + 
+			    "    A2.LEGACY_BATCH AS LEGACY_BATCH,\n" + 
+			    "    A3.QTY AS QTY,\n" + 
+			    "    A3.WO AS WO,\n" + 
+			    "    A3.TASK_CARD AS TASK_CARD,\n" + 
+			    "    A3.TRANSACTION_NO AS TRANSACTION\n" + 
+			    "FROM\n" + 
+			    "    PN_INVENTORY_HISTORY A3,\n" + 
+			    "    PN_INVENTORY_DETAIL A2,\n" + 
+			    "    WO A1\n" + 
+			    "WHERE\n" + 
+			    "    A3.SVO_NO IS NULL\n" + 
+			    "    AND A3.WO IS NOT NULL\n" + 
+			    "    AND A3.TASK_CARD IS NOT NULL\n" + 
+			    "    AND A3.TRANSACTION_TYPE LIKE '%A/C%'\n" + 
+			    "    AND A3.BATCH = A2.BATCH\n" + 
+			    "    AND A1.WO = A3.WO";
+
 		
 		if(MaxRecord != null && !MaxRecord.isEmpty()) {
 			sql=  "SELECT *	FROM ( " + sql;
