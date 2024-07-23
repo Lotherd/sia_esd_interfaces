@@ -44,7 +44,7 @@ public class ImportZepartserData {
 	
 	public ImportZepartserData()
 	{
-		factory = Persistence.createEntityManagerFactory("TraxESD");
+		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
 		em = factory.createEntityManager();		
 	}
 	

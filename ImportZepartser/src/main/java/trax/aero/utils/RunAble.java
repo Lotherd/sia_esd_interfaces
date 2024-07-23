@@ -52,7 +52,7 @@ public class RunAble implements Runnable {
 	};
 	
 	public RunAble() {
-		factory = Persistence.createEntityManagerFactory("TraxESD");
+		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
 		data = new ImportZepartserData();
 	}
 	

@@ -44,7 +44,7 @@ public class MaterialData implements IMaterialData {
 	
 	private static final int X_MINUTES = new Integer(System.getProperty("MaterialStatusImport_Time")) * 60 * 1000;
 	
-	@PersistenceContext(unitName = "TraxESD") private EntityManager em;
+	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
 	
 	EmailSender emailer = null;
 	String error = "";	

@@ -107,7 +107,7 @@ public class ServiceablelocationData {
 				ServiceablelocationController.addError(e.toString());
 				logger.severe(e.toString());
 			}
-			factory = Persistence.createEntityManagerFactory("TraxESD");
+			factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
 			em = factory.createEntityManager();
 		}
 		
