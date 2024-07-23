@@ -122,8 +122,6 @@
           <addDefaultConstructor>true</addDefaultConstructor>
           <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
         </configuration>
-        <executions>ertyRestrictions>true</enforcePropertyRestrictions>
-        </configuration>
         <executions>
           
         </executions>
