@@ -125,6 +125,7 @@ public class Run implements Runnable {
 			}
 			catch(Throwable e)
 			{
+				e.printStackTrace();
 				 logger.severe(e.toString());
 				InstallRemoveSVOController.addError(e.toString());
 				if(!ArrayRequestError.isEmpty()) {			
