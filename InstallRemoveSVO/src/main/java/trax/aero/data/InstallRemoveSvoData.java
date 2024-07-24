@@ -128,7 +128,7 @@ public class InstallRemoveSvoData {
 			InstallRemoveSVOController.addError(e.toString());
 			
 		}
-		factory = Persistence.createEntityManagerFactory("TraxESD");
+		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
 		em = factory.createEntityManager();		
 	}
 	
