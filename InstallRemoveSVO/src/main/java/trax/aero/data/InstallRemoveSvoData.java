@@ -183,42 +183,41 @@ public class InstallRemoveSvoData {
 		String currentDate;
 		Format formatter = new SimpleDateFormat("dd-MM-yyyy");
 
-		 logger.info("getTransactions1");
-			
+		
 		
 		ArrayList<I19_Request> list = new ArrayList<I19_Request>();
 		
-		String sql =
-				"SELECT\r\n" + 
-				"    \"PIH\".\"PN\"                    \"PN\",\r\n" + 
-				"    \"PIH\".\"SN\"                    \"SN\",\r\n" + 
-				"    \"PIH\".\"SN\"                    \"SN\",\r\n" + 
-				"    \"PIH\".\"REMOVE_INSTALLED_DATE\" \"REMOVE_INSTALLED_DATE\",\r\n" + 
-				"    \"PIH\".\"LOCATION\"              \"LOCATION\",\r\n" + 
-				"    'LICENCE_TYPE'               \"'LICENCE_TYPE'\",\r\n" + 
-				"    \"PIH\".\"REMOVE_AS_SERVICEABLE\" \"REMOVE_AS_SERVICEABLE\",\r\n" + 
-				"    \"PIH\".\"INTERNAL_EXTERNAL\"     \"INTERNAL_EXTERNAL\",\r\n" + 
-				"    \"PIH\".\"TRANSACTION_TYPE\"      \"TRANSACTION_TYPE\",\r\n" + 
-				"    \"PIH\".\"REMOVAL_REASON\"        \"REMOVAL_REASON\",\r\n" + 
-				"    \"PIH\".\"NOTES\"                 \"NOTES\",\r\n" + 
-				"    \"W\".\"CUSTOMER\"              \"CUSTOMER\",\r\n" + 
-				"    \"PIH\".\"RFO_NO\"                \"RFO_NO\",\r\n" + 
-				"    \"PID\".\"LEGACY_BATCH\"          \"LEGACY_BATCH\",\r\n" + 
-				"    \"PIH\".\"QTY\"                   \"QTY\",\r\n" + 
-				"    \"PIH\".\"WO\"                    \"WO\",\r\n" + 
-				"    \"PIH\".\"TASK_CARD\"             \"TASK_CARD\",\r\n" + 
-				"    \"PIH\".\"TRANSACTION_NO\"           \"TRANSACTION\"\r\n" + 
-				"FROM\r\n" + 
-				"    \"PN_INVENTORY_HISTORY\" \"PIH\",\r\n" + 
-				"    \"PN_INVENTORY_DETAIL\"  \"PID\",\r\n" + 
-				"    \"WO\"                   \"W\"\r\n" + 
-				"WHERE\r\n" + 
-				"    \"PIH\".\"SVO_NO\" IS NULL\r\n" + 
-				"    AND \"PIH\".\"WO\" IS NOT NULL\r\n" + 
-				"    AND \"PIH\".\"TASK_CARD\" IS NOT NULL\r\n" + 
-				"    AND \"PIH\".\"TRANSACTION_TYPE\" LIKE '%A/C%'\r\n" + 
-				"    AND \"PIH\".\"BATCH\" = \"PID\".\"BATCH\"\r\n" + 
-				"    AND \"W\".\"WO\" = \"PIH\".\"WO\"";
+		String sql= "SELECT \n" + 
+			    "    A3.PN AS PN,\n" + 
+			    "    A3.SN AS SN,\n" + 
+			    "    A3.SN AS SN,\n" + 
+			    "    A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE,\n" + 
+			    "    A3.LOCATION AS LOCATION,\n" + 
+			    "    'TYPE' AS LICENCE_TYPE,\n" + 
+			    "    A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE,\n" + 
+			    "    A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL,\n" + 
+			    "    A3.TRANSACTION_TYPE AS TRANSACTION_TYPE,\n" + 
+			    "    A3.REMOVAL_REASON AS REMOVAL_REASON,\n" + 
+			    "    A3.NOTES AS NOTES,\n" + 
+			    "    A1.CUSTOMER AS CUSTOMER,\n" + 
+			    "    A3.RFO_NO AS RFO_NO,\n" + 
+			    "    A2.LEGACY_BATCH AS LEGACY_BATCH,\n" + 
+			    "    A3.QTY AS QTY,\n" + 
+			    "    A3.WO AS WO,\n" + 
+			    "    A3.TASK_CARD AS TASK_CARD,\n" + 
+			    "    A3.TRANSACTION_NO AS TRANSACTION, A1.RFO_NO\n" + 
+			    "FROM\n" + 
+			    "    PN_INVENTORY_HISTORY A3,\n" + 
+			    "    PN_INVENTORY_DETAIL A2,\n" + 
+			    "    WO A1\n" + 
+			    "WHERE\n" + 
+			    "    A3.SVO_NO IS NULL\n" + 
+			    "    AND A3.WO IS NOT NULL\n" + 
+			    "    AND A3.TASK_CARD IS NOT NULL\n" + 
+			    "    AND A3.TRANSACTION_TYPE LIKE '%A/C%'\n" + 
+			    "    AND A3.BATCH = A2.BATCH\n" + 
+			    "    AND A1.WO = A3.WO AND A1.MODULE = 'SHOP' and A1.RFO_NO IS NOT NULL";
+
 		
 		
 				
@@ -275,7 +274,7 @@ public class InstallRemoveSvoData {
 					}
 					
 					if(rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
-						Inbound.setLicenceType(rs1.getString(6));
+						Inbound.setLicenceType("");
 					}
 					else {
 						Inbound.setLicenceType("");
@@ -326,7 +325,9 @@ public class InstallRemoveSvoData {
 					if(rs1.getString(13) != null && !rs1.getString(13).isEmpty()) {
 						Inbound.setRfoNo(rs1.getString(13));
 					}
-					else {
+					else if(rs1.getString(19) != null && !rs1.getString(19).isEmpty()) {
+						Inbound.setRfoNo(rs1.getString(19));
+					}else {
 						Inbound.setRfoNo("");
 					}
 					
@@ -374,7 +375,6 @@ public class InstallRemoveSvoData {
 		}
 		catch (Exception e) 
         {
-            e.printStackTrace();
 			InstallRemoveSVOController.addError(e.toString());
             logger.severe(e.toString());
             e.printStackTrace();
@@ -385,7 +385,6 @@ public class InstallRemoveSvoData {
 			if(pstmt1 != null && !pstmt1.isClosed())
 				pstmt1.close();
 		}
-		logger.info("end of getTransaction");
 		return list;
 	}
 	
