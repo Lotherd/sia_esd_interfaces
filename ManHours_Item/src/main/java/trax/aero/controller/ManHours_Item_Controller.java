@@ -113,6 +113,7 @@ public class ManHours_Item_Controller {
 	                msgBuilder.append("**********************************************************");
 
 	                email.setMsg(msgBuilder.toString());
+	               
 
                     for (String emailAddress : emailsList) {
                         email.addTo(emailAddress.trim());
@@ -230,9 +231,20 @@ public class ManHours_Item_Controller {
 	        email.setSmtpPort(Integer.valueOf(port));
 	        //email.setAuthentication("apikey", "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");
 	        email.setFrom(fromEmail);
+	        
+	        for (Operation_TRAX operation : order.getOperation()) {
+                String taskCard = operation.getTASK_CARD();
+                String operationNumber = operation.getOperation_number(); // get operation number if needed
+
+                if (taskCard == null || taskCard.isEmpty()) {
+                    logger.warning("TASK_CARD is null or empty for Operation: " + operationNumber);
+                    continue; // Skip this operation if task card is not available
+                }
+
+                //logger.info("Processing TASK_CARD: " + taskCard);
 
 	        if (!"53".equals(order.getError_code())) {
-	            email.setSubject("Interface failed to Update WorkAccomplished/Billed Hours for WO: " + order.getWO_number() + " TASK CARD: " + operationTrax.getTASK_CARD());
+	            email.setSubject("Interface failed to Update WorkAccomplished/Billed Hours for WO: " + order.getWO_number() + " TASK CARD: " + taskCard);
 
 	            StringBuilder msgBuilder = new StringBuilder();
 	            msgBuilder.append("WO: ").append(wo).append(",\n");
@@ -266,6 +278,7 @@ public class ManHours_Item_Controller {
             }
             email.send();
             logger.info("Email sent successfully to: " + String.join(", ", emailsList));
+	        }
 	    } catch (Exception e) {
 	        logger.severe(e.toString());
 	        logger.severe("Email not found");
