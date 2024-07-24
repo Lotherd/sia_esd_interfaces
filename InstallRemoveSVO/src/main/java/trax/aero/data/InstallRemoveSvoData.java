@@ -70,7 +70,6 @@ public class InstallRemoveSvoData {
 	String exceuted;
 	private Connection con;
 	
-	final String MaxRecord = System.getProperty("InstallRemoveSVO_MaxRecord");
 	//public InterfaceLockMaster lock;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 
@@ -221,13 +220,7 @@ public class InstallRemoveSvoData {
 				"    AND \"PIH\".\"BATCH\" = \"PID\".\"BATCH\"\r\n" + 
 				"    AND \"W\".\"WO\" = \"PIH\".\"WO\"";
 		
-		if(MaxRecord != null && !MaxRecord.isEmpty()) {
-			sql=  "SELECT *	FROM ( " + sql;
-		}
 		
-		if(MaxRecord != null && !MaxRecord.isEmpty()) {
-			sql= sql + "  )WHERE ROWNUM <= ?";		
-		}
 				
 		PreparedStatement pstmt1 = null;
 		ResultSet rs1 = null;
@@ -235,9 +228,7 @@ public class InstallRemoveSvoData {
 		try 
 		{
 			pstmt1 = con.prepareStatement(sql);
-			if((MaxRecord != null && !MaxRecord.isEmpty())) {
-				pstmt1.setString(1, MaxRecord);
-			}
+			
 			rs1 = pstmt1.executeQuery();
 
 			if (rs1 != null) 
