@@ -217,41 +217,61 @@ public class ManHours_Item_Data {
 	                        "WHERE W.SOURCE_TYPE NOT IN ('E8', 'X3') AND W.RFO_NO IS NOT NULL AND WTI.OPS_NO IS NOT NULL AND W.WO = WT.WO AND W.WO = WTI.WO AND W.WO = WA.WO AND WT.TASK_CARD = WTI.TASK_CARD " +
 	                        "AND WT.STATUS = 'CLOSED' AND ( WT.INTERFACE_SAP_TRANSFERRED_FLAG IS NULL OR WT.INTERFACE_SAP_TRANSFERRED_FLAG = '3')) WHERE rnk = 1";
 
-	    String sqlAction = "SELECT CASE WHEN WT.NON_ROUTINE = 'Y' THEN " +
-                "(SELECT DISTINCT LISTAGG(single_record, ' | ') WITHIN GROUP (ORDER BY rn) AS single_string " +
-                "FROM (SELECT DISTINCT " +
-                "CASE WHEN WTI.DUAL_INSPECTED_BY IS NOT NULL THEN " +
-                "'ITEM ' || WTI.TASK_CARD_ITEM || ': ' || WKA.WORK_ACCOMPLISHED || ' BY: ' || EC.REFERENCE || ' DATE: ' || TO_CHAR(WA.TRANSACTION_DATE, 'DD-MON-YY HH24:MI') || ' DUALINSP: ' || DUAL_WKA.WORK_ACCOMPLISHED || ' BY: ' || DUAL_EC.REFERENCE || ' DATE: ' || TO_CHAR(DUAL_WA.TRANSACTION_DATE, 'DD-MON-YY HH24:MI') " +
-                "ELSE 'ITEM ' || WTI.TASK_CARD_ITEM || ': ' || WKA.WORK_ACCOMPLISHED || ' BY: ' || EC.REFERENCE || ' DATE: ' || TO_CHAR(WA.TRANSACTION_DATE, 'DD-MON-YY HH24:MI') " +
+	    String sqlAction = "SELECT CASE " +
+                "WHEN wt.non_routine = 'Y' THEN " +
+                "(SELECT DISTINCT " +
+                "LISTAGG(single_record, ' | ') WITHIN GROUP(ORDER BY rn) AS single_string " +
+                "FROM (" +
+                "SELECT DISTINCT " +
+                "CASE " +
+                "WHEN wti.dual_inspected_by IS NOT NULL THEN " +
+                "'ITEM ' || wti.task_card_item || ': ' || wka1.work_accomplished || ' BY: ' || ec1.reference || ' DATE: ' || " +
+                "to_char(wka1.created_date, 'DD-MON-YY HH24:MI') || ' DUALINSP: ' || wka2.work_accomplished || ' BY: ' || " +
+                "ec2.reference || ' DATE: ' || to_char(wka2.created_date, 'DD-MON-YY HH24:MI') " +
+                "ELSE " +
+                "'ITEM ' || wti.task_card_item || ': ' || wka1.work_accomplished || ' BY: ' || ec1.reference || ' DATE: ' || " +
+                "to_char(wka1.created_date, 'DD-MON-YY HH24:MI') " +
                 "END AS single_record, " +
-                "ROW_NUMBER() OVER (PARTITION BY WTI.TASK_CARD_ITEM ORDER BY WA.TRANSACTION_DATE DESC) AS rn " +
-                "FROM WO_TASK_CARD_ITEM WTI " +
-                "JOIN WO_TASK_CARD WT ON WTI.WO = WT.WO AND WTI.TASK_CARD = WT.TASK_CARD " +
-                "JOIN (SELECT WO, TASK_CARD, WORK_ACCOMPLISHED_LINE, WORK_ACCOMPLISHED, CREATED_BY " +
-                "FROM (SELECT WO, TASK_CARD, WORK_ACCOMPLISHED_LINE, WORK_ACCOMPLISHED, CREATED_BY, " +
-                "ROW_NUMBER() OVER (PARTITION BY WO, TASK_CARD, CREATED_BY ORDER BY WORK_ACCOMPLISHED_LINE DESC) AS rn " +
-                "FROM WO_TASK_CARD_ITEM_WRK_ACMPLSHD) " +
-                "WHERE rn = 1) WKA ON WTI.WO = WKA.WO AND WTI.TASK_CARD = WKA.TASK_CARD AND WTI.INSPECTED_BY = WKA.CREATED_BY " +
-                "JOIN WO_ACTUALS WA ON WA.WO = WTI.WO " +
-                "JOIN EMPLOYEE_CONTROL EC ON EC.EMPLOYEE = WA.EMPLOYEE " +
-                "LEFT JOIN (SELECT WO, TASK_CARD, WORK_ACCOMPLISHED_LINE, WORK_ACCOMPLISHED, CREATED_BY " +
-                "FROM (SELECT WO, TASK_CARD, WORK_ACCOMPLISHED_LINE, WORK_ACCOMPLISHED, CREATED_BY " +
-                "FROM WO_TASK_CARD_ITEM_WRK_ACMPLSHD)) DUAL_WKA ON WTI.WO = DUAL_WKA.WO AND WTI.TASK_CARD = DUAL_WKA.TASK_CARD AND WTI.DUAL_INSPECTED_BY = DUAL_WKA.CREATED_BY " +
-                "LEFT JOIN WO_ACTUALS DUAL_WA ON DUAL_WA.WO = WTI.WO " +
-                "LEFT JOIN EMPLOYEE_CONTROL DUAL_EC ON DUAL_EC.EMPLOYEE = DUAL_WA.EMPLOYEE " +
-                "WHERE WTI.WO = ? AND WTI.TASK_CARD = ? AND WT.NON_ROUTINE = 'Y' AND WA.EMPLOYEE IS NOT NULL) A " +
+                "ROW_NUMBER() OVER(PARTITION BY wti.task_card_item ORDER BY wa.transaction_date DESC) AS rn " +
+                "FROM wo_task_card_item wti " +
+                "JOIN wo_task_card wt ON wti.wo = wt.wo AND wti.task_card = wt.task_card " +
+                "JOIN (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, created_by, created_date " +
+                "FROM (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, created_by, created_date, " +
+                "ROW_NUMBER() OVER(PARTITION BY wo, task_card, task_card_item, created_by ORDER BY work_accomplished_line DESC) AS rn " +
+                "FROM wo_task_card_item_wrk_acmplshd) WHERE rn = 1) wka1 " +
+                "ON wti.wo = wka1.wo AND wti.task_card = wka1.task_card AND wti.task_card_item = wka1.task_card_item " +
+                "AND wti.inspected_by = wka1.created_by " +
+                "JOIN (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, created_by, created_date " +
+                "FROM (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, created_by, created_date, " +
+                "ROW_NUMBER() OVER(PARTITION BY wo, task_card, task_card_item, created_by ORDER BY work_accomplished_line DESC) AS rn " +
+                "FROM wo_task_card_item_wrk_acmplshd) WHERE rn = 1) wka2 " +
+                "ON wti.wo = wka2.wo AND wti.task_card = wka2.task_card AND wti.task_card_item = wka2.task_card_item " +
+                "AND wti.dual_inspected_by = wka2.created_by " +
+                "LEFT JOIN employee_control ec1 ON ec1.employee = wka1.created_by " +
+                "LEFT JOIN employee_control ec2 ON ec2.employee = wka2.created_by " +
+                "JOIN wo_actuals wa ON wa.wo = wti.wo " +
+                "WHERE wti.wo = ? AND wti.task_card = ? AND wt.non_routine = 'Y' AND wa.employee IS NOT NULL) a " +
                 "WHERE rn = 1) " +
-                "WHEN WT.NON_ROUTINE = 'N' THEN " +
-                "(SELECT 'Refer to TRAXWO: ' || WT.WO || ' TASK CARD: ' || WT.TASK_CARD || ' For Details LICENSE: ' || EC.REFERENCE || ' DATE: ' || TO_CHAR(WA.MODIFIED_DATE, 'DD-MON-YY HH24:MI') AS single_string " +
-                "FROM WO_TASK_CARD_ITEM WTI " +
-                "JOIN WO_TASK_CARD WT ON WTI.WO = WT.WO AND WTI.TASK_CARD = WT.TASK_CARD " +
-                "JOIN WO_ACTUALS WA ON WA.WO = WTI.WO " +
-                "JOIN EMPLOYEE_CONTROL EC ON EC.EMPLOYEE = WA.EMPLOYEE " +
-                "WHERE WTI.WO = ? AND WTI.TASK_CARD = ? AND WT.NON_ROUTINE = 'N' AND WA.EMPLOYEE IS NOT NULL AND WA.TRANSACTION_DATE = (SELECT MAX(TRANSACTION_DATE) FROM WO_ACTUALS WA2 WHERE WA2.WO = WTI.WO) " +
+                "WHEN wt.non_routine = 'N' THEN " +
+                "(SELECT 'Refer to TRAXWO: ' || wt.wo || ' TASK CARD: ' || wt.task_card || ' For Details LICENSE: ' || " +
+                "ec.reference || ' DATE: ' || to_char(wa.modified_date, 'DD-MON-YY HH24:MI') AS single_string " +
+                "FROM wo_task_card_item wti " +
+                "JOIN wo_task_card wt ON wti.wo = wt.wo AND wti.task_card = wt.task_card " +
+                "JOIN wo_actuals wa ON wa.wo = wti.wo " +
+                "LEFT JOIN (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, created_by, created_date " +
+                "FROM (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, created_by, created_date, " +
+                "ROW_NUMBER() OVER(PARTITION BY wo, task_card, task_card_item, created_by ORDER BY work_accomplished_line DESC) AS rn " +
+                "FROM wo_task_card_item_wrk_acmplshd) WHERE rn = 1) wka " +
+                "ON wti.wo = wka.wo AND wti.task_card = wka.task_card AND wti.task_card_item = wka.task_card_item " +
+                "AND wti.inspected_by = wka.created_by " +
+                "LEFT JOIN employee_control ec ON ec.employee = wka.created_by " +
+                "WHERE wti.wo = ? AND wti.task_card = ? AND wt.non_routine = 'N' AND wa.employee IS NOT NULL " +
+                "AND wa.transaction_date = (SELECT MAX(transaction_date) FROM wo_actuals wa2 WHERE wa2.wo = wti.wo) " +
                 "FETCH FIRST 1 ROW ONLY) " +
                 "END AS single_string " +
-                "FROM WO_TASK_CARD WT " +
-                "WHERE WT.WO = ? AND WT.TASK_CARD = ? AND (WT.NON_ROUTINE = 'Y' OR WT.NON_ROUTINE = 'N')";
+                "FROM wo_task_card wt " +
+                "WHERE wt.wo = ? AND wt.task_card = ? AND (wt.non_routine = 'Y' OR wt.non_routine = 'N')";
+   
 
 
 	    String sqlmarking = "SELECT INVOICED_FLAG FROM WO_ACTUALS WHERE WO = ? AND TASK_CARD = ?"; 
