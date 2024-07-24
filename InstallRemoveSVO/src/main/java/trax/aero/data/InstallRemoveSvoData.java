@@ -384,6 +384,7 @@ public class InstallRemoveSvoData {
         {
 			InstallRemoveSVOController.addError(e.toString());
             logger.severe(e.toString());
+            e.printStackTrace();
             throw e;
 		}finally {
 			if(rs1 != null && !rs1.isClosed())
