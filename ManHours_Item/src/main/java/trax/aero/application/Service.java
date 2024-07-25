@@ -138,42 +138,42 @@ ManHours_Item_Data data = new ManHours_Item_Data("mark");
 			StringWriter sw = new StringWriter();
 			marshaller.marshal(input,  sw);
 			
-			String xmlContent = sw.toString();
+			logger.info("Input: " + sw.toString());
 			
-			int xmlStart = xmlContent.indexOf("<?xml");
-			if(xmlStart > 0) {
-				xmlContent = xmlContent.substring(xmlStart);
-			}
-			
-			 xmlContent = xmlContent.replaceAll("[^\\x20-\\x7e]", "");
-		     
-			 logger.info("Input: " + xmlContent);
-			 
-			 executed = data.markTransaction(input);
-			 if(!executed.equalsIgnoreCase("OK")) {
-				 executed = "Issue Found";
-				 throw new Exception("Issue found");
-			 }
-			
-		}catch(Exception e) {
-			logger.severe(e.toString());
-			ManHours_Item_Controller.addError(e.toString());
-				OpsLineEmail opsLineEmail = data.getOpsLineStaffName(input.getWO_number());
-                
-				ManHours_Item_Controller.sendEmailOpsLine(null, input, opsLineEmail);
-			
-		}finally {
-			try {
-				if(data.getCon() != null && !data.getCon().isClosed())
-					data.getCon().close();
-			}catch(SQLException e){
-				e.printStackTrace();
-			}
-			logger.info("finishing");
+			if(input.getError_code() != null && !input.getError_code().isEmpty() && input.getError_code().equalsIgnoreCase("53")) {
+		    	executed = data.markTransaction(input);
+		    } else {
+		    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", Order Number: "+input.getRFO() + ", Error Code: " +input.getError_code());
+		    	ManHours_Item_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", Order Number: "+input.getRFO() + ", Error Code: " +input.getError_code());
+		    	executed = data.markTransaction(input);
+		    	executed = "Issue found";
+		    }
+			if(executed == null || !executed.equalsIgnoreCase("OK")) {
+		    	executed = "Issue found";
+        		throw new Exception("Issue found");
+		    }
 		}
-		
-		
-		return Response.ok(executed, MediaType.APPLICATION_XML + ";chartset=utf-8").build();
+		catch(Exception e)
+		{
+			
+			ManHours_Item_Controller.addError(e.toString());
+			ManHours_Item_Controller.sendEmailRequest(null);
+			
+		}
+       finally 
+       {   
+    	   try 
+		{
+			if(data.getCon() != null && !data.getCon().isClosed())
+				data.getCon().close();
+		} 
+		catch (SQLException e) 
+		{ 
+			e.printStackTrace();
+		}
+    	   logger.info("finishing");
+       }
+	   return Response.ok(executed,MediaType.APPLICATION_XML + ";charset=utf-8").build();
 	}
 
 }

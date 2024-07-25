@@ -1,11 +1,14 @@
 package trax.aero.utils;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 import trax.aero.controller.ManHours_Item_Controller;
 import trax.aero.data.ManHours_Item_Data;
@@ -62,9 +65,40 @@ public class Run implements Runnable{
 			        	 ManHours_Item_Controller.addError("Unable to send XML " + "to URL " + url + " MAX_ATTEMPTS: " + MAX_ATTEMPTS);
 			         } else {
 			        	 INT14_18_TRAX input = null;
-			        	 
+			        	 try {
+			        		 String body = poster.getBody();
+			        		 StringReader sr = new StringReader(body);
+			        		 jc = JAXBContext.newInstance(INT14_18_TRAX.class);
+			        		 Unmarshaller unmarshaller = jc.createUnmarshaller();
+			        		 input = (INT14_18_TRAX) unmarshaller.unmarshal(sr);
+			        		 
+			        		 marshaller = jc.createMarshaller();
+						        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);  
+						        sw = new StringWriter();
+							    marshaller.marshal(input,sw);
+							    logger.info("Input: " + sw.toString());
+							    if(input.getError_code() != null && !input.getError_code().isEmpty() && input.getError_code().equalsIgnoreCase("53")) {
+							    	executed = data.markTransaction(input);
+							    } else {
+							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", Order Number: "+input.getRFO() + ", Error Code: " +input.getError_code());
+							    	ManHours_Item_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", Order Number: "+input.getRFO() + ", Error Code: " +input.getError_code());
+							    	executed = data.markTransaction(input);
+							    	executed = "Issue found";
+							    }
+							    if(executed == null || !executed.equalsIgnoreCase("OK")) {
+							    	executed = "Issue found";
+					        		throw new Exception("Issue found");
+							    }
+			        		 
+			        	 }catch(Exception e) {
+			        		
+			        		 ManHours_Item_Controller.addError(e.toString());
+							 ManHours_Item_Controller.sendEmailRequest(ArrayReq);
+							
+			        	 }finally {
 			        	 
 			        		 logger.info("finishing");
+			        	 }
 			        	 
 			        	 logger.info("POST status: " + String.valueOf(success) + " to URL: " + url);
 			         }
