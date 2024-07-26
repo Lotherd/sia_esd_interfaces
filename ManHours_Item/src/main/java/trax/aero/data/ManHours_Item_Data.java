@@ -152,7 +152,7 @@ public class ManHours_Item_Data {
 	                    attemptCounts.put(key, attempt);
 
 	                    try {
-	                        Thread.sleep(30000); 
+	                    	Thread.sleep(300000); 
 	                        logger.info("TASK_CARD: " + o.getTASK_CARD() + " WO: " + request.getWO_number());
 	                        ps1.setString(1, request.getWO_number());
 	                        ps1.setString(2, o.getTASK_CARD());

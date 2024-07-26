@@ -70,7 +70,7 @@ public class ManHours_Item_Controller {
 	                             "WHERE W.WO = ?";
 
 	                pstmt = con.prepareStatement(sql);
-	                pstmt.setString(1, op.getOPS_NO());
+	                pstmt.setString(1, req.getWO());
 	                rs = pstmt.executeQuery();
 
 	                String wo = null;
@@ -99,6 +99,8 @@ public class ManHours_Item_Controller {
 	                //email.setAuthentication("apikey", "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");
 	                email.setFrom(fromEmail);
 	                email.setSubject("Interface failed to Update WorkAccomplished/Billed Hours for WO: " + req.getWO() + " Task Card: " + op.getTASK_CARD());
+	                
+	                String errorMessage = errors.split("Remarks: ")[1].split(",")[0]; // Extract the specific error message part
 
 	                StringBuilder msgBuilder = new StringBuilder();
 	                msgBuilder.append("WO: ").append(wo).append(",\n");
@@ -107,7 +109,7 @@ public class ManHours_Item_Controller {
 	                msgBuilder.append("PN: ").append(pn).append("\n");
 	                msgBuilder.append("SN: ").append(pnSn).append("\n");
 	                msgBuilder.append("Date & Time of Transaction: ").append(date).append(",\n\n");
-	                msgBuilder.append("Error Message: ").append(errors).append("\n\n");
+	                msgBuilder.append("Error Message: ").append(errorMessage).append("\n\n");
 	                msgBuilder.append("**********************************************************\n");
 	                msgBuilder.append("*NOTE: This is a system generated email. Do not reply*\n");
 	                msgBuilder.append("**********************************************************");
@@ -121,6 +123,8 @@ public class ManHours_Item_Controller {
 
                     email.send();
                     logger.info("Email sent successfully to: " + String.join(", ", emailsList));
+                    
+                    errors = "";
                 }
             }
         
