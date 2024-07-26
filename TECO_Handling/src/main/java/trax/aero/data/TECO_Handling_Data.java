@@ -218,13 +218,60 @@ public class TECO_Handling_Data {
 
 	    ArrayList<INT15_SND> list = new ArrayList<>();
 
-	    String sqlRFO = "SELECT DISTINCT W.RFO_NO, W.WO, TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, "
-	            + "TO_CHAR(W.COMPLETION_DATE, 'HH24:MI:SS') AS COMPLETION_TIME, W.STATUS, W.REOPEN_REASON, W.SOURCE_REF, "
-	            + "WT.TASK_CARD, W.SOURCE_TYPE FROM WO W, WO_TASK_CARD WT, PN_INVENTORY_HISTORY ATH "
-	            + "WHERE W.WO = WT.WO AND W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD AND W.RFO_NO IS NOT NULL "
-	            + "AND (W.STATUS = 'CLOSED' OR W.STATUS = 'CANCEL' OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL)) "
-	            + "AND ATH.SVO_NO IS NOT NULL AND ATH.INTERFACE_TRANSFER_FLAG = 'D' AND ATH.TRANSACTION_TYPE = 'REMOVE' "
-	            + "AND NOT EXISTS (SELECT 1 FROM PN_INVENTORY_HISTORY ATH_INNER WHERE ATH_INNER.WO = W.WO AND ATH_INNER.INTERFACE_TRANSFER_FLAG = 'N')";
+	    String sqlRFO = "SELECT DISTINCT " +
+                "    w.rfo_no, " +
+                "    w.wo, " +
+                "    TO_CHAR(w.completion_date, 'DD-MM-YYYY') AS completion_date, " +
+                "    TO_CHAR(w.completion_date, 'HH24:MI:SS') AS completion_time, " +
+                "    w.status, " +
+                "    w.reopen_reason, " +
+                "    w.source_ref, " +
+                "    wt.task_card, " +
+                "    w.source_type " +
+                "FROM " +
+                "    wo w " +
+                "    JOIN wo_task_card wt ON w.wo = wt.wo " +
+                "    JOIN pn_inventory_history ath ON w.wo = ath.wo AND wt.task_card = ath.task_card " +
+                "WHERE " +
+                "    w.rfo_no IS NOT NULL " +
+                "    AND (w.status = 'CLOSED' " +
+                "         OR w.status = 'CANCEL' " +
+                "         OR (w.status = 'OPEN' " +
+                "             AND w.reopen_reason IS NOT NULL)) " +
+                "    AND ath.svo_no IS NOT NULL " +
+                "    AND ath.interface_transfer_flag = 'D' " +
+                "    AND ath.transaction_type = 'REMOVE' " +
+                "    AND NOT EXISTS ( " +
+                "        SELECT 1 " +
+                "        FROM pn_inventory_history ath_inner " +
+                "        WHERE ath_inner.wo = w.wo " +
+                "            AND ath_inner.interface_transfer_flag = 'N') " +
+                "UNION ALL " +
+                "SELECT DISTINCT " +
+                "    w.rfo_no, " +
+                "    w.wo, " +
+                "    TO_CHAR(w.completion_date, 'DD-MM-YYYY') AS completion_date, " +
+                "    TO_CHAR(w.completion_date, 'HH24:MI:SS') AS completion_time, " +
+                "    w.status, " +
+                "    NULL AS reopen_reason, " +
+                "    w.source_ref, " +
+                "    wt.task_card, " +
+                "    w.source_type " +
+                "FROM " +
+                "    wo w " +
+                "    JOIN wo_task_card wt ON w.wo = wt.wo " +
+                "WHERE " +
+                "    (w.status = 'CLOSED' " +
+                "         OR w.status = 'CANCEL' " +
+                "         OR (w.status = 'OPEN' " +
+                "             AND w.reopen_reason IS NOT NULL)) " +
+                "    AND w.rfo_no IS NOT NULL " +
+                "    AND wt.task_card IN ( " +
+                "        SELECT task_card " +
+                "        FROM wo_task_card wt_inner " +
+                "        WHERE wt_inner.wo = w.wo " +
+                "            AND wt_inner.status = 'CLOSED')";
+
 
 	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
 	        sqlRFO = "SELECT * FROM (" + sqlRFO + ") WHERE ROWNUM <= ?";
