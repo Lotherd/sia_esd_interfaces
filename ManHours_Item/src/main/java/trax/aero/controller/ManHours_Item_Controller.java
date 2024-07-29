@@ -100,15 +100,13 @@ public class ManHours_Item_Controller {
 	                email.setFrom(fromEmail);
 	                email.setSubject("Interface failed to Update WorkAccomplished/Billed Hours for WO: " + req.getWO() + " Task Card: " + op.getTASK_CARD());
 	                
-	                String errorMessage = "Unknown error";
+	                String errorMessage = "Connection timed out: Unable to invoke request. ";
 	                if (errors.contains("Remarks: ")) {
 	                    String[] errorParts = errors.split("Remarks: ");
 	                    if (errorParts.length > 1) {
 	                        errorMessage = errorParts[1].split(",")[0];
 	                    }
-	                } else if (errors != null && !errors.isEmpty()) {
-	                    errorMessage = errors;
-	                }
+	                } 
 
 	                StringBuilder msgBuilder = new StringBuilder();
 	                msgBuilder.append("WO: ").append(wo).append(",\n");

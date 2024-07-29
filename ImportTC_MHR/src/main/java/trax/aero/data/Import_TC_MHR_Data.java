@@ -127,8 +127,8 @@ public class Import_TC_MHR_Data {
 		    String sqlunMark = "UPDATE WO_TASK_CARD SET INTERFACE_TRANSFERRED_DATE = null WHERE TASK_CARD = ? AND WO = ?";
 		    String sqlunMark2 = "UPDATE WO_TASK_CARD_ADUIT SET INTERFACE_SAP_TRANSFERRED_DATE = null WHERE TASK_CARD = ? AND WO = ? AND TRANSACTION_TYPE ='DELETE'";
 		    
-		    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-		                          + "VALUES (?, 'ERROR', 'I06', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Import_TC_MHR I_06', sysdate, sysdate)";
+		    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+		                          + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I06', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Import_TC_MHR I_06', sysdate, sysdate FROM dual";
 		    
 		    String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ?";
 		    
@@ -144,6 +144,7 @@ public class Import_TC_MHR_Data {
 		        for (OrderTRAX r : request.getOrder()) {
 		            for (OperationTRAX o : r.getOperations()) {
 		                if (o != null) {
+		                	if (r.getExceptionId().equalsIgnoreCase("53")){
 		                    pstmt2.setString(1, o.getTaskCard());
 		                    pstmt2.setString(2, r.getWo());
 		                    pstmt2.executeUpdate();
@@ -161,7 +162,7 @@ public class Import_TC_MHR_Data {
 		                        pstmt4.setString(3, r.getWo());
 		                        pstmt4.executeUpdate();
 		                    }
-
+		                }
 		                    if (!r.getExceptionId().equalsIgnoreCase("53") &&
 		                    	    (r.getExceptionDetail().toLowerCase().contains("is locked by".toLowerCase()) ||
 		                    	     r.getExceptionDetail().toLowerCase().contains("already being processed".toLowerCase()))){
@@ -173,8 +174,9 @@ public class Import_TC_MHR_Data {
 		                        psDeleteError.executeUpdate();
 		                        
 		                        psInsertError.setString(1, r.getWo());
-		                        psInsertError.setString(2, r.getExceptionId());
-		                        psInsertError.setString(3, r.getExceptionDetail());
+		                        psInsertError.setString(2, o.getTaskCard());
+		                        psInsertError.setString(3, r.getExceptionId());
+		                        psInsertError.setString(4, r.getExceptionDetail());
 		                        psInsertError.executeUpdate();
 		                        
 		                        String key = r.getWo() + "-" + o.getTaskCard();
@@ -185,7 +187,7 @@ public class Import_TC_MHR_Data {
 	                                attemptCounts.put(key, attempt);
 
 		                            try {
-		                                Thread.sleep(30000); 
+		                                Thread.sleep(300000); 
 
 		                                ps1.setString(1, o.getTaskCard());
 		                                ps1.setString(2, r.getWo());
