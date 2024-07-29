@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="ZprintDS"
+		transaction-type="JTA">
+		<jta-data-source>ZprintDS</jta-data-source>
+		<class>trax.aero.model.BlobTable</class>
+		<class>trax.aero.model.BlobTablePK</class>
+		<class>trax.aero.model.WoTaskCard</class>
+		<class>trax.aero.model.WoTaskCardPK</class>
+		<class>trax.aero.model.WoTaskCardAcModPlan</class>
+		<class>trax.aero.model.Wo</class>
+		<class>trax.aero.model.WoTaskCardAcModPlanPK</class>
+		<class>trax.aero.model.WoTaskCardBust</class>
+		<class>trax.aero.model.WoTaskCardBustPK</class>
+		<class>trax.aero.model.WoTaskCardItem</class>
+		<class>trax.aero.model.WoTaskCardItemPK</class>
+		<class>trax.aero.model.WoTaskCardKeyword</class>
+		<class>trax.aero.model.WoTaskCardKeywordPK</class>
+		<class>trax.aero.model.WoTaskCardSignedPdf</class>
+		<class>trax.aero.model.WoTaskCardSignedPdfPK</class>
+		<class>trax.aero.model.WoTaskCardSurvey</class>
+		<class>trax.aero.model.WoTaskCardSurveyPK</class>
+		<class>trax.aero.model.WoTaskCardWorkInProgress</class>
+		<class>trax.aero.model.WoTaskCardWorkInProgressPK</class>
+		<class>trax.aero.model.TaskCard</class>
+		<class>trax.aero.model.TaskCardItem</class>
+		<class>trax.aero.model.TaskCardItemPK</class>
+		<class>trax.aero.model.TaskCardPn</class>
+		<class>trax.aero.model.TaskCardPnPK</class>
+		<class>trax.aero.model.WoTaskCardPn</class>
+		<class>trax.aero.model.WoTaskCardPnPK</class>
+		<class>trax.aero.model.PicklistDistribution</class>
+		<class>trax.aero.model.PicklistDistributionPK</class>
+		<class>trax.aero.model.PicklistHeader</class>
+		<class>trax.aero.model.PnInventoryDetail</class>
+	<class>trax.aero.model.PnMaster</class>
+	<class>trax.aero.model.WoTaskCardCustomer</class>
+	<class>trax.aero.model.WoTaskCardCustomerPK</class>
+	<class>trax.aero.model.TaskCardKeyword</class>
+	<class>trax.aero.model.TaskCardKeywordPK</class>
+	<class>trax.aero.model.TaskCardExecution</class>
+	<class>trax.aero.model.TaskCardExecutionPK</class>
+	<class>trax.aero.model.WoTaskCardExecution</class>
+	<class>trax.aero.model.WoTaskCardExecutionPK</class>
+	<class>trax.aero.model.InterfaceLockMaster</class>
+	<class>trax.aero.model.TaskCardControlMaster</class>
+	<class>trax.aero.model.TaskCardControlMasterPK</class>
+	<class>trax.aero.model.WoTaskCardControl</class>
+	<class>trax.aero.model.WoTaskCardControlPK</class>
+	<class>trax.aero.model.AcMaster</class>
+	<class>trax.aero.model.AcTypeSeriesMaster</class>
+	<class>trax.aero.model.AcTypeSeriesMasterPK</class>
+        <shared-cache-mode>NONE</shared-cache-mode>
+		<properties>
+			<property name="hibernate.dialect"
+				value="org.hibernate.dialect.Oracle10gDialect" />
+		</properties>
+    </persistence-unit>
+</persistence>
