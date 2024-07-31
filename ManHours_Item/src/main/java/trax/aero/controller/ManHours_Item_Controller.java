@@ -255,6 +255,13 @@ public class ManHours_Item_Controller {
 
 	        if (!"53".equals(order.getError_code())) {
 	            email.setSubject("Interface failed to Update WorkAccomplished/Billed Hours for WO: " + order.getWO_number() + " TASK CARD: " + taskCard);
+	            
+	            String errorMessage = "Connection timed out: Unable to invoke request. ";
+	            if(order.getRemarks() != null) {
+	            	errorMessage = order.getRemarks();
+	            }
+	            
+	            
 
 	            StringBuilder msgBuilder = new StringBuilder();
 	            msgBuilder.append("WO: ").append(wo).append(",\n");
@@ -263,7 +270,7 @@ public class ManHours_Item_Controller {
 	            msgBuilder.append("PN: ").append(pn).append("\n");
 	            msgBuilder.append("SN: ").append(pnSn).append("\n");
 	            msgBuilder.append("Date & Time of Transaction: ").append(date).append(",\n\n");
-	            msgBuilder.append("Error Message: ").append(order.getRemarks()).append("\n\n");
+	            msgBuilder.append("Error Message: ").append(errorMessage).append("\n\n");
 	            msgBuilder.append("**********************************************************\n");
 	            msgBuilder.append("*NOTE: This is a system generated email. Do not reply*\n");
 	            msgBuilder.append("**********************************************************");

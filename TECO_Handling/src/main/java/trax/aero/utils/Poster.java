@@ -25,7 +25,9 @@ import javax.xml.bind.Marshaller;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 import trax.aero.logger.LogManager;
+
 import trax.aero.pojo.INT15_SND;
+
 
 public class Poster {
 	
@@ -38,66 +40,85 @@ public class Poster {
 	
 	
 	public boolean post(INT15_SND data, String URL) {
-		{
-			Client client = null;
-			Response response = null;
-			
-			try {
-				final HttpAuthenticationFeature feature = HttpAuthenticationFeature.basicBuilder().credentials(System.getProperty("Post_ID"), System.getProperty("Post_Password")).build();
-				String auth = ID + ":" + Password;
-				
-				String url = URL;
-				
-				if(url == null || url.isEmpty()) {
-					return false;
-				}
-				
-				if(url.startsWith("hhtps")) {
-					client = getRestSSLClient(MediaType.APPLICATION_XML + ";charset=utf-8", null);
-				} else 
-					client = getRestHttpClient(MediaType.APPLICATION_XML + ";charset=utf-8", null);
-					
-					client = client.register(feature);
-					
-					WebTarget webTarget = client.target(url);
-					
-					Builder builder = webTarget.request();
-					
-					builder = builder.header("Content-type", MediaType.APPLICATION_XML + ";charset=utf-8");
-					builder = builder.header("Accept", MediaType.APPLICATION_XML + ";charset=utf-8");
-					builder = builder.header(HttpHeaders.AUTHORIZATION, "Basic "+ new String(Base64.getEncoder().encode(auth.getBytes())));
-					
-					String requests = "";
-					
-					
-					logger.info("POSTING REQUEST: " + requests + "to URL: " + url);
-					
-					JAXBContext jc = JAXBContext.newInstance(INT15_SND.class);
-					Marshaller marshaller = jc.createMarshaller();
-					marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-					StringWriter sw = new StringWriter();
-					marshaller.marshal(data, sw);
-					String xmlContent = sw.toString();
-					
-					response = builder.post(Entity.entity(xmlContent, MediaType.APPLICATION_XML + ";charset=utf-8"));
-					body = response.readEntity(String.class);
-					logger.info("Response: " + response.getStatus() + " Response Body: " + body);
-					
-					if(response.getStatus() == 200 || response.getStatus() == 202){
-						return true;
-					}
-					return false;
-				
-			}catch (Exception exc) {
-				logger.severe(exc.toString());
-			} finally {
-				if(response != null)
-					response.close();
-				if(client != null)
-					client.close();
-			}
-			return false;
-		}
+	    final int maxRetries = 3;
+	    final int retryInterval = 5000; 
+
+	    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+	        Client client = null;
+	        Response response = null;
+
+	        try {
+	            final HttpAuthenticationFeature feature = HttpAuthenticationFeature.basicBuilder()
+	                .credentials(System.getProperty("Post_ID"), System.getProperty("Post_Password"))
+	                .build();
+	            String auth = ID + ":" + Password;
+
+	            String url = URL;
+
+	            if (url == null || url.isEmpty()) {
+	                return false;
+	            }
+
+	            if (url.startsWith("https")) {
+	                client = getRestSSLClient(MediaType.APPLICATION_XML + ";charset=utf-8", null);
+	            } else {
+	                client = getRestHttpClient(MediaType.APPLICATION_XML + ";charset=utf-8", null);
+	            }
+
+	            client = client.register(feature);
+
+	            WebTarget webTarget = client.target(url);
+
+	            Builder builder = webTarget.request();
+
+	            builder = builder.header("Content-type", MediaType.APPLICATION_XML + ";charset=utf-8");
+	            builder = builder.header("Accept", MediaType.APPLICATION_XML + ";charset=utf-8");
+	            builder = builder.header(HttpHeaders.AUTHORIZATION, "Basic " + new String(Base64.getEncoder().encode(auth.getBytes())));
+
+	            String requests = "";
+
+	          
+
+	            logger.info("POSTING REQUEST: " + requests + " to URL: " + url);
+
+	            JAXBContext jc = JAXBContext.newInstance(INT15_SND.class);
+	            Marshaller marshaller = jc.createMarshaller();
+	            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+	            StringWriter sw = new StringWriter();
+	            marshaller.marshal(data, sw);
+	            String xmlContent = sw.toString();
+	            //logger.info("XML Content: " + xmlContent);
+
+	            response = builder.post(Entity.entity(xmlContent, MediaType.APPLICATION_XML + ";charset=utf-8"));
+	            body = response.readEntity(String.class);
+	            logger.info("Response: " + response.getStatus() + " Response Body: " + body);
+
+	            if (response.getStatus() == 200 || response.getStatus() == 202) {
+	                return true;
+	            }
+	            
+	            logger.warning("Attempt " + attempt + " failed with status: " + response.getStatus());
+
+	        } catch (Exception exc) {
+	            logger.severe("Attempt " + attempt + " failed due to: " + exc.toString());
+	        } finally {
+	            if (response != null) {
+	                response.close();
+	            }
+	            if (client != null) {
+	                client.close();
+	            }
+	        }
+
+	        if (attempt < maxRetries) {
+	            try {
+	                Thread.sleep(retryInterval);
+	            } catch (InterruptedException ie) {
+	                logger.severe("Retry sleep interrupted: " + ie.toString());
+	            }
+	        }
+	    }
+	    return false;
 	}
 	
 	private Client getRestSSLClient(String accept, String contentType) {

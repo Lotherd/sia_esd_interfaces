@@ -83,7 +83,7 @@ public class ModelData {
 	
 	public ModelData()
 	{
-		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+		factory = Persistence.createEntityManagerFactory("ZprintDS");
 		em = factory.createEntityManager();
 		emailer = new EmailSender(System.getProperty("TECH_toEmail"));
 		

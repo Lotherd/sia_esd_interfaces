@@ -164,39 +164,46 @@ public class TECO_Handling_Data {
 	            pstmt1.setString(1, MaxRecord);
 	        }*/
 
+	        //logger.info("Executing SQL query: " + sqlSVO);
+
 	        try (ResultSet rs1 = pstmt1.executeQuery()) {
 	            while (rs1.next()) {
-	                logger.info("Processing SVO: " + rs1.getString(1));
+	                logger.info("Processing SVO: " + rs1.getString("SVO_NO"));
+
 	                INT15_SND req = new INT15_SND();
 
-	                req.setSAP_number(rs1.getString(1));
-	                req.setWO(rs1.getString(2));
-	                req.setWO_Completion_date(rs1.getString(3) != null ? rs1.getString(3) : "");
-	                req.setWO_Completion_time(rs1.getString(4) != null ? rs1.getString(4) : "");
-	                req.setStatus(rs1.getString(5));
-	                req.setReason_teco(rs1.getString(6));
-	                req.setNotification_number(rs1.getString(7) != null && rs1.getString(5).equals("CLOSED") && rs1.getString(10).equals("E4") ? rs1.getString(7) : "");
-	                req.setTC_number(rs1.getString(8) != null ? rs1.getString(8) : "");
-	                req.setTransaction(rs1.getString(9) != null ? rs1.getString(9) : "");
+	                req.setSAP_number(rs1.getString("SVO_NO"));
+	                req.setWO(rs1.getString("WO"));
+	                req.setWO_Completion_date(rs1.getString("COMPLETION_DATE") != null ? rs1.getString("COMPLETION_DATE") : "");
+	                req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "");
+	                req.setStatus(rs1.getString("STATUS"));
+	                req.setReason_teco(rs1.getString("REOPEN_REASON"));
+	                req.setNotification_number(rs1.getString("SOURCE_REF") != null && rs1.getString("STATUS").equals("CLOSED") && rs1.getString("SOURCE_TYPE").equals("E4") ? rs1.getString("SOURCE_REF") : "");
+	                req.setTC_number(rs1.getString("TASK_CARD") != null ? rs1.getString("TASK_CARD") : "");
+	                req.setTransaction(rs1.getString("TRANSACTION_NO") != null ? rs1.getString("TRANSACTION_NO") : "");
 	                req.setFlag("Y");
 
 	                list.add(req);
 
-	                pstmt2.setString(1, rs1.getString(1));
-	                pstmt2.setString(2, rs1.getString(9));
+	                // Log parameter values
+	                logger.info("Marking SVO_NO: " + rs1.getString("SVO_NO") + " Transaction NO: " + rs1.getString("TRANSACTION_NO"));
+	                
+	                pstmt2.setString(1, rs1.getString("SVO_NO"));
+	                pstmt2.setString(2, rs1.getString("TRANSACTION_NO"));
 	                pstmt2.executeUpdate();
 	            }
 	        }
-	    } catch (Exception e) {
+	    } catch (SQLException e) {
+	        logger.severe("SQLException occurred: " + e.getMessage());
 	        e.printStackTrace();
 	        executed = e.toString();
 	        TECO_Handling_Controller.addError(e.toString());
-	        logger.severe(executed);
 	        throw new Exception("Issue found", e);
 	    }
 
 	    return list;
 	}
+
 
 	
 	
@@ -246,57 +253,54 @@ public class TECO_Handling_Data {
 	             + "                      WHERE ATH_INNER.WO = W.WO "
 	             + "                        AND ATH_INNER.INTERFACE_TRANSFER_FLAG = 'N'))";
 
-
-	   /* if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	        sqlRFO = "SELECT * FROM (" + sqlRFO + ") WHERE ROWNUM <= ?";
-	    }*/
-
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ?";
-	    
 	    String sqlMark2 = "UPDATE WO SET INTERFACE_TECO_FLAG = 'Y' where WO = ?";
 
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlRFO);
 	         PreparedStatement pstmt2 = con.prepareStatement(sqlMark);
-	    	PreparedStatement pstmt3 = con.prepareStatement(sqlMark2)) {
+	         PreparedStatement pstmt3 = con.prepareStatement(sqlMark2)) {
 
-	        /*if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	            pstmt1.setString(1, MaxRecord);
-	        }*/
-
+	        //logger.info("Executing SQL query: " + sqlRFO);
+	        
 	        try (ResultSet rs1 = pstmt1.executeQuery()) {
 	            while (rs1.next()) {
-	                logger.info("Processing RFO: " + rs1.getString(1));
+	                logger.info("Processing RFO: " + rs1.getString("RFO_NO"));
+
 	                INT15_SND req = new INT15_SND();
 
-	                req.setSAP_number(rs1.getString(1));
-	                req.setWO(rs1.getString(2));
-	                req.setWO_Completion_date(rs1.getString(3) != null ? rs1.getString(3) : "");
-	                req.setWO_Completion_time(rs1.getString(4) != null ? rs1.getString(4) : "");
-	                req.setStatus(rs1.getString(5));
-	                req.setReason_teco(rs1.getString(6));
-	                req.setNotification_number(rs1.getString(7) != null && rs1.getString(5).equals("CLOSED") && rs1.getString(10).equals("E4") ? rs1.getString(7) : "");
+	                req.setSAP_number(rs1.getString("RFO_NO"));
+	                req.setWO(rs1.getString("WO"));
+	                req.setWO_Completion_date(rs1.getString("COMPLETION_DATE") != null ? rs1.getString("COMPLETION_DATE") : "");
+	                req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "");
+	                req.setStatus(rs1.getString("STATUS"));
+	                req.setReason_teco(rs1.getString("REOPEN_REASON"));
+	                req.setNotification_number(rs1.getString("SOURCE_REF") != null && rs1.getString("STATUS").equals("CLOSED") && rs1.getString("SOURCE_TYPE").equals("E4") ? rs1.getString("SOURCE_REF") : "");
 	                req.setFlag("N");
 
 	                list.add(req);
 
-	                pstmt2.setString(1, rs1.getString(2));
-	                pstmt2.setString(2, rs1.getString(8));
+	                // Log parameter values
+	                logger.info("Marking WO: " + rs1.getString("WO") + " Task Card: " + rs1.getString("TASK_CARD"));
+	                
+	                pstmt2.setString(1, rs1.getString("WO"));
+	                pstmt2.setString(2, rs1.getString("TASK_CARD"));
 	                pstmt2.executeUpdate();
 	                
-	                pstmt3.setString(1, rs1.getString(2));
+	                pstmt3.setString(1, rs1.getString("WO"));
 	                pstmt3.executeUpdate();
 	            }
 	        }
-	    } catch (Exception e) {
+	    } catch (SQLException e) {
+	        logger.severe("SQLException occurred: " + e.getMessage());
 	        e.printStackTrace();
 	        executed = e.toString();
 	        TECO_Handling_Controller.addError(e.toString());
-	        logger.severe(executed);
 	        throw new Exception("Issue found", e);
 	    }
 
 	    return list;
 	}
+
 
 	
 	public String setOpsLine(String opsLine, String email) throws Exception {

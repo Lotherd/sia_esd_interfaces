@@ -75,7 +75,7 @@ public class ImportZepartserData {
 	@Transactional
 	public boolean insertZepartser(ZEPARTSER z)
 	{
-		String query = "INSERT INTO ZEPARTSER_MASTER (CUSTOMER, PN) VALUES (?, ?)";
+		String query = "INSERT INTO ZEPARTSER_MASTER (CUSTOMER, PN, CREATED_DATE) VALUES (?, ?, SYSDATE)";
 		
 		try
 		{

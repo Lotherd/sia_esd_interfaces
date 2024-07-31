@@ -275,7 +275,7 @@ public class Import_TC_MHR_Controller {
             
         
 
-            if (order.getExceptionId() != "53" ) {
+            if (!"53".equals(order.getExceptionId())) {
             email.setSubject("Interface failed to Update Order Details for WO: " + order.getWo() + " Task Card: " + operation.getTaskCard());
 
             

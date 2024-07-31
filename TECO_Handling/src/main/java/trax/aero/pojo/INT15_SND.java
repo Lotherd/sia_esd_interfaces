@@ -17,10 +17,10 @@ public class INT15_SND {
 	@XmlElement(name = "TRAX_WO_number")
 	private String WO;
 	
-	@XmlElement(name = "WO_Completion_Date")
+	@XmlElement(name = "WO_Close_Date")
 	private String WO_Completion_date;
 	
-	@XmlElement(name = "WO_Completion_time")
+	@XmlElement(name = "WO_Close_time")
 	private String WO_Completion_time;
 	
 	@XmlElement(name = "Task_card_status")

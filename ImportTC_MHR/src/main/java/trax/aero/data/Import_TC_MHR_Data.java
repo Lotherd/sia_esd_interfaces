@@ -130,7 +130,7 @@ public class Import_TC_MHR_Data {
 		    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 		                          + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I06', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Import_TC_MHR I_06', sysdate, sysdate FROM dual";
 		    
-		    String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ?";
+		    String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
 		    
 
 		    try (PreparedStatement pstmt2 = con.prepareStatement(sqlDate);
@@ -162,6 +162,10 @@ public class Import_TC_MHR_Data {
 		                        pstmt4.setString(3, r.getWo());
 		                        pstmt4.executeUpdate();
 		                    }
+		                    
+		                    psDeleteError.setString(1, r.getWo());
+	                        psDeleteError.setString(2, o.getTaskCard());
+	                        psDeleteError.executeUpdate();
 		                }
 		                    if (!r.getExceptionId().equalsIgnoreCase("53") &&
 		                    	    (r.getExceptionDetail().toLowerCase().contains("is locked by".toLowerCase()) ||
@@ -170,8 +174,8 @@ public class Import_TC_MHR_Data {
 		                        Import_TC_MHR_Controller.addError(executed);
 
 		                        
-		                        psDeleteError.setString(1, r.getWo());
-		                        psDeleteError.executeUpdate();
+		                       // psDeleteError.setString(1, r.getWo());
+		                       // psDeleteError.executeUpdate();
 		                        
 		                        psInsertError.setString(1, r.getWo());
 		                        psInsertError.setString(2, o.getTaskCard());
@@ -221,6 +225,7 @@ public class Import_TC_MHR_Data {
 		                        }
 		                    } else {
 		                        psDeleteError.setString(1, r.getWo());
+		                        psDeleteError.setString(2, o.getTaskCard());
 		                        psDeleteError.executeUpdate();
 		                    }
 		                }

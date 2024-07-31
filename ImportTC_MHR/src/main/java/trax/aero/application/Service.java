@@ -80,14 +80,7 @@ public class Service {
 						
 	                    Import_TC_MHR_Controller.sendEmailOpsLine(op.getOpsNo(), o, op, opsLineEmail);
 					}
-				} else {
-					for(OperationTRAX op : o.getOperations()) {
-					OpsLineEmail opsLineEmail = data.getOpsLineStaffName(o.getWo(), op.getTaskCard());
-					OrderSND orderSND = new OrderSND(); 
-                    OperationSND operationSND = new OperationSND(); 
-                    Import_TC_MHR_Controller.sendEmailOpsLine(null, o, op, opsLineEmail);
-					}
-				}
+				} 
 			} 
 		}finally {
 				try {
