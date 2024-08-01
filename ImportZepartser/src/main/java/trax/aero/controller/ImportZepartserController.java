@@ -3,6 +3,7 @@ package trax.aero.controller;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.logging.Logger;
 
 
@@ -39,17 +40,19 @@ public class ImportZepartserController {
 			email.setSmtpPort(Integer.valueOf(port));
 			email.setFrom(fromEmail);
 			//email.setAuthentication("apikey", "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");
-			email.setSubject("Import Zepartser Interface did not receive an XML correctly.");
+			email.setSubject("Interface failed to record material in ZEPARTSER_MASTER due to incorrect format");
 			for(String emails: emailsList)
 	        {
 	        	email.addTo(emails);
 	        }
-			email.setMsg("XML File " 
-					+ file.getName()  
-					+" has encountered an issue. "			
-					+ "Enter records manually. "
-					+ "Issues found at:\n"  
-					+errors);
+			email.setMsg(
+					"Date & Time of Transaction: " +new Date().toString()+",\n"
+					+"XML File " + file.getName()  +",\n"
+					+ "Error Message : " +errors +System.lineSeparator()
+					+"**********************************************************"+System.lineSeparator()
+					+"* NOTE: This is a system generated email. Do not reply *"+System.lineSeparator()
+					+"**********************************************************"+System.lineSeparator()
+					);
 			email.send();
 		}
 		catch(Exception e)
