@@ -46,8 +46,8 @@ public class ImportZepartserController {
 	        	email.addTo(emails);
 	        }
 			email.setMsg(
-					"Date & Time of Transaction: " +new Date().toString()+",\n"
-					+"XML File " + file.getName()  +",\n"
+					"Date & Time of Transaction: " +new Date().toString()+"\n"
+					+"XML File: " + file.getName()  +"\n"
 					+ "Error Message : " +errors +System.lineSeparator()
 					+"**********************************************************"+System.lineSeparator()
 					+"* NOTE: This is a system generated email. Do not reply *"+System.lineSeparator()
