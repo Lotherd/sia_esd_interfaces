@@ -168,7 +168,7 @@ public class Import_TC_MHR_Data {
 	                        psDeleteError.executeUpdate();
 		                }
 		                    if (!r.getExceptionId().equalsIgnoreCase("53") &&
-		                    	    (r.getExceptionDetail().toLowerCase().contains("is locked by".toLowerCase()) ||
+		                    	    (r.getExceptionDetail().toLowerCase().contains("is locked".toLowerCase()) ||
 		                    	     r.getExceptionDetail().toLowerCase().contains("already being processed".toLowerCase()))){
 		                        executed = "Request SAP Order Number: " + r.getRfoNo() + ", Error Code: " + r.getExceptionId() + ", Remarks: " + r.getExceptionDetail() + ", Operation Number: " + o.getOpsNo();
 		                        Import_TC_MHR_Controller.addError(executed);
