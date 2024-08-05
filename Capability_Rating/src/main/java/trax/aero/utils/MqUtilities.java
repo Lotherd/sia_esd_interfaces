@@ -23,6 +23,7 @@ public class MqUtilities {
     private static final String APP_PASSWORD = System.getProperty("CapabilityRating_password"); // Password that the application uses to connect to MQ
     //private static final String QUEUE_NAME_SENDER = System.getProperty("CapabilityRating_send"); // Queue that the application uses to put and get messages to and from
     private static final String QUEUE_NAME_RECEIVE = System.getProperty("CapabilityRating_receive");
+    private static final String CIPHER_SUITE = System.getProperty("CapabilityRating_CipherSuite"); // Cipher suite for SSL/TLS
     
     public static MQQueueConnectionFactory createMQQueueConnectionFactory() throws JMSException {
     	MQQueueConnectionFactory mqQueueConnectionFactory = new MQQueueConnectionFactory();
@@ -34,6 +35,7 @@ public class MqUtilities {
        
         mqQueueConnectionFactory.setStringProperty(WMQConstants.USERID, APP_USER); 
         mqQueueConnectionFactory.setStringProperty(WMQConstants.PASSWORD,APP_PASSWORD );
+        mqQueueConnectionFactory.setStringProperty(WMQConstants.WMQ_SSL_CIPHER_SUITE, CIPHER_SUITE); // Set the cipher suite
 	    return mqQueueConnectionFactory;
     }
     
