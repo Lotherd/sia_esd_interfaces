@@ -96,6 +96,14 @@ public class TECO_Handling_Controller {
 	            email.setAuthentication("apikey", "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");
 	            email.setFrom(fromEmail);
 	            email.setSubject("Interface failed to TECO Orders for WO: " + req.getWO());
+	            
+	            String errorMessage = "Connection timed out: Unable to invoke request. ";
+                if (errors.contains("Remarks: ")) {
+                    String[] errorParts = errors.split("Remarks: ");
+                    if (errorParts.length > 1) {
+                        errorMessage = errorParts[1].split(",")[0];
+                    }
+                } 
 
 	            StringBuilder msgBuilder = new StringBuilder();
 	            msgBuilder.append("WO: ").append(req.getWO()).append(",\n");
@@ -105,7 +113,7 @@ public class TECO_Handling_Controller {
 	            msgBuilder.append("PN: ").append(pn).append("\n");
 	            msgBuilder.append("SN: ").append(pnSn).append("\n");
 	            msgBuilder.append("Date & Time of Transaction: ").append(date).append(",\n\n");
-	            msgBuilder.append("Error Message: ").append(errors).append("\n\n");
+	            msgBuilder.append("Error Message: ").append(errorMessage).append("\n\n");
 	            msgBuilder.append("**********************************************************\n");
 	            msgBuilder.append("*NOTE: This is a system generated email. Do not reply*\n");
 	            msgBuilder.append("**********************************************************");
