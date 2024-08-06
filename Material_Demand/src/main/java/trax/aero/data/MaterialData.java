@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -26,6 +27,7 @@ import trax.aero.client.ServiceClient;
 import trax.aero.inbound.MT_TRAX_SND_I10_4110;
 import trax.aero.inbound.Order;
 import trax.aero.inbound.OrderComponent;
+import trax.aero.interfaces.IEmailSender;
 import trax.aero.interfaces.IMaterialData;
 import trax.aero.logger.LogManager;
 import trax.aero.model.InterfaceAudit;
@@ -46,13 +48,13 @@ public class MaterialData implements IMaterialData {
 	
 	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
 	
-	EmailSender emailer = null;
+	 @EJB IEmailSender emailer;
 	String error = "";	
 	
 	ServiceClient client = null;
 	public MaterialData()
 	{
-		emailer = new EmailSender(System.getProperty("MD_toEmail"));
+		//emailer = new IEmailSender(System.getProperty("MD_toEmail"));
 		client = new ServiceClient();
 				
 	}
@@ -452,7 +454,7 @@ public class MaterialData implements IMaterialData {
 						os = os + "( OrderNumber: "+ r.getSAP_OrderNumber()+ "),";
 					}
 					markSentFailed(requisition);
-					emailer.sendEmail("Trax was unable to call SAP Orders:\n" +os);
+					emailer.sendEmail("Trax was unable to call SAP Orders:\n" +os,requisition, System.getProperty("MD_toEmail"));
 					logError("Trax was unable to call SAP Orders:\n" +os);
 				}else {
 					markSent(requisition);
@@ -619,7 +621,8 @@ public class MaterialData implements IMaterialData {
 					+ " Requistionline: "+ oc.getEXTERNAL_CUST_RES_ITEM() + "),";
 				}	
 			
-				emailer.sendEmail("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders) ;
+				emailer.sendEmail("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders,
+						reqs	,System.getProperty("MD_toEmail")) ;
 				logError("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders);
 				if(reqs.getEXCEPTION_DETAIL().contains("locked")) {
 					markSentFailed(reqs);
@@ -636,7 +639,8 @@ public class MaterialData implements IMaterialData {
 				}		
 						
 					
-				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders ) ;
+				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders,
+						reqs,System.getProperty("MD_toEmail")) ;
 				logError("Received acknowledgement with NULL Success Error Log\n" +orders);
 			}
 		}	
