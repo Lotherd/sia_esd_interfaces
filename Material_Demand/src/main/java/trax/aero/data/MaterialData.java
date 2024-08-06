@@ -544,8 +544,8 @@ public class MaterialData implements IMaterialData {
 								.setParameter("tra", "DISTRIBU")
 								.getSingleResult();
 						
-						require.setInterfaceSyncDate(new Date());
-						require.setInterfaceSyncFlag("Y");
+						req.setInterfaceSyncDate(new Date());
+						req.setInterfaceSyncFlag("Y");
 						insertData(req);
 						
 					}catch(Exception e) {
@@ -621,6 +621,10 @@ public class MaterialData implements IMaterialData {
 			
 				emailer.sendEmail("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders) ;
 				logError("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders);
+				if(reqs.getEXCEPTION_DETAIL().contains("locked")) {
+					markSentFailed(reqs);
+				}
+				
 			}else {
 				logger.info("IDOCStatus unkown");
 				String orders = "";
@@ -638,6 +642,38 @@ public class MaterialData implements IMaterialData {
 		}	
 	}
 	
+	private void markSentFailed(trax.aero.outbound.Order reqs) {
+		
+			for(trax.aero.outbound.OrderComponent oc : reqs.getOrderComponent()) {
+				PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
+				.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
+				.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
+				.setParameter("tra", "REQUIRE")
+				.getSingleResult();
+				//require.setInterfaceSyncFlag(null);
+				require.setInterfaceSyncDate(new Date());
+				require.setInterfaceSyncFlag("Y");
+				insertData(require);
+		
+				try {
+					PicklistDistribution req = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
+							.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
+							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
+							.setParameter("tra", "DISTRIBU")
+							.getSingleResult();
+					req.setInterfaceSyncDate(new Date());
+					req.setInterfaceSyncFlag("Y");
+					insertData(req);
+				
+				}catch(Exception e) {
+					logger.severe(e.toString());
+				}
+			}
+		
+	}
+
+
+
 	private <T> void insertData( T data) 
 	{
 		try 

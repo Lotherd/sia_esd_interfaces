@@ -71,6 +71,21 @@ public class RunAble implements Runnable {
 		logger.info("DONE processing file " + file.getName() + " " + result);
 	}
 	
+	private void insertFileFailed(File file, String outcome) 
+	{
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
+		LocalDateTime  currentDateTime = LocalDateTime.now();
+		
+		File todayFolder = new File(System.getProperty("Zepartser_failedLoc")+ File.separator + dtf.format(currentDateTime));
+		if (!todayFolder.isDirectory())			
+			todayFolder.mkdir();
+		
+		 boolean result = file.renameTo(new File(todayFolder + File.separator
+			+ outcome + Calendar.getInstance().getTimeInMillis() + "_" + file.getName()));
+		
+		logger.info("DONE processing file " + file.getName() + " " + result);
+	}
+	
 	private String insertFileFailed(ZepartserMaster z, String outcome, String fileName) throws IOException 
 	{
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -210,7 +225,7 @@ public class RunAble implements Runnable {
 						if(filereader != null) {
 							filereader.close();
 						}
-						insertFile(file,"ERROR_");
+						insertFileFailed(file,"FAILURE_");
 					}					
 					logger.info(e.getMessage());
 				}
