@@ -849,10 +849,10 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		
 		BigDecimal qtyAvail = pnInventoryDetail.getQtyAvailable();
 		pnInventoryDetail.setQtyAvailable(qtyAvail.subtract( ( pick.getQty())));
-		stockTransfer.setQtyAvailable(  ( pick.getQty()));
+		stockTransfer.setQtyReserved(( pick.getQty()));
 			
 		//stockTransfer.setQtyAvailable(new BigDecimal(0));
-		stockTransfer.setQtyReserved(new BigDecimal(0));
+		stockTransfer.setQtyAvailable(new BigDecimal(0));
 		stockTransfer.setQtyInTransfer(new BigDecimal(0));
 		stockTransfer.setQtyPendingRi(new BigDecimal(0));
 		stockTransfer.setQtyUs(new BigDecimal(0));
