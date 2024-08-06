@@ -139,17 +139,20 @@ public class RunAble implements Runnable {
 				File file = new File(inputFiles[i].toString());
 				zepartserMaster = new ZepartserMaster();
 				zepartserMaster.setZepartser(new ArrayList<ZEPARTSER>());
+				FileReader filereader = null;
+				 CSVReader csvReader = null;
 				try
 				{	
-					FileReader filereader = new FileReader(file);
+					 filereader = new FileReader(file);
 					
 					 CSVParser parser = new CSVParserBuilder().withSeparator('|').build();
 					
-					 CSVReader csvReader = new CSVReaderBuilder(filereader)
+					 csvReader = new CSVReaderBuilder(filereader)
 							.withCSVParser(parser).withSkipLines(1).build();
 					 
 					List<String[]> allData = csvReader.readAll();
-						 
+					filereader.close();
+					csvReader.close();						 
 					for (String[] row : allData) {
 						ZEPARTSER z = new ZEPARTSER();
 				        z.setCustomer(row[0]);
@@ -158,8 +161,6 @@ public class RunAble implements Runnable {
 					}		    
 				    
 					
-					filereader.close();
-					csvReader.close();
 					
 					
 				    ZepartserMaster zepartserMasterFailure = new ZepartserMaster();
@@ -199,11 +200,20 @@ public class RunAble implements Runnable {
 				}
 				catch(Exception e)
 				{
+					e.printStackTrace();
 					ImportZepartserController.addError(e.toString());
 					ImportZepartserController.sendEmail(file);
-					//insertFile(file,"FAILURE_");
+					if(!e.getMessage().contains("Failed Zepartsers are in File")) {
+						if(csvReader!=null) {
+							csvReader.close();
+						}
+						if(filereader != null) {
+							filereader.close();
+						}
+						insertFile(file,"ERROR_");
+					}					
 					logger.info(e.getMessage());
-				}					
+				}
 			}
 		}
 		catch(Throwable e)
