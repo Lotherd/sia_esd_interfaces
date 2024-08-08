@@ -18,9 +18,6 @@ public class MaterialStatusImportController {
 	
 	static String errors = "";
 	
-	@EJB
-	static IMaterialStatusImportData data;
-	
 	static Logger logger = LogManager.getLogger("MaterialStatusImport_I11&I12");
 	
 	public MaterialStatusImportController()
@@ -30,6 +27,10 @@ public class MaterialStatusImportController {
 	
 	public static void addError(String error) {
 		errors=errors.concat(error + System.lineSeparator()+ System.lineSeparator());
+	}
+	
+	public static String getError() {
+		return errors;
 	}
 	
 	public static void sendEmail(MaterialStatusImportMaster input)
@@ -69,13 +70,13 @@ public class MaterialStatusImportController {
 		}
 		catch(Exception e)
 		{
+			e.printStackTrace();
 			logger.severe(e.toString());
 			logger.severe("Email not found");
 			
 		}
 		finally
 		{
-			data.logError(errors);
 			errors = "";
 		}
 	}
