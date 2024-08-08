@@ -33,6 +33,7 @@ import trax.aero.logger.LogManager;
 import trax.aero.model.InterfaceAudit;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.PicklistDistribution;
+import trax.aero.model.PicklistDistributionRec;
 import trax.aero.model.PicklistHeader;
 import trax.aero.model.Wo;
 import trax.aero.model.WoTaskCard;
@@ -355,8 +356,7 @@ public class MaterialData implements IMaterialData {
 						c.setDeletionIndicator("");
 					}
 					
-					if(detail.getExternalCustToQty() != null 
-							&& detail.getExternalCustToQty().equals(detail.getQtyPicked())) {
+					if(CheckToQty(detail)) {
 						c.setDeletionIndicator("F");
 					}
 					
@@ -475,6 +475,32 @@ public class MaterialData implements IMaterialData {
 	
 	
 	
+
+	private boolean CheckToQty(PicklistDistribution detail) {
+		try
+		{
+			BigDecimal sum = new BigDecimal(0);
+			if(detail.getPicklistDistributionRecs()!= null) {
+				for(PicklistDistributionRec rec  :detail.getPicklistDistributionRecs()) {
+					if(rec.getCustToQty() !=null ) {
+						sum = sum.add(rec.getCustToQty());
+					}
+				}
+			}
+			logger.info("TO QTY: " + sum.toString() +" PICKED QTY: " +detail.getQtyPicked().toString());
+			if(sum.equals(detail.getQtyPicked())) {
+				return true;
+			}
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			
+		}
+		return false;
+	}
+
+
 
 	private Wo getWo(BigDecimal wo) {
 		
