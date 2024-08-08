@@ -102,7 +102,7 @@ public class Unit_Price_RFO_Data {
 	    return executed;
 	}
 	
-	public ArrayList<INT27_SND> getManHRIT() throws Exception {
+	public ArrayList<INT27_SND> getPrice() throws Exception {
 	    executed = "OK";
 
 	    if (this.con == null || this.con.isClosed()) {
