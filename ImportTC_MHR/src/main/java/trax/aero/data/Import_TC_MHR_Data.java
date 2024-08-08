@@ -249,49 +249,62 @@ public class Import_TC_MHR_Data {
 	    ArrayList<OperationSND> oplist = new ArrayList<OperationSND>();
 	    ArrayList<OrderSND> orlist = new ArrayList<OrderSND>();
 
-	    String sqlTaskCard =
-	    	    "SELECT REFERENCE_TASK_CARD, TASK_CARD_DESCRIPTION, PRIORITY, WO, TASK_CARD, \r\n" +
-	    	    "(SELECT W.STATUS FROM WO W WHERE W.WO = WO_TASK_CARD.WO) AS STATUS, \r\n" +
-	    	    "(SELECT W.RFO_NO FROM WO W WHERE W.WO = WO_TASK_CARD.WO AND W.MODULE = 'SHOP' \r\n" +
-	    	    "AND (WO_TASK_CARD.non_routine = 'N' OR WO_TASK_CARD.non_routine = 'Y' OR WO_TASK_CARD.non_routine IS NULL) \r\n" +
-	    	    "AND W.rfo_no IS NOT NULL) AS ESD_RFO, TASK_CARD_CATEGORY, \r\n" +
-	    	    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + \r\n" +
-	    	    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) \r\n" +
-	    	    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD.TASK_CARD AND WO = WO_TASK_CARD.WO) AS Total_Hours \r\n" +
-	    	    "FROM WO_TASK_CARD WHERE (INTERFACE_TRANSFERRED_DATE IS NULL \r\n" +
-	    	    "OR (MODIFIED_DATE > INTERFACE_TRANSFERRED_DATE AND \r\n" +
-	    	    "(TASK_CARD_DESCRIPTION <> TASK_CARD_DESCRIPTION_OLD OR TASK_CARD_CATEGORY <> TASK_CARD_CATEGORY_OLD OR \r\n" +
-	    	    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + \r\n" +
-	    	    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) \r\n" +
-	    	    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD.TASK_CARD AND WO = WO_TASK_CARD.WO) <> TASK_CARD_HOURS_OLD))) \r\n" +
-	    	    "AND (1 = (SELECT COUNT(*) FROM WO W WHERE W.WO = WO_TASK_CARD.WO \r\n" +
-	    	    "AND W.MODULE = 'SHOP' AND W.RFO_NO IS NOT NULL \r\n" +
-	    	    "AND (WO_TASK_CARD.non_routine = 'N' OR WO_TASK_CARD.non_routine = 'Y' OR WO_TASK_CARD.non_routine IS NULL))) \r\n" +
-	    	    "AND (non_routine = 'N' OR non_routine = 'Y' OR non_routine IS NULL) AND STATUS !='CLOSED' \r\n" +
-	    	    "AND EXISTS (SELECT 1 FROM WO W WHERE W.WO = WO_TASK_CARD.WO AND W.MODULE = 'SHOP' \r\n" +
-	    	    "AND W.RFO_NO IS NOT NULL AND W.STATUS = 'OPEN') \r\n" +
-	    	    "UNION ALL \r\n" +
-	    	    "SELECT REFERENCE_TASK_CARD, TASK_CARD_DESCRIPTION, PRIORITY, WO, TASK_CARD, \r\n" +
-	    	    "(SELECT W.STATUS FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO) AS STATUS, \r\n" +
-	    	    "(SELECT W.RFO_NO FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO AND W.MODULE = 'SHOP' \r\n" +
-	    	    "AND (WO_TASK_CARD_ADUIT.non_routine = 'N' OR WO_TASK_CARD_ADUIT.non_routine = 'Y' OR WO_TASK_CARD_ADUIT.non_routine IS NULL) \r\n" +
-	    	    "AND W.rfo_no IS NOT NULL) AS ESD_RFO, TASK_CARD_CATEGORY, \r\n" +
-	    	    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + \r\n" +
-	    	    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) \r\n" +
-	    	    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD_ADUIT.TASK_CARD AND WO = WO_TASK_CARD_ADUIT.WO) AS Total_Hours \r\n" +
-	    	    "FROM WO_TASK_CARD_ADUIT WHERE (INTERFACE_SAP_TRANSFERRED_DATE IS NULL \r\n" +
-	    	    "OR (MODIFIED_DATE > INTERFACE_SAP_TRANSFERRED_DATE AND \r\n" +
-	    	    "(TASK_CARD_DESCRIPTION <> TASK_CARD_DESCRIPTION_OLD OR TASK_CARD_CATEGORY <> TASK_CARD_CATEGORY_OLD OR \r\n" +
-	    	    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + \r\n" +
-	    	    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) \r\n" +
-	    	    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD_ADUIT.TASK_CARD AND WO = WO_TASK_CARD_ADUIT.WO) <> TASK_CARD_HOURS_OLD))) \r\n" +
-	    	    "AND (1 = (SELECT COUNT(*) FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO \r\n" +
-	    	    "AND W.MODULE = 'SHOP' AND W.RFO_NO IS NOT NULL \r\n" +
-	    	    "AND (WO_TASK_CARD_ADUIT.non_routine = 'N' OR WO_TASK_CARD_ADUIT.non_routine = 'Y' OR WO_TASK_CARD_ADUIT.non_routine IS NULL))) \r\n" +
-	    	    "AND (non_routine = 'N' OR non_routine = 'Y' OR non_routine IS NULL) AND STATUS !='CLOSED' \r\n" +
-	    	    "AND EXISTS (SELECT 1 FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO AND W.MODULE = 'SHOP' \r\n" +
-	    	    "AND W.RFO_NO IS NOT NULL AND W.STATUS = 'OPEN') \r\n" +
-	    	    "AND WO_TASK_CARD_ADUIT.Transaction_type = 'DELETE'";
+	    String sqlTaskCard = "SELECT REFERENCE_TASK_CARD, TASK_CARD_DESCRIPTION, PRIORITY, WO, TASK_CARD, " +
+	                    "(SELECT W.STATUS FROM WO W WHERE W.WO = WO_TASK_CARD.WO) AS STATUS, " +
+	                    "(SELECT W.RFO_NO FROM WO W WHERE W.WO = WO_TASK_CARD.WO AND W.MODULE = 'SHOP' " +
+	                    "AND (WO_TASK_CARD.non_routine = 'N' OR WO_TASK_CARD.non_routine = 'Y' OR WO_TASK_CARD.non_routine IS NULL) " +
+	                    "AND W.rfo_no IS NOT NULL) AS ESD_RFO, TASK_CARD_CATEGORY, " +
+	                    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + " +
+	                    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) " +
+	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD.TASK_CARD AND WO = WO_TASK_CARD.WO) AS Total_Hours " +
+	                    "FROM WO_TASK_CARD " +
+	                    "WHERE (INTERFACE_TRANSFERRED_DATE IS NULL " +
+	                    "OR (MODIFIED_DATE > INTERFACE_TRANSFERRED_DATE AND " +
+	                    "(TASK_CARD_DESCRIPTION <> TASK_CARD_DESCRIPTION_OLD OR TASK_CARD_CATEGORY <> TASK_CARD_CATEGORY_OLD OR (STATUS = 'CANCEL' AND STATUS <> STATUS_OLD) OR " +
+	                    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + " +
+	                    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) " +
+	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD.TASK_CARD AND WO = WO_TASK_CARD.WO) <> TASK_CARD_HOURS_OLD))) " +
+	                    "AND (1 = (SELECT COUNT(*) FROM WO W WHERE W.WO = WO_TASK_CARD.WO " +
+	                    "AND W.MODULE = 'SHOP' AND W.RFO_NO IS NOT NULL " +
+	                    "AND (WO_TASK_CARD.non_routine = 'N' OR WO_TASK_CARD.non_routine = 'Y' OR WO_TASK_CARD.non_routine IS NULL))) " +
+	                    "AND (non_routine = 'N' OR non_routine = 'Y' OR non_routine IS NULL) AND STATUS != 'CLOSED' " +
+	                    "AND EXISTS (" +
+	                    "SELECT 1 " +
+	                    "FROM WO W " +
+	                    "WHERE W.WO = WO_TASK_CARD.WO " +
+	                    "AND W.MODULE = 'SHOP' " +
+	                    "AND W.RFO_NO IS NOT NULL " +
+	                    "AND (W.STATUS = 'OPEN' OR (W.STATUS = 'COMPLETED' AND NOT EXISTS (SELECT 1 FROM WO_TASK_CARD TC WHERE TC.WO = W.WO AND TC.STATUS <> 'CANCEL'))) " +
+	                    ") " +
+	                    "UNION ALL " +
+	                    "SELECT REFERENCE_TASK_CARD, TASK_CARD_DESCRIPTION, PRIORITY, WO, TASK_CARD, " +
+	                    "(SELECT W.STATUS FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO) AS STATUS, " +
+	                    "(SELECT W.RFO_NO FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO AND W.MODULE = 'SHOP' " +
+	                    "AND (WO_TASK_CARD_ADUIT.non_routine = 'N' OR WO_TASK_CARD_ADUIT.non_routine = 'Y' OR WO_TASK_CARD_ADUIT.non_routine IS NULL) " +
+	                    "AND W.rfo_no IS NOT NULL) AS ESD_RFO, TASK_CARD_CATEGORY, " +
+	                    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + " +
+	                    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) " +
+	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD_ADUIT.TASK_CARD AND WO = WO_TASK_CARD_ADUIT.WO) AS Total_Hours " +
+	                    "FROM WO_TASK_CARD_ADUIT " +
+	                    "WHERE (INTERFACE_SAP_TRANSFERRED_DATE IS NULL " +
+	                    "OR (MODIFIED_DATE > INTERFACE_SAP_TRANSFERRED_DATE AND " +
+	                    "(TASK_CARD_DESCRIPTION <> TASK_CARD_DESCRIPTION_OLD OR TASK_CARD_CATEGORY <> TASK_CARD_CATEGORY_OLD OR (STATUS = 'CANCEL' AND STATUS <> STATUS_OLD) OR " +
+	                    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + " +
+	                    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) " +
+	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD_ADUIT.TASK_CARD AND WO = WO_TASK_CARD_ADUIT.WO) <> TASK_CARD_HOURS_OLD))) " +
+	                    "AND (1 = (SELECT COUNT(*) FROM WO W WHERE W.WO = WO_TASK_CARD_ADUIT.WO " +
+	                    "AND W.MODULE = 'SHOP' AND W.RFO_NO IS NOT NULL " +
+	                    "AND (WO_TASK_CARD_ADUIT.non_routine = 'N' OR WO_TASK_CARD_ADUIT.non_routine = 'Y' OR WO_TASK_CARD_ADUIT.non_routine IS NULL))) " +
+	                    "AND (non_routine = 'N' OR non_routine = 'Y' OR non_routine IS NULL) AND STATUS != 'CLOSED' " +
+	                    "AND EXISTS (" +
+	                    "SELECT 1 " +
+	                    "FROM WO W " +
+	                    "WHERE W.WO = WO_TASK_CARD_ADUIT.WO " +
+	                    "AND W.MODULE = 'SHOP' " +
+	                    "AND W.RFO_NO IS NOT NULL " +
+	                    "AND (W.STATUS = 'OPEN' OR (W.STATUS = 'COMPLETED' AND NOT EXISTS (SELECT 1 FROM WO_TASK_CARD_ADUIT TC WHERE TC.WO = W.WO AND TC.STATUS <> 'CANCEL'))) " +
+	                    ") " +
+	                    "AND WO_TASK_CARD_ADUIT.Transaction_type = 'DELETE'";
 
 
 	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
@@ -319,9 +332,9 @@ public class Import_TC_MHR_Data {
 	    String sqlCategory = 
 		    	"SELECT TASK_CARD_CATEGORY FROM WO_TASK_CARD WHERE WO =? AND TASK_CARD =?";
 	    
-	    String sqlMark = "UPDATE WO_TASK_CARD SET INTERFACE_TRANSFERRED_DATE = SYSDATE, TASK_CARD_DESCRIPTION_OLD = ?, TASK_CARD_CATEGORY_OLD = ?, TASK_CARD_HOURS_OLD = ? WHERE TASK_CARD = ? AND WO = ?";
+	    String sqlMark = "UPDATE WO_TASK_CARD SET INTERFACE_TRANSFERRED_DATE = SYSDATE, TASK_CARD_DESCRIPTION_OLD = ?, TASK_CARD_CATEGORY_OLD = ?, TASK_CARD_HOURS_OLD = ?, STATUS_OLD = ? WHERE TASK_CARD = ? AND WO = ?";
 	    
-	    String sqlMark2 = "UPDATE WO_TASK_CARD_ADUIT SET INTERFACE_SAP_TRANSFERRED_DATE = SYSDATE, TASK_CARD_DESCRIPTION_OLD = ?, TASK_CARD_CATEGORY_OLD = ?, TASK_CARD_HOURS_OLD = ?  WHERE TASK_CARD = ? AND WO = ? AND TRANSACTION_TYPE ='DELETE'";
+	    String sqlMark2 = "UPDATE WO_TASK_CARD_ADUIT SET INTERFACE_SAP_TRANSFERRED_DATE = SYSDATE, TASK_CARD_DESCRIPTION_OLD = ?, TASK_CARD_CATEGORY_OLD = ?, TASK_CARD_HOURS_OLD = ?, STATUS_OLD = ? WHERE TASK_CARD = ? AND WO = ? AND TRANSACTION_TYPE ='DELETE'";
 
 	    PreparedStatement pstmt1 = null;
 	    ResultSet rs1 = null;
@@ -413,7 +426,7 @@ public class Import_TC_MHR_Data {
 	                        deletionIndicator = "X";
 	                    }
 	                }
-	                if (rs4 != null && !rs4.isClosed()) rs4.close();
+	                
 
 	                if (deletionIndicator.equals("")) {
 	                    pstmt8.setString(1, traxWO);
@@ -469,16 +482,20 @@ public class Import_TC_MHR_Data {
 	                pstmt6.setString(1, operation.getTcDescription());
 	                pstmt6.setString(2, operation.getTcCategory());
 	                pstmt6.setString(3, operation.getStandardManHours());
-	                pstmt6.setString(4, taskCard);
-	                pstmt6.setString(5, traxWO);
+	                pstmt6.setString(4, rs4.getString(1));
+	                pstmt6.setString(5, taskCard);
+	                pstmt6.setString(6, traxWO);
 	                pstmt6.executeQuery();
 
 	                pstmt7.setString(1, operation.getTcDescription());
 	                pstmt7.setString(2, operation.getTcCategory());
 	                pstmt7.setString(3, operation.getStandardManHours());
-	                pstmt7.setString(4, taskCard);
-	                pstmt7.setString(5, traxWO);
+	                pstmt7.setString(4, rs4.getString(1));
+	                pstmt7.setString(5, taskCard);
+	                pstmt7.setString(6, traxWO);
 	                pstmt7.executeQuery();
+	                
+	                if (rs4 != null && !rs4.isClosed()) rs4.close();
 	            }
 
 	            for (OrderSND order : orderMap.values()) {
