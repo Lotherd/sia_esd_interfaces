@@ -55,7 +55,6 @@ public class EmailSender implements IEmailSender
 			email.setHostName(host);
 			email.setSmtpPort(Integer.valueOf(port));
 			email.setFrom(fromEmail);
-			
 			ArrayList<String> emailsList = new ArrayList<String>(Arrays.asList(toEmail.split(",")));
 			for(String toEmails : emailsList)
 			{
@@ -63,23 +62,26 @@ public class EmailSender implements IEmailSender
 			}
 			
 			
-			email.setSubject("Interface failed to create Material Reservation in SAP for "
-					+ "WO: " +w.getWo()
-					+ "Task Card: " + taskCard
-					+ "PN: " +pick.getPn()
+			email.setSubject("Interface failed to create Material Reservation in SAP for"
+					+ " WO: " +w.getWo()
+					+ " Task Card: " + taskCard
+					+ " PN: " +pick.getPn()
 					);
 			
-			email.setMsg("WO: " + w.getWo()+System.lineSeparator()
-					+ "WO Description : "+w.getWoDescription()  +System.lineSeparator()
-					+ "RFO :  " +w.getRfoNo() +System.lineSeparator()
-					+ "Material : " +pick.getPn()+System.lineSeparator()
-					+ "Date & Time of Transaction: " +new Date().toString()+System.lineSeparator()
-					+ "Error Message : "+error+System.lineSeparator() 
-					+"**********************************************************" +System.lineSeparator()
-					+"* NOTE: This is a system generated email. Do not reply *"+System.lineSeparator()
-					+"**********************************************************" +System.lineSeparator()
+			email.setMsg("WO: " + w.getWo()+System.lineSeparator() +System.lineSeparator()
+					+ "WO Description : "+w.getWoDescription()  +System.lineSeparator() +System.lineSeparator()
+					+ "RFO :  " +w.getRfoNo() +System.lineSeparator() +System.lineSeparator()
+					+ "Material : " +pick.getPn()+System.lineSeparator() +System.lineSeparator()
+					+ "Date & Time of Transaction: " +new Date().toString()+System.lineSeparator() +System.lineSeparator()
+					+ "Error Message : "+error+System.lineSeparator()  +System.lineSeparator()
+					+"**********************************************************" +System.lineSeparator() +System.lineSeparator()
+					+"* NOTE: This is a system generated email. Do not reply *"+System.lineSeparator() +System.lineSeparator()
+					+"**********************************************************" +System.lineSeparator() +System.lineSeparator()
 					);
+			
+			
 			email.send();
+			
 		} 
 		catch (EmailException e) 
 		{

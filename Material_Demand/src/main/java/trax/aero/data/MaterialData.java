@@ -171,7 +171,10 @@ public class MaterialData implements IMaterialData {
 						String pn = detail.getPn();
 						
 						pn = pn.replaceAll("IN", "\"");
+						pn = pn.replaceAll("in", "\"");
 						pn = pn.replaceAll("FT", "'");
+						pn = pn.replaceAll("ft", "'");
+
 						
 						if(pn.contains(":UPLOAD"))
 						{
@@ -333,7 +336,9 @@ public class MaterialData implements IMaterialData {
 					String pn = detail.getPn();
 					
 					pn = pn.replaceAll("IN", "\"");
+					pn = pn.replaceAll("in", "\"");
 					pn = pn.replaceAll("FT", "'");
+					pn = pn.replaceAll("ft", "'");
 					
 					if(pn.contains(":UPLOAD"))
 					{
@@ -587,8 +592,10 @@ public class MaterialData implements IMaterialData {
 				//require.setInterfaceSyncFlag(null);
 				require.setInterfaceSyncDate(null);
 				require.setInterfaceModifiedDate(new Date());
-				require.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
-				require.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
+				if(reqs.getEXCEPTION_ID() != null && reqs.getEXCEPTION_ID().equalsIgnoreCase("53")) {
+					require.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
+					require.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
+				}
 				insertData(require);
 		
 				try {
@@ -597,10 +604,12 @@ public class MaterialData implements IMaterialData {
 							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 							.setParameter("tra", "DISTRIBU")
 							.getSingleResult();
-					req.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
-					req.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
+					if(reqs.getEXCEPTION_ID() != null && reqs.getEXCEPTION_ID().equalsIgnoreCase("53")) {
+						req.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
+						req.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
+					}
 					req.setInterfaceModifiedDate(new Date());
-					insertData(require);
+					insertData(req);
 				
 				}catch(Exception e) {
 					logger.severe(e.toString());
@@ -621,9 +630,9 @@ public class MaterialData implements IMaterialData {
 					+ " Requistionline: "+ oc.getEXTERNAL_CUST_RES_ITEM() + "),";
 				}	
 			
-				emailer.sendEmail("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders,
+				emailer.sendEmail(reqs.getEXCEPTION_DETAIL()+"\n"+ orders,
 						reqs	,System.getProperty("MD_toEmail")) ;
-				logError("Received acknowledgement with EXCEPTION_ID: " + reqs.getEXCEPTION_ID() +", EXCEPTION_DETAIL: "+reqs.getEXCEPTION_DETAIL()+"\n"+ orders);
+				logError(reqs.getEXCEPTION_DETAIL()+"\n"+ orders);
 				if(reqs.getEXCEPTION_DETAIL().contains("locked")) {
 					markSentFailed(reqs);
 				}
