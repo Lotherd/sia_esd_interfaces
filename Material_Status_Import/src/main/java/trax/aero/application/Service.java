@@ -61,7 +61,7 @@ public class Service {
 		{
 			logger.severe(e.toString());
 			MaterialStatusImportController.addError(e.toString());
-					  		
+			data.logError(MaterialStatusImportController.getError());		  		
 			MaterialStatusImportController.sendEmail(input);
 		}
        finally 
