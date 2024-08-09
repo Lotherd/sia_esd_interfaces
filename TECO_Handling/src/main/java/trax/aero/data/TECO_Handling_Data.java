@@ -277,7 +277,7 @@ public class TECO_Handling_Data {
                 "  AND WT.INV_CHECK = 'Y' " +
                 "  AND ( " +
                 "    (W.STATUS = 'CLOSED' " +
-                "        AND W.interface_teco_flag IS NULL " +
+                "        AND (W.interface_teco_flag = 'D' OR W.interface_teco_flag IS NULL) " +
                 "        AND NOT EXISTS ( " +
                 "            SELECT 1 " +
                 "            FROM WO_TASK_CARD WT_INNER " +
@@ -300,7 +300,7 @@ public class TECO_Handling_Data {
                 "        ) " +
                 "    ) " +
                 "    OR (W.STATUS = 'CLOSED' " +
-                "        AND W.interface_teco_flag IS NULL " +
+                "        AND (W.interface_teco_flag = 'D' OR W.interface_teco_flag IS NULL) " +
                 "        AND NOT EXISTS ( " +
                 "            SELECT 1 " +
                 "            FROM WO_TASK_CARD WT_INNER " +
@@ -374,7 +374,11 @@ public class TECO_Handling_Data {
 	                req.setWO_Completion_date(rs1.getString("COMPLETION_DATE") != null ? rs1.getString("COMPLETION_DATE") : "");
 	                req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "");
 	                req.setStatus(rs1.getString("STATUS"));
-	                req.setReason_teco(rs1.getString("REOPEN_REASON"));
+	                if ("OPEN".equals(rs1.getString("STATUS"))) {
+	                    req.setReason_teco(rs1.getString("REOPEN_REASON"));
+	                } else {
+	                    req.setReason_teco("");
+	                }
 	                req.setNotification_number(rs1.getString("SOURCE_REF") != null && rs1.getString("STATUS").equals("CLOSED") && rs1.getString("SOURCE_TYPE").equals("E4") ? rs1.getString("SOURCE_REF") : "");
 	                req.setFlag("N");
 
