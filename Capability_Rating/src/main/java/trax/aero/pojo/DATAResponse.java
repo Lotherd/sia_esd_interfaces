@@ -22,7 +22,7 @@ public class DATAResponse {
 	@JsonProperty("authorityType")
 	private String authorityType;
 	
-	@JsonProperty("catCategory")
+	@JsonProperty("catCCategory")
 	private String catCategory;
 	
 	@JsonProperty("revNo")

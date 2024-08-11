@@ -22,7 +22,7 @@ public class DATARequest {
 	@JsonProperty("authorityType")
 	private String authorityType;
 	
-	@JsonProperty("catCategory")
+	@JsonProperty("catCCategory")
 	private String catCategory;
 	
 	@JsonProperty("revNo")
