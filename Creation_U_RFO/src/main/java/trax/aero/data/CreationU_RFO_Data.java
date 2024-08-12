@@ -38,7 +38,7 @@ public class CreationU_RFO_Data {
 	String executed;
 	private Connection con;
 	
-	final String MaxRecord = System.getProperty("BatchCreation_MaxRecord");
+	final String MaxRecord = System.getProperty("CreationRFO_MaxRecord");
 	Logger logger = LogManager.getLogger("RFOCreation");
 	
 	public CreationU_RFO_Data(String mark) {
@@ -96,6 +96,68 @@ public class CreationU_RFO_Data {
 	public String markTransaction(INT22_TRAX request) {
 		executed = "OK";
 		
+		String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'Y' WHERE TRANSACTION_NO = ?, WO = ?, TASK_CARD = ? ";
+		
+		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL WHERE TRANSACTION_NO = ?, WO = ?, TASK_CARD = ? ";
+		
+		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I22', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'CreationU_RFO I_22', sysdate, sysdate FROM dual";
+		
+		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
+		
+		try( PreparedStatement pstmt2 = con.prepareStatement(update);
+				 PreparedStatement pstmt3 = con.prepareStatement(errorunmark);
+				 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
+		         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)){
+			
+			if(request != null) {
+				if (request.getErrorCode().equalsIgnoreCase("53")) {
+					
+					request.setPrintStatus("S");
+					
+					pstmt2.setString(1, request.getTransaction());
+					pstmt2.setString(2, request.getTraxWoNumber());
+					pstmt2.setString(3, request.getTcNumber());
+					pstmt2.executeQuery();
+					
+					psDeleteError.setString(1, request.getTraxWoNumber());
+                    psDeleteError.setString(2, request.getSapSvo());
+                    psDeleteError.executeUpdate();
+					
+				}
+				
+				if (!request.getErrorCode().equalsIgnoreCase("53")){
+					request.setPrintStatus("E");
+					
+					executed = "Request WO: " + request.getTraxWoNumber() + ", Error Code: " + request.getErrorCode() + ", Remarks: " + request.getRemarks()+ ", SVO: " + request.getSapSvo();
+					CreationU_RFO_Controller.addError(executed);
+					
+					psInsertError.setString(1, request.getTraxWoNumber());
+                    psInsertError.setString(2, request.getSapSvo());
+                    psInsertError.setString(3, request.getErrorCode());
+                    psInsertError.setString(4, request.getRemarks());
+                    psInsertError.executeUpdate();
+                    
+                    pstmt3.setString(1, request.getTransaction());
+                    pstmt3.setString(2, request.getTraxWoNumber());
+                    pstmt3.setString(3, request.getTcNumber());
+                    pstmt3.executeQuery();
+					
+				}else {
+					psDeleteError.setString(1, request.getTraxWoNumber());
+                    psDeleteError.setString(2, request.getSapSvo());
+                    psDeleteError.executeUpdate();
+				}
+				
+			}
+			
+		}
+		
+		catch (SQLException e) {
+	        executed = e.toString();
+	        CreationU_RFO_Controller.addError(e.toString());
+	        logger.severe(e.toString());
+	    }
 		return executed;
 	}
 	
@@ -116,6 +178,167 @@ public class CreationU_RFO_Data {
 	    }
 		
 		ArrayList<INT22_SND> list = new ArrayList<INT22_SND>();
+		
+		String sqlPN = "SELECT " +
+		        "    w.location, " +
+		        "    h.wo, " +
+		        "    h.task_card, " +
+		        "    w.rfo_no, " +
+		        "    w.customer, " +
+		        "    wt.pn, " +
+		        "    wt.pn_sn, " +
+		        "    h.created_by, " +
+		        "    h.legacy_batch, " +
+		        "    h.transaction_no, " +
+		        "    h.svo_no, " +
+		        "    h.qty " +
+		        "FROM " +
+		        "    wo w " +
+		        "    JOIN wo_task_card wt ON wt.wo = w.wo " +
+		        "    JOIN pn_inventory_history h ON wt.wo = h.wo " +
+		        "                                   AND wt.task_card = h.task_card " +
+		        "                                   AND wt.pn = h.pn " +
+		        "    JOIN pn_master pm ON wt.pn = pm.pn " +
+		        "    JOIN system_tran_code s ON w.source_type = s.system_code " +
+		        "WHERE " +
+		        "    (pm.category = 'A') " +  // Case A: Only category A
+		        "    OR " +
+		        "    (pm.category IN ('B', 'C', 'D') " +  // Case B & D (Not in ZEPARTSER)
+		        "    AND NOT EXISTS ( " +
+		        "        SELECT 1 " +
+		        "        FROM zepartser_master z " +
+		        "        WHERE z.customer = w.customer " +
+		        "          AND z.pn = wt.pn " +
+		        "    )) " +
+		        "    OR " +
+		        "    (pm.category IN ('B', 'C', 'D') " +  // Case B & D (In ZEPARTSER)
+		        "    AND EXISTS ( " +
+		        "        SELECT 1 " +
+		        "        FROM zepartser_master z " +
+		        "        WHERE z.customer = w.customer " +
+		        "          AND z.pn = wt.pn " +
+		        "    )) " +
+		        "    AND s.system_transaction = 'SOURCETYPE' " +
+		        "    AND s.party = '1P' " +
+		        "    AND h.interface_transfer_flag IS NULL " +
+		        "    AND h.made_as_ccs IS NOT NULL";
+		
+		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
+		
+		if (MaxRecord != null && !MaxRecord.isEmpty()) {
+			sqlPN = "SELECT * FROM (" + sqlPN;
+		}
+		
+		if (MaxRecord != null && !MaxRecord.isEmpty()) {
+			sqlPN = sqlPN + " ) WHERE ROWNUM <= ?";
+		}
+		
+		PreparedStatement pstmt1 = null;
+		 ResultSet rs1 = null;
+		 PreparedStatement pstmt2 = null;
+		 ResultSet rs2 = null;
+		 
+		 try {
+			pstmt1 = con.prepareStatement(sqlPN);
+			pstmt2 = con.prepareStatement(sqlMark);
+			
+			if (MaxRecord != null && !MaxRecord.isEmpty()) {
+		        pstmt1.setString(1, MaxRecord);
+		      }
+
+		      rs1 = pstmt1.executeQuery();
+		      
+		      if(rs1 != null) {
+		    	  while(rs1.next()) {
+		    		  logger.info("Porcessing PN: " +rs1.getString(6) + "Customer: " +rs1.getString(5));
+		    		  INT22_SND req = new INT22_SND();
+		    		  
+		    		  if(rs1.getString(1) != null) {
+		    			  req.setLocation(rs1.getString(1));
+		    		  }else {
+		    			  req.setLocation("");
+		    		  }
+		    		  
+		    		  if(rs1.getString(2) != null) {
+		    			  req.setWo(rs1.getString(2));
+		    		  }else {
+		    			  req.setWo("");
+		    		  }
+		    		  
+		    		  if (rs1.getString(6) != null) {
+		    			  req.setPn(rs1.getString(6));
+		    		  } else {
+		    			  req.setPn("");
+		    		  }
+		    		  
+		    		  if(rs1.getString(7) != null) {
+		    			  req.setPnSn(rs1.getString(7));
+		    		  } else {
+		    			  req.setPnSn("");
+		    		  }
+		    		  
+		    		  if(rs1.getString(11) != null) {
+		    			  req.setSvoNo(rs1.getString(11));
+		    		  } else {
+		    			  req.setSvoNo("");
+		    		  }
+		    		  
+		    		  if(rs1.getString(8) != null) {
+		    			  req.setRelationCode(rs1.getString(8));
+		    		  } else {
+		    			  req.setRelationCode("");
+		    		  }
+		    		  
+		    		  req.setInternalExternal("I");
+		    		  
+		    		  if(rs1.getString(3) != null) {
+		    			  req.setTc(rs1.getString(3));
+		    		  } else {
+		    			  req.setTc("");
+		    		  }
+		    		  
+		    		  if(rs1.getString(10) != null) {
+		    			  req.setTransaction(rs1.getString(10));
+		    		  } else {
+		    			  req.setTransaction("");
+		    		  }
+		    		  
+		    		  if(rs1.getString(9) != null) {
+		    			  req.setLegacyBatch(rs1.getString(9));
+		    		  } else {
+		    			  req.setLegacyBatch("");
+		    		  }
+		    		  
+		    		  req.setRfoNo(rs1.getString(4));
+		    		  
+		    		  if(rs1.getString(12) != null) {
+		    			  req.setQty(rs1.getString(12));
+		    		  } else {
+		    			  req.setQty("");
+		    		  }
+
+		    		  list.add(req);
+
+		    		  
+						pstmt2.setString(1, req.getWo());
+						pstmt2.setString(2, req.getTc());
+						pstmt2.setString(3, req.getPn());
+						pstmt2.executeQuery();
+		    	  }
+		      }
+		      if (rs1 != null && !rs1.isClosed()) rs1.close();
+		      
+		 }catch (Exception e) {
+		      e.printStackTrace();
+		      executed = e.toString();
+		      CreationU_RFO_Controller.addError(e.toString());
+
+		      logger.severe(executed);
+		      throw new Exception("Issue found");
+		}finally {
+		      if (rs1 != null && !rs1.isClosed()) rs1.close();
+		      if (pstmt1 != null && !pstmt1.isClosed()) pstmt1.close();
+		}
 		
 		return list;
 	}
