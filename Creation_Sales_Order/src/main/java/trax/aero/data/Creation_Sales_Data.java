@@ -102,10 +102,10 @@ public class Creation_Sales_Data {
 		String sqlReturn = "UPDATE WO SET STATUS = 'CONF SLOT', INTERFACE_ESD_TRANSFERRED_FLAG = CASE WHEN SOURCE_TYPE IN ('X3', 'E8') THEN NULL ELSE '5' \r\n " +
 							"END, INTERFACE_ESD_TRANSFERRED_DATE = CASE WHEN SOURCE_TYPE IN ('X3', 'E8') THEN NULL ELSE SYSDATE END WHERE WO = ?";
 		
-		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-                + "VALUES (?, 'ERROR', 'I07', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Sales_Order I_07', sysdate, sysdate)";
+		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I07', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Sales I_07', sysdate, sysdate FROM dual";
 
-String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ?";
+String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
 		
 		try 
 			(PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
@@ -124,8 +124,7 @@ String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ?";
 					executed = "WO: " + request.getWO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 					Creation_Sales_Controller.addError(executed);
 					
-					psDeleteError.setString(1, request.getWO());
-                    psDeleteError.executeUpdate();
+					
                     
                     psInsertError.setString(1, request.getWO());
                     psInsertError.setString(2, request.getExceptionId());
@@ -134,6 +133,9 @@ String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ?";
 					
 					pstmt2.setString(1, request.getWO());
 					pstmt2.executeUpdate();
+				}else {
+					psDeleteError.setString(1, request.getWO());
+                    psDeleteError.executeUpdate();
 				}
 			}
 			
