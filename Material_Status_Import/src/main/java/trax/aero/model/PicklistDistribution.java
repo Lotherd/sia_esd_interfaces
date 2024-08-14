@@ -4,6 +4,7 @@ import java.io.Serializable;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 
 /**
@@ -29,27 +30,51 @@ public class PicklistDistribution implements Serializable {
 	@Column(name="CREATED_BY")
 	private String createdBy;
 
+	@Temporal(TemporalType.DATE)
 	@Column(name="CREATED_DATE")
 	private Date createdDate;
 
+	@Temporal(TemporalType.DATE)
 	@Column(name="DATE_PICKED")
 	private Date datePicked;
 
 	@Column(name="EMOBILITY_PICKED_BY")
 	private String emobilityPickedBy;
 
+	@Temporal(TemporalType.DATE)
 	@Column(name="EMOBILITY_PICKED_DATE")
 	private Date emobilityPickedDate;
 
 	@Column(name="EMOBILITY_PICKED_FLAG")
 	private String emobilityPickedFlag;
 
+	@Column(name="EXTERNAL_CUST_RES")
+	private String externalCustRes;
+
+	@Column(name="EXTERNAL_CUST_RES_ITEM")
+	private String externalCustResItem;
+
+	@Column(name="EXTERNAL_CUST_TO")
+	private BigDecimal externalCustTo;
+
+	@Column(name="EXTERNAL_CUST_TO_QTY")
+	private BigDecimal externalCustToQty;
+
+	@Temporal(TemporalType.DATE)
 	@Column(name="INTERFACE_MODIFIED_DATE")
 	private Date interfaceModifiedDate;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="INTERFACE_SYNC_DATE")
+	private Date interfaceSyncDate;
+
+	@Column(name="INTERFACE_SYNC_FLAG")
+	private String interfaceSyncFlag;
 
 	@Column(name="MODIFIED_BY")
 	private String modifiedBy;
 
+	@Temporal(TemporalType.DATE)
 	@Column(name="MODIFIED_DATE")
 	private Date modifiedDate;
 
@@ -64,6 +89,7 @@ public class PicklistDistribution implements Serializable {
 	@Column(name="PICKED_BY")
 	private String pickedBy;
 
+	@Temporal(TemporalType.DATE)
 	@Column(name="PICKED_DATE")
 	private Date pickedDate;
 
@@ -71,6 +97,9 @@ public class PicklistDistribution implements Serializable {
 	private String pickedFlag;
 
 	private String pn;
+
+	@Column(name="PN_NUM_RECEIVED")
+	private String pnNumReceived;
 
 	@Column(name="PRINT_TAG")
 	private String printTag;
@@ -82,6 +111,10 @@ public class PicklistDistribution implements Serializable {
 
 	@Column(name="READY_FLAG")
 	private String readyFlag;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name="RECEIVED_DATE")
+	private Date receivedDate;
 
 	private BigDecimal requisition;
 
@@ -100,23 +133,15 @@ public class PicklistDistribution implements Serializable {
 
 	@Column(name="TASK_CARD")
 	private String taskCard;
-	
-	@Column(name="EXTERNAL_CUST_RES")
-	private String externalCustRes;
-	
-	@Column(name="EXTERNAL_CUST_RES_ITEM")
-	private String externalCustResItem;
-	
-	@Column(name="EXTERNAL_CUST_TO")
-	private BigDecimal externalCustTo;
-	
-	@Column(name="EXTERNAL_CUST_TO_QTY")
-	private BigDecimal externalCustToQty;
 
 	//bi-directional many-to-one association to PicklistHeader
 	@ManyToOne
-	@JoinColumn(name="PICKLIST" ,insertable = false, updatable = false)
+	@JoinColumn(name="PICKLIST")
 	private PicklistHeader picklistHeader;
+
+	//bi-directional many-to-one association to PicklistDistributionRec
+	@OneToMany(mappedBy="picklistDistribution")
+	private List<PicklistDistributionRec> picklistDistributionRecs;
 
 	public PicklistDistribution() {
 	}
@@ -201,12 +226,60 @@ public class PicklistDistribution implements Serializable {
 		this.emobilityPickedFlag = emobilityPickedFlag;
 	}
 
+	public String getExternalCustRes() {
+		return this.externalCustRes;
+	}
+
+	public void setExternalCustRes(String externalCustRes) {
+		this.externalCustRes = externalCustRes;
+	}
+
+	public String getExternalCustResItem() {
+		return this.externalCustResItem;
+	}
+
+	public void setExternalCustResItem(String externalCustResItem) {
+		this.externalCustResItem = externalCustResItem;
+	}
+
+	public BigDecimal getExternalCustTo() {
+		return this.externalCustTo;
+	}
+
+	public void setExternalCustTo(BigDecimal externalCustTo) {
+		this.externalCustTo = externalCustTo;
+	}
+
+	public BigDecimal getExternalCustToQty() {
+		return this.externalCustToQty;
+	}
+
+	public void setExternalCustToQty(BigDecimal externalCustToQty) {
+		this.externalCustToQty = externalCustToQty;
+	}
+
 	public Date getInterfaceModifiedDate() {
 		return this.interfaceModifiedDate;
 	}
 
 	public void setInterfaceModifiedDate(Date interfaceModifiedDate) {
 		this.interfaceModifiedDate = interfaceModifiedDate;
+	}
+
+	public Date getInterfaceSyncDate() {
+		return this.interfaceSyncDate;
+	}
+
+	public void setInterfaceSyncDate(Date interfaceSyncDate) {
+		this.interfaceSyncDate = interfaceSyncDate;
+	}
+
+	public String getInterfaceSyncFlag() {
+		return this.interfaceSyncFlag;
+	}
+
+	public void setInterfaceSyncFlag(String interfaceSyncFlag) {
+		this.interfaceSyncFlag = interfaceSyncFlag;
 	}
 
 	public String getModifiedBy() {
@@ -281,6 +354,14 @@ public class PicklistDistribution implements Serializable {
 		this.pn = pn;
 	}
 
+	public String getPnNumReceived() {
+		return this.pnNumReceived;
+	}
+
+	public void setPnNumReceived(String pnNumReceived) {
+		this.pnNumReceived = pnNumReceived;
+	}
+
 	public String getPrintTag() {
 		return this.printTag;
 	}
@@ -311,6 +392,14 @@ public class PicklistDistribution implements Serializable {
 
 	public void setReadyFlag(String readyFlag) {
 		this.readyFlag = readyFlag;
+	}
+
+	public Date getReceivedDate() {
+		return this.receivedDate;
+	}
+
+	public void setReceivedDate(Date receivedDate) {
+		this.receivedDate = receivedDate;
 	}
 
 	public BigDecimal getRequisition() {
@@ -377,36 +466,26 @@ public class PicklistDistribution implements Serializable {
 		this.picklistHeader = picklistHeader;
 	}
 
-	public String getExternalCustRes() {
-		return externalCustRes;
+	public List<PicklistDistributionRec> getPicklistDistributionRecs() {
+		return this.picklistDistributionRecs;
 	}
 
-	public void setExternalCustRes(String externalCustRes) {
-		this.externalCustRes = externalCustRes;
+	public void setPicklistDistributionRecs(List<PicklistDistributionRec> picklistDistributionRecs) {
+		this.picklistDistributionRecs = picklistDistributionRecs;
 	}
 
-	public String getExternalCustResItem() {
-		return externalCustResItem;
+	public PicklistDistributionRec addPicklistDistributionRec(PicklistDistributionRec picklistDistributionRec) {
+		getPicklistDistributionRecs().add(picklistDistributionRec);
+		picklistDistributionRec.setPicklistDistribution(this);
+
+		return picklistDistributionRec;
 	}
 
-	public void setExternalCustResItem(String externalCustResItem) {
-		this.externalCustResItem = externalCustResItem;
-	}
+	public PicklistDistributionRec removePicklistDistributionRec(PicklistDistributionRec picklistDistributionRec) {
+		getPicklistDistributionRecs().remove(picklistDistributionRec);
+		picklistDistributionRec.setPicklistDistribution(null);
 
-	public BigDecimal getExternalCustTo() {
-		return externalCustTo;
-	}
-
-	public void setExternalCustTo(BigDecimal externalCustTo) {
-		this.externalCustTo = externalCustTo;
-	}
-
-	public BigDecimal getExternalCustToQty() {
-		return externalCustToQty;
-	}
-
-	public void setExternalCustToQty(BigDecimal externalCustToQty) {
-		this.externalCustToQty = externalCustToQty;
+		return picklistDistributionRec;
 	}
 
 }

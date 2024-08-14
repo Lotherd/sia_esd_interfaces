@@ -27,6 +27,8 @@ import trax.aero.model.InterfaceAudit;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.PicklistDistribution;
 import trax.aero.model.PicklistDistributionPK;
+import trax.aero.model.PicklistDistributionRec;
+import trax.aero.model.PicklistDistributionRecPK;
 import trax.aero.model.PicklistHeader;
 import trax.aero.model.PnInterchangeable;
 import trax.aero.model.PnInventoryDetail;
@@ -160,9 +162,12 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 				//LOCATION TRANSFER
 				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "ISSUED");
-					
+				for( Transfer_order to: input.getTransfer_order()) {
+					setCustTo(picklistDistributionDIS,to);
+				}
 				picklistDistributionDIS.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionDIS.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
+				
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
 				insertData(pnInventoryDetail);
@@ -207,6 +212,35 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 	}
 	
+
+	private void setCustTo(PicklistDistribution picklistDistributionDIS, Transfer_order to) {
+		PicklistDistributionRec rec = null;
+		try {
+			 rec = em.createQuery("SELECT p FROM PicklistDistributionRec p WHERE p.id.picklist = :pic AND p.id.picklistLine = :res AND p.id.transaction = :act and p.id.custTo = :cus", PicklistDistributionRec.class)
+					.setParameter("pic", picklistDistributionDIS.getId().getPicklist())
+					.setParameter("res",picklistDistributionDIS.getId().getPicklistLine())
+					.setParameter("act",picklistDistributionDIS.getId().getTransaction())
+					.setParameter("cus",to.getTRASNFER_ORDER_NUMBER().longValue())
+					.getSingleResult();
+		}catch (Exception e) {
+			rec = new PicklistDistributionRec();
+			rec.setId(new PicklistDistributionRecPK());
+			rec.getId().setCustTo(to.getTRASNFER_ORDER_NUMBER().longValue());
+			rec.getId().setDistributionLine(picklistDistributionDIS.getId().getDistributionLine());
+			rec.getId().setPicklist(picklistDistributionDIS.getId().getPicklist());
+			rec.getId().setPicklistLine(picklistDistributionDIS.getId().getPicklistLine());
+			rec.getId().setTransaction(picklistDistributionDIS.getId().getTransaction());
+			rec.setCreatedBy("TRAX_IFACE");
+			rec.setCreatedDate(new Date());
+			
+		}
+		rec.setModifiedBy("TRAX_IFACE");
+		rec.setModifiedDate(new Date());
+		rec.setCustToQty(to.getTRANSFER_ORDER_QUANTITY());
+		insertData(rec);
+	}
+
+
 
 	private PnInventoryDetail getPnInventoryDetail(MaterialStatusImportMaster input, PicklistHeader pick) {
 		PnInventoryDetail pnInventoryDetail = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
