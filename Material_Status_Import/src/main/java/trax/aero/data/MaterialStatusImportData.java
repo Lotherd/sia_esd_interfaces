@@ -164,9 +164,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "ISSUED");
 				for( Transfer_order to: input.getTransfer_order()) {
 					setCustTo(picklistDistributionDIS,to);
+					setCustTo(picklistDistributionREQ,to);
 				}
 				picklistDistributionDIS.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionDIS.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
+				
+				picklistDistributionREQ.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
+				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
+				
 				
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
