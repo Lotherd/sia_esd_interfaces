@@ -55,7 +55,7 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	            return null; 
 	    }
 	}
-	
+	 
 	public DATAMasterResponse importAuth(DATA input) {
 		DATAMasterResponse output = new DATAMasterResponse();
 		if (input.getData() != null ) {
@@ -154,8 +154,79 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	            	auth.setAuthorityDate("");
 	            }
 	        }
-
-			
+	        
+	      //PNTYPE TRANSCODE
+	        
+	        System.out.println("CHECKING PN_TYPE: "+element.getClcfNo() + " into the Trax DataBase");
+	        
+	        try {
+	        	String checkPnTypeStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'PNTYPE' AND SYSTEM_CODE = ? ";
+	            Query checkPnType = em.createNativeQuery(checkPnTypeStr);
+	            checkPnType.setParameter(1, auth.getPnType());
+	            long count = ((Number) checkPnType.getSingleResult()).longValue();
+	            System.out.println("Count of records found: " + count);
+	            
+	            if (count == 0) {
+	            	  System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
+		                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE) " +
+		                                     "VALUES ('PNTYPE', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE )";
+		                Query insertPnTypeQueryObj = em.createNativeQuery(insertPnTypeQuery);
+		                insertPnTypeQueryObj.setParameter(1, auth.getPnType());
+		                insertPnTypeQueryObj.setParameter(2, auth.getPnType());
+		                insertPnTypeQueryObj.executeUpdate();
+		                System.out.println("Successfully inserted into SYSTEM_TRAN_CODE");
+	            } else {
+	            	System.out.println("Record already exists. No insertion needed.");
+	            }
+	              
+	        }catch (Exception e) {
+	            System.out.println("Error occurred while checking or inserting/updating SYSTEM_TRAN_CODE");
+	            e.printStackTrace();
+	        }
+	        
+	        
+	        //AUTHORITY TRANSCODE
+	        
+	        System.out.println("CHECKING AUTHORITY TRANSCODE: "+element.getClcfNo() + " into the Trax DataBase");
+	        
+	        try {
+	        	String checkAuthStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'AUTHAPPROVAL' AND SYSTEM_CODE = ? ";
+	            Query checkAuth = em.createNativeQuery(checkAuthStr);
+	            checkAuth.setParameter(1, auth.getId().getAuthority());
+	            long count = ((Number) checkAuth.getSingleResult()).longValue();
+	            System.out.println("Count of records found: " + count);
+	            
+	            if (count == 0) {
+	            	  System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
+		                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE) " +
+		                                     "VALUES ('AUTHAPPROVAL', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE )";
+		                Query insertPnTypeQueryObj = em.createNativeQuery(insertPnTypeQuery);
+		                insertPnTypeQueryObj.setParameter(1, auth.getId().getAuthority());
+		                insertPnTypeQueryObj.setParameter(2, auth.getId().getAuthority());
+		                insertPnTypeQueryObj.executeUpdate();
+		                System.out.println("Successfully inserted into SYSTEM_TRAN_CODE");
+	            } else {
+	            	System.out.println("Record already exists. No insertion needed.");
+	            }
+	              
+	        }catch (Exception e) {
+	            System.out.println("Error occurred while checking or inserting/updating SYSTEM_TRAN_CODE");
+	            e.printStackTrace();
+	        }
+	        
+	        
+	        // INSERTING PN_MASTER
+	        System.out.println("Updating PN_MASTER "+element.getPartNo()+" into the Trax DataBase");
+	        
+	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ? WHERE PN = ? ";
+	        Query updatePN = em.createNativeQuery(updatePnMaster);
+	        updatePN.setParameter(1, auth.getTechControl());
+	        updatePN.setParameter(2, auth.getPnType());
+	        updatePN.setParameter(3, auth.getId().getPn());
+	        updatePN.executeUpdate();
+            System.out.println("Successfully inserted into PN_MASTER");
+	        
+		
 			System.out.println("INSERTING Authority: "+element.getAuthorityType()+" and Pn: "+element.getPartNo()+" into the Trax DataBase");
 			insertData(auth);
 			
@@ -175,7 +246,7 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	            if (count > 0) {
 	                // Update the existing record
 	                System.out.println("Record exists. Updating ACTIVE field in PN_AUTHORITY_APPROVAL");
-	                String updateQueryStr = "UPDATE PN_AUTHORITY_APPROVAL SET ACTIVE = ? WHERE PN = ? AND AUTHORITY = ?";
+	                String updateQueryStr = "UPDATE PN_AUTHORITY_APPROVAL SET AUTH_STATUS = ? WHERE PN = ? AND AUTHORITY = ?";
 	                Query updateQuery = em.createNativeQuery(updateQueryStr);
 	                updateQuery.setParameter(1, activeStatus);
 	                updateQuery.setParameter(2, auth.getId().getPn());

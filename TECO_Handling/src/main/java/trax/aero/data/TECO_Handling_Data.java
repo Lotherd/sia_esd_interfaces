@@ -266,18 +266,17 @@ public class TECO_Handling_Data {
                 "        THEN 'CANCEL' " +
                 "        ELSE W.STATUS " +
                 "    END AS STATUS, " +
-                "    W.REOPEN_REASON, " +
+                "    W.REOPEN_REASON, " + 
                 "    W.SOURCE_REF, " +
-                "    WT.TASK_CARD, " +
                 "    W.SOURCE_TYPE " +
                 "FROM WO W " +
                 "JOIN WO_TASK_CARD WT ON W.WO = WT.WO " +
                 "LEFT JOIN PN_INVENTORY_HISTORY ATH ON W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD " +
                 "WHERE W.RFO_NO IS NOT NULL " +
-                "  AND WT.INV_CHECK = 'Y' " +
                 "  AND ( " +
                 "    (W.STATUS = 'CLOSED' " +
                 "        AND (W.interface_teco_flag = 'D' OR W.interface_teco_flag IS NULL) " +
+                "  		AND WT.INV_CHECK = 'Y' " +
                 "        AND NOT EXISTS ( " +
                 "            SELECT 1 " +
                 "            FROM WO_TASK_CARD WT_INNER " +
@@ -301,6 +300,7 @@ public class TECO_Handling_Data {
                 "    ) " +
                 "    OR (W.STATUS = 'CLOSED' " +
                 "        AND (W.interface_teco_flag = 'D' OR W.interface_teco_flag IS NULL) " +
+                "  		AND WT.INV_CHECK IS NULL " +
                 "        AND NOT EXISTS ( " +
                 "            SELECT 1 " +
                 "            FROM WO_TASK_CARD WT_INNER " +
@@ -326,12 +326,18 @@ public class TECO_Handling_Data {
                 "    (W.STATUS = 'OPEN' " +
                 "        AND W.REOPEN_REASON IS NOT NULL " +
                 "        AND (W.interface_teco_flag = 'Y' OR W.interface_teco_flag IS NULL) " +
-                "    AND NOT EXISTS ( " +
+                "    AND (NOT EXISTS ( " +
                 "            SELECT 1 " +
                 "            FROM WO_TASK_CARD WT_INNER " +
                 "            WHERE WT_INNER.WO = W.WO " +
                 "              AND WT_INNER.STATUS != 'CLOSED' " +
                 "        ) " +
+                "    OR NOT EXISTS ( " +
+                "            SELECT 1 " +
+                "            FROM WO_TASK_CARD WT_INNER " +
+                "            WHERE WT_INNER.WO = W.WO " +
+                "              AND WT_INNER.STATUS != 'CANCEL' " +
+                "        )) " +
                 "        AND ( " +
                 "            (ATH.SVO_NO IS NULL OR ATH.TRANSACTION_TYPE IS NOT NULL) " +
                 "            OR " +
@@ -349,7 +355,7 @@ public class TECO_Handling_Data {
                 "    ) " +
                 "  ) ";
 
-	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ?";
+	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ?";
 	    String sqlMark2 = "UPDATE WO SET INTERFACE_TECO_FLAG = CASE " +
                 "WHEN STATUS IN ('CLOSED') THEN 'Y' " +
                 "WHEN STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL THEN 'D' " +
@@ -385,10 +391,9 @@ public class TECO_Handling_Data {
 	                list.add(req);
 
 	                // Log parameter values
-	                logger.info("Marking WO: " + rs1.getString("WO") + " Task Card: " + rs1.getString("TASK_CARD"));
+	                logger.info("Marking WO: " + rs1.getString("WO"));
 	                
 	                pstmt2.setString(1, rs1.getString("WO"));
-	                pstmt2.setString(2, rs1.getString("TASK_CARD"));
 	                pstmt2.executeUpdate();
 	                
 	                pstmt3.setString(1, rs1.getString("WO"));
