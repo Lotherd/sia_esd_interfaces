@@ -168,8 +168,8 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	            
 	            if (count == 0) {
 	            	  System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
-		                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE) " +
-		                                     "VALUES ('PNTYPE', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE )";
+		                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
+		                                     "VALUES ('PNTYPE', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25' )";
 		                Query insertPnTypeQueryObj = em.createNativeQuery(insertPnTypeQuery);
 		                insertPnTypeQueryObj.setParameter(1, auth.getPnType());
 		                insertPnTypeQueryObj.setParameter(2, auth.getPnType());
@@ -198,8 +198,8 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	            
 	            if (count == 0) {
 	            	  System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
-		                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE) " +
-		                                     "VALUES ('AUTHAPPROVAL', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE )";
+		                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
+		                                     "VALUES ('AUTHAPPROVAL', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25')";
 		                Query insertPnTypeQueryObj = em.createNativeQuery(insertPnTypeQuery);
 		                insertPnTypeQueryObj.setParameter(1, auth.getId().getAuthority());
 		                insertPnTypeQueryObj.setParameter(2, auth.getId().getAuthority());
