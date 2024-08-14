@@ -1,11 +1,13 @@
 package trax.aero.utils;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
 import trax.aero.controller.CreationU_RFO_Controller;
 import trax.aero.data.CreationU_RFO_Data;
@@ -16,7 +18,7 @@ import trax.aero.pojo.INT22_TRAX;
 public class Run implements Runnable{
 
 	CreationU_RFO_Data data = null;
-	final String url = System.getProperty("BatchCreation_URL");
+	final String url = System.getProperty("CreationRFO_URL");
 	final int MAX_ATTEMPTS = 3;
 	Logger logger = LogManager.getLogger("RFOCreation");
 	
@@ -66,8 +68,40 @@ public class Run implements Runnable{
 			         } else {
 			        	 INT22_TRAX input = null;
 			        	 
-			        	 logger.info("finishing");
+			        	 try {
+			        		 String body = poster.getBody();
+			        		 StringReader sr = new StringReader(body);
+			        		 jc = JAXBContext.newInstance(INT22_TRAX.class);
+			        		 Unmarshaller unmarshaller = jc.createUnmarshaller();
+			        		 input = (INT22_TRAX) unmarshaller.unmarshal(sr);
+			        		 
+			        		 marshaller = jc.createMarshaller();
+						        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);  
+						        sw = new StringWriter();
+							    marshaller.marshal(input,sw);
+							    logger.info("Input: " + sw.toString());
+							    if(input.getErrorCode() != null && !input.getErrorCode().isEmpty() && input.getErrorCode().equalsIgnoreCase("53")) {
+							    	executed = data.markTransaction(input);
+							    } else {
+							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getSapSvo() + ", Error Code: " +input.getErrorCode());
+							    	CreationU_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getSapSvo() + ", Error Code: " +input.getErrorCode());
+							    	executed = data.markTransaction(input);
+							    	executed = "Issue found";
+							    }
+							    if(executed == null || !executed.equalsIgnoreCase("OK")) {
+							    	executed = "Issue found";
+					        		throw new Exception("Issue found");
+							    }
+			        		 
+			        	 }catch(Exception e) {
+			        		
+			        		 CreationU_RFO_Controller.addError(e.toString());
+			        		 CreationU_RFO_Controller.sendEmailRequest(ArrayReq);
+							
+			        	 }finally {
 			        	 
+			        	 logger.info("finishing");
+			        	 }
 				        logger.info("POST status: " + String.valueOf(success) + " to URL: " + url);
 			         }
 			}

@@ -100,10 +100,10 @@ public class Creation_Equipment_Data {
 		
 		String sqlReturn = "UPDATE WO SET STATUS = 'GENERATION', INTERFACE_ESD_TRANSFERRED_FLAG = null, INTERFACE_ESD_TRANSFERRED_DATE = null  WHERE WO = ?";
 		
-		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-	            + "VALUES (?, 'ERROR', 'I05', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Sales_Order I_07', sysdate, sysdate)";
+		 String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+                 + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I05', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Equipment I_05', sysdate, sysdate FROM dual";
 		
-		String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ?";
+		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
 		
 		try 
 			(PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
@@ -114,26 +114,41 @@ public class Creation_Equipment_Data {
 			if (request != null) {
 				
 				if(request.getModNO() != null && !request.getModNO().isEmpty()) {
+					if (request.getExceptionId().equalsIgnoreCase("53")){
 				pstmt1.setString(3, request.getWO());
 				pstmt1.setString(2,  request.getEquipment());
 				pstmt1.setString(1, request.getModNO());
 				pstmt1.executeUpdate();
+				
+				psDeleteError.setString(1, request.getWO());
+				psDeleteError.setString(2, request.getModNO());
+                psDeleteError.executeUpdate();
+                
+				}
 				}
 				
-				if (request.getExceptionId() != null && !request.getExceptionId().equalsIgnoreCase("53")) {
+				if (!request.getExceptionId().equalsIgnoreCase("53") &&
+                	    (request.getExceptionDetail().toLowerCase().contains("is locked".toLowerCase()) ||
+                	     request.getExceptionDetail().toLowerCase().contains("already being processed".toLowerCase()))){
 					executed = "WO: " + request.getWO() + ", WBS: " + request.getModNO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 					Creation_Equipment_Controller.addError(executed);
 					
-					psDeleteError.setString(1, request.getWO());
-	                psDeleteError.executeUpdate();
+					
 	                
 	                psInsertError.setString(1, request.getWO());
-	                psInsertError.setString(2, request.getExceptionId());
-	                psInsertError.setString(3, request.getExceptionDetail());
+	                psInsertError.setString(2, request.getModNO());
+	                psInsertError.setString(3, request.getExceptionId());
+	                psInsertError.setString(4, request.getExceptionDetail());
 	                psInsertError.executeUpdate();
 	                
 	                pstmt2.setString(1, request.getWO());
 	                pstmt2.executeUpdate();
+				} else {
+					psDeleteError.setString(1, request.getWO());
+					psDeleteError.setString(2, request.getModNO());
+	                psDeleteError.executeUpdate();
+	                
+	               
 				}
 			}
 			
