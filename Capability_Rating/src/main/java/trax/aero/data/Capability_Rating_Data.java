@@ -253,6 +253,15 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	                updateQuery.setParameter(3, auth.getId().getAuthority());
 	                updateQuery.executeUpdate();
 	                System.out.println("Successfully updated PN_AUTHORITY_APPROVAL");
+	                
+	                if(activeStatus.equalsIgnoreCase("N")) {
+	                	String deleteAuth = "DELETE FROM PN_AUTHORITY_APPROVAL WHERE PN = ? AND AUTHORITY = ? ";
+	                	 Query deleteAuthObj = em.createNativeQuery(deleteAuth);
+	                	 deleteAuthObj.setParameter(1, auth.getId().getPn());
+	                	 deleteAuthObj.setParameter(2, auth.getId().getAuthority());
+	                	 deleteAuthObj.executeUpdate();
+	                	 System.out.println("Successfully inactive record into PN_AUTHORITY_APPROVAL");
+	                }
 	            } else {
 	                // Insert the new record
 	                System.out.println("Record does not exist. Inserting into PN_AUTHORITY_APPROVAL");
@@ -268,6 +277,15 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	                insertQueryObj.setParameter(7, activeStatus);
 	                insertQueryObj.executeUpdate();
 	                System.out.println("Successfully inserted into PN_AUTHORITY_APPROVAL");
+	                
+	                if(activeStatus.equalsIgnoreCase("N")) {
+	                	String deleteAuth = "DELETE FROM PN_AUTHORITY_APPROVAL WHERE PN = ? AND AUTHORITY = ? ";
+	                	 Query deleteAuthObj = em.createNativeQuery(deleteAuth);
+	                	 deleteAuthObj.setParameter(1, auth.getId().getPn());
+	                	 deleteAuthObj.setParameter(2, auth.getId().getAuthority());
+	                	 deleteAuthObj.executeUpdate();
+	                	 System.out.println("Successfully inactive record into PN_AUTHORITY_APPROVAL");
+	                }
 	            }
 	        } catch (Exception e) {
 	            System.out.println("Error occurred while checking or inserting/updating PN_AUTHORITY_APPROVAL");
