@@ -275,7 +275,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 	
 	{
 		OrderDetail require = (OrderDetail) em.createQuery("SELECT p FROM OrderDetail"
-				+ " p where p.id.OrderNumber =:pick AND p.id.orderLine =:line AND p.id.orderType =:tra")
+				+ " p where p.id.orderNumber =:pick AND p.id.orderLine =:line AND p.id.orderType =:tra")
 				.setParameter("pick", Long.valueOf(reqs.getTrax_repair_order()))
 				.setParameter("line", Long.valueOf(reqs.getTrax_repair_order_line()))
 				.setParameter("tra", "RO")
