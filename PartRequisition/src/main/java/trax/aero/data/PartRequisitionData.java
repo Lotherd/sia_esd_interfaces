@@ -215,7 +215,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 		catch(Exception e)
 		{
 			logger.info(e.getMessage());
-			return null;
+			return "";
 		}
 	}
 
