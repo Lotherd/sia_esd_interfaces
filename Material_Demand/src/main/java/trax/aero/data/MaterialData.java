@@ -468,7 +468,7 @@ public class MaterialData implements IMaterialData {
 		}
 		
 		
-		//checkMaterialStatusImport();
+		checkMaterialStatusImport();
 		return null;
 		
 	}
@@ -835,8 +835,13 @@ public class MaterialData implements IMaterialData {
 					if (p.getInterfaceModifiedDate() != null  && 
 						p.getInterfaceModifiedDate().getTime() < xAgo) {
 						triggerInt46(p.getPn());
-						p.setExternalCustTo(new BigDecimal(1));
-						insertData(p);
+						PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
+								.setParameter("pick", p.getId().getPicklist())
+								.setParameter("line", p.getId().getPicklistLine())
+								.setParameter("tra", "REQUIRE")
+								.getSingleResult();
+						require.setExternalCustTo(new BigDecimal(1));
+						insertData(require);
 					}
 				}
 			}	
