@@ -50,7 +50,7 @@ public class RunAble implements Runnable {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
 		LocalDateTime  currentDateTime = LocalDateTime.now();
 		
-		File todayFolder = new File(System.getProperty("ImportCertification_compFiles")+ File.separator + dtf.format(currentDateTime));
+		File todayFolder = new File(System.getProperty("AuthorizationD_compFiles")+ File.separator + dtf.format(currentDateTime));
 		if (!todayFolder.isDirectory())			
 			todayFolder.mkdir();
 		
@@ -83,9 +83,9 @@ public class RunAble implements Runnable {
         list.add("apple");
         String[] stringArray = list.toArray(new String[0]);
         
-        String[] header = {"Staff Number","Trade","Authorization Number","Authorization Expiry Date","Authorization Status",
-        		"3P Airlines Licenses"};
-        String[] arr = {"","","","","",""};
+        String[] header = {"Resource First Name","Resource ID","Resource Authorisation No.","Organization / Customer Text","Record Item Name",
+        		"Record Item Parent", "Record Item Authority", "Auth Expiry"};
+        String[] arr = {"","","","","","","",""};
         data.add(header);
         
         for(EmployeeLicense e : employeeFailure) {
@@ -108,10 +108,10 @@ public class RunAble implements Runnable {
         	       	   	
         	data.add(arr);
         }
-        File compFolder = new File(System.getProperty("ImportCertification_compFiles"));
+        File compFolder = new File(System.getProperty("AuthorizationD_compFiles"));
 		if (!compFolder.isDirectory())
 		compFolder.mkdir();
-		File todayFolder = new File(System.getProperty("ImportCertification_compFiles")+ File.separator + dtf.format(currentDateTime));
+		File todayFolder = new File(System.getProperty("AuthorizationD_compFiles")+ File.separator + dtf.format(currentDateTime));
 		if (!todayFolder.isDirectory())
 		todayFolder.mkdir();
 	
@@ -138,7 +138,7 @@ public class RunAble implements Runnable {
 		try 
 		{
 			//setting up variables
-			final String process = System.getProperty("ImportCertification_fileLoc");
+			final String process = System.getProperty("AuthorizationD_locFiles");
 			inputFolder = new File(process);
 			String exectued = "OK",outcome = "PROCESSED_";
 			ArrayList<EmployeeLicense> employees = new ArrayList<EmployeeLicense>();
