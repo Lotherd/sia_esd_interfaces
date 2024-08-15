@@ -78,8 +78,12 @@ public class PartRequisitionData implements IPartRequisitionData {
 				
 		try
 		{
-			details = this.em.createQuery("SELECT p FROM OrderDetail p where ( p.interfaceSyncDate IS NULL  ) and  ( p.interfaceSyncFlag != :flag or p.interfaceSyncFlag is null)")
+			details = this.em.createQuery("SELECT p FROM OrderDetail p where "
+					+ "( p.interfaceSyncDate IS NULL  ) and p.id.orderType = :type and   "
+					+ "( p.interfaceSyncFlag != :flag or p.interfaceSyncFlag is null) and "
+					+ " p.wo is not null")
 					.setParameter("flag", "S")
+					.setParameter("type", "RO")
 					.getResultList();
 		}
 		catch(Exception e)
@@ -237,7 +241,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 	private void markSent(MT_TRAX_SND_I21_4121_REQ data) {
 		try {
 			OrderDetail require = (OrderDetail) em.createQuery("SELECT p FROM OrderDetail"
-					+ " p where p.id.OrderNumber =:pick AND p.id.orderLine =:line AND p.id.orderType =:tra")
+					+ " p where p.id.orderNumber =:pick AND p.id.orderLine =:line AND p.id.orderType =:tra")
 					.setParameter("pick", Long.valueOf(data.getTrax_repair_order()))
 					.setParameter("line", Long.valueOf(data.getTrax_repair_order_line()))
 					.setParameter("tra", "RO")
@@ -254,7 +258,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 		try {	
 					
 				OrderDetail require = (OrderDetail) em.createQuery("SELECT p FROM OrderDetail"
-						+ " p where p.id.OrderNumber =:pick AND p.id.orderLine =:line AND p.id.orderType =:tra")
+						+ " p where p.id.orderNumber =:pick AND p.id.orderLine =:line AND p.id.orderType =:tra")
 						.setParameter("pick", Long.valueOf(data.getTrax_repair_order()))
 						.setParameter("line", Long.valueOf(data.getTrax_repair_order_line()))
 						.setParameter("tra", "RO")
