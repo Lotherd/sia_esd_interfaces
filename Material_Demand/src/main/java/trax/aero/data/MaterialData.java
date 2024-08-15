@@ -835,6 +835,8 @@ public class MaterialData implements IMaterialData {
 					if (p.getInterfaceModifiedDate() != null  && 
 						p.getInterfaceModifiedDate().getTime() < xAgo) {
 						triggerInt46(p.getPn());
+						p.setExternalCustTo(new BigDecimal(1));
+						insertData(p);
 					}
 				}
 			}	
