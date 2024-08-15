@@ -242,7 +242,9 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		rec.setModifiedBy("TRAX_IFACE");
 		rec.setModifiedDate(new Date());
 		rec.setCustToQty(to.getTRANSFER_ORDER_QUANTITY());
-		rec.setLegacyBatch(new BigDecimal( to.getLEGACY_BATCH()));
+		if(to.getLEGACY_BATCH() != null && !to.getLEGACY_BATCH().isEmpty()) {
+			rec.setLegacyBatch(new BigDecimal( to.getLEGACY_BATCH()));
+		}
 		insertData(rec);
 	}
 
