@@ -46,11 +46,11 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	public String translateCategory(String catCategory) {
 	    switch (catCategory) {
 	        case "B1":
-	            return "Engine";
+	            return "ENGINE";
 	        case "B3":
 	            return "APU";
 	        case "C7":
-	            return "Module";
+	            return "MODULE";
 	        default:
 	            return null; 
 	    }
@@ -217,7 +217,7 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	        
 	        // INSERTING PN_MASTER
 	        System.out.println("Updating PN_MASTER "+element.getPartNo()+" into the Trax DataBase");
-	        
+	        System.out.println("TECH_CONTROL: "+auth.getTechControl()+" PN_TYPE: "+ auth.getPnType());
 	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ? WHERE PN = ? ";
 	        Query updatePN = em.createNativeQuery(updatePnMaster);
 	        updatePN.setParameter(1, auth.getTechControl());
