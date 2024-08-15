@@ -468,7 +468,7 @@ public class MaterialData implements IMaterialData {
 		}
 		
 		
-		checkMaterialStatusImport();
+		//checkMaterialStatusImport();
 		return null;
 		
 	}
