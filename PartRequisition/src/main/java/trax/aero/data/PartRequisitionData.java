@@ -146,13 +146,15 @@ public class PartRequisitionData implements IPartRequisitionData {
 				}
 		}
 		
-		Set<MT_TRAX_SND_I21_4121_REQ> s= new HashSet<MT_TRAX_SND_I21_4121_REQ>();
-	    s.addAll(requisitions);         
-	    requisitions = new ArrayList<MT_TRAX_SND_I21_4121_REQ>();
-	    requisitions.addAll(s);     
+		   
 		
 		if(requisitions != null && requisitions.size() > 0) {
 		
+			Set<MT_TRAX_SND_I21_4121_REQ> s= new HashSet<MT_TRAX_SND_I21_4121_REQ>();
+		    s.addAll(requisitions);         
+		    requisitions = new ArrayList<MT_TRAX_SND_I21_4121_REQ>();
+		    requisitions.addAll(s);  
+			
 			for(MT_TRAX_SND_I21_4121_REQ requisition : requisitions) {
 				JAXBContext jc = JAXBContext.newInstance(MT_TRAX_SND_I21_4121_REQ.class);
 				Marshaller marshaller = jc.createMarshaller();
