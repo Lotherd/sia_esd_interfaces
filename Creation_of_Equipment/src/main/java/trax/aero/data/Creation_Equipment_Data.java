@@ -98,18 +98,39 @@ public class Creation_Equipment_Data {
 		
 		String sqlUpdateWO = "UPDATE WO SET MOD_NO = ?, EQUIPMENT = ?, INTERFACE_ESD_TRANSFERRED_DATE = SYSDATE, INTERFACE_ESD_TRANSFERRED_FLAG = '5' WHERE WO = ?";
 		
-		String sqlReturn = "UPDATE WO SET STATUS = 'GENERATION', INTERFACE_ESD_TRANSFERRED_FLAG = null, INTERFACE_ESD_TRANSFERRED_DATE = null  WHERE WO = ?";
+		String sqlReturn = "UPDATE WO SET STATUS = ? , INTERFACE_ESD_TRANSFERRED_FLAG = null, INTERFACE_ESD_TRANSFERRED_DATE = null  WHERE WO = ?";
 		
 		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I05', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Equipment I_05', sysdate, sysdate FROM dual";
 		
 		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
 		
+		String sqlPrevStatus = "SELECT WA1.STATUS " +
+                "FROM WO_AUDIT WA1 " +
+                "JOIN ( " +
+                "    SELECT WA2.WO, MAX(WA2.MODIFIED_DATE) AS PREV_DATE " +
+                "    FROM WO_AUDIT WA2 " +
+                "    JOIN ( " +
+                "        SELECT MAX(MODIFIED_DATE) AS MAX_CONF_SLOT_DATE, WO " +
+                "        FROM WO_AUDIT " +
+                "        WHERE STATUS = 'CONF SLOT' " +
+                "        AND WO = ? " +  
+                "        GROUP BY WO " +
+                "    ) WA3 ON WA2.WO = WA3.WO " +
+                "    WHERE WA2.MODIFIED_DATE < WA3.MAX_CONF_SLOT_DATE " +
+                "    AND WA2.WO = ? " + 
+                "    GROUP BY WA2.WO, WA3.MAX_CONF_SLOT_DATE " +
+                ") WA4 ON WA1.WO = WA4.WO AND WA1.MODIFIED_DATE = WA4.PREV_DATE " +
+                "WHERE WA1.WO = ?";
+		
+		
+		
 		try 
 			(PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
 			PreparedStatement pstmt2 = con.prepareStatement(sqlReturn);
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
-	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)){
+	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
+	         PreparedStatement psStatus = con.prepareStatement(sqlPrevStatus)){
 			
 			if (request != null) {
 				
@@ -123,15 +144,26 @@ public class Creation_Equipment_Data {
 				if (request.getExceptionId() != null && !request.getExceptionId().equalsIgnoreCase("53")) {
 					executed = "WO: " + request.getWO() + ", WBS: " + request.getModNO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 					Creation_Equipment_Controller.addError(executed);
-					
-					
-	                
+
 	                psInsertError.setString(1, request.getWO());
 	                psInsertError.setString(2, request.getExceptionId());
 	                psInsertError.setString(3, request.getExceptionDetail());
 	                psInsertError.executeUpdate();
 	                
-	                pstmt2.setString(1, request.getWO());
+	                psStatus.setString(1, request.getWO());
+	                psStatus.setString(2, request.getWO());
+	                psStatus.setString(3, request.getWO());
+	                ResultSet rs = psStatus.executeQuery();
+	                
+	                String prevStatus = null;
+	                if (rs.next()) {
+	                    prevStatus = rs.getString("STATUS");
+	                }else {
+	                	 prevStatus = "GENERATION";
+	                }
+	                
+	                pstmt2.setString(1, prevStatus);
+	                pstmt2.setString(2, request.getWO());
 	                pstmt2.executeUpdate();
 				} else {
 					psDeleteError.setString(1, request.getWO());
