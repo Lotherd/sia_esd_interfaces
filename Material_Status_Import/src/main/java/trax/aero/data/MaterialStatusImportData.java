@@ -242,6 +242,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		rec.setModifiedBy("TRAX_IFACE");
 		rec.setModifiedDate(new Date());
 		rec.setCustToQty(to.getTRANSFER_ORDER_QUANTITY());
+		rec.setLegacyBatch(new BigDecimal( to.getLEGACY_BATCH()));
 		insertData(rec);
 	}
 
@@ -752,7 +753,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			}
 			catch(Exception e)
 			{
-				e.printStackTrace();
+				//e.printStackTrace();
 				BlobTablePK pk = new BlobTablePK();
 				blob = new BlobTable();
 				blob.setCreatedDate(new Date());
