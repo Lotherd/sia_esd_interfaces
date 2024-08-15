@@ -826,7 +826,7 @@ public class MaterialData implements IMaterialData {
 			list = this.em.createQuery("SELECT p FROM PicklistDistribution p where ( p.externalCustRes IS NOT NULL and p.externalCustRes IS NOT NULL ) and "
 					+ " ( p.externalCustTo IS NULL)  AND p.id.transaction =:tra  "
 					+ "AND p.interfaceModifiedDate IS NOT NULL")
-					.setParameter("tra", "DISTRIBU")
+					.setParameter("tra", "REQUIRE")
 					.getResultList();
 					
 			if(list != null && list.size() > 0){		
