@@ -111,8 +111,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 					if(detail.getOrderHeader().getWo() != null) {
 						String rfo = null;
 						w = getWo(detail.getOrderHeader().getWo());
-						if(	w.getModule().equalsIgnoreCase("SHOP") && w.getRefurbishmentOrder() != null) {
-							rfo = w.getRefurbishmentOrder();
+						if(	w.getModule().equalsIgnoreCase("SHOP") && w.getRfoNo() != null) {
+							rfo = w.getRfoNo();
 						}
 						if(rfo == null) {
 							continue;

@@ -191,6 +191,9 @@ public class Wo implements Serializable {
 
 	@Column(name="NH_WO")
 	private BigDecimal nhWo;
+	
+	@Column(name="RFO_NO")
+	private String rfoNo;
 
 	private BigDecimal notes;
 
@@ -1286,6 +1289,13 @@ public class Wo implements Serializable {
 		this.workStarted = workStarted;
 	}
 
+	public String getRfoNo() {
+		return rfoNo;
+	}
+
+	public void setRfoNo(String rfoNo) {
+		this.rfoNo = rfoNo;
+	}
 	
 
 }
