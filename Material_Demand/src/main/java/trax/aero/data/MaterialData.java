@@ -468,7 +468,7 @@ public class MaterialData implements IMaterialData {
 		}
 		
 		
-		checkMaterialStatusImport();
+		//checkMaterialStatusImport();
 		return null;
 		
 	}
@@ -479,16 +479,23 @@ public class MaterialData implements IMaterialData {
 	private boolean CheckToQty(PicklistDistribution detail) {
 		try
 		{
+			PicklistDistribution dis = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
+					.setParameter("pick", detail.getId().getPicklist())
+					.setParameter("line", detail.getId().getPicklistLine())
+					.setParameter("tra", "DISTRIBU")
+					.getSingleResult();
+			
+			
 			BigDecimal sum = new BigDecimal(0);
-			if(detail.getPicklistDistributionRecs()!= null) {
-				for(PicklistDistributionRec rec  :detail.getPicklistDistributionRecs()) {
+			if(dis.getPicklistDistributionRecs()!= null) {
+				for(PicklistDistributionRec rec  :dis.getPicklistDistributionRecs()) {
 					if(rec.getCustToQty() !=null ) {
 						sum = sum.add(rec.getCustToQty());
 					}
 				}
 			}
-			logger.info("TO QTY: " + sum.toString() +" PICKED QTY: " +detail.getQtyPicked().toString());
-			if(sum.equals(detail.getQtyPicked())) {
+			logger.info("TO QTY: " + sum.toString() +" PICKED QTY: " +dis.getQtyPicked().toString());
+			if(sum.equals(dis.getQtyPicked())) {
 				return true;
 			}
 		}
@@ -824,7 +831,7 @@ public class MaterialData implements IMaterialData {
 		try
 		{
 			list = this.em.createQuery("SELECT p FROM PicklistDistribution p where ( p.externalCustRes IS NOT NULL and p.externalCustRes IS NOT NULL ) and "
-					+ " ( p.externalCustTo IS NULL)  AND p.id.transaction =:tra  "
+					+ " ( p.externalCustToQty IS NULL)  AND p.id.transaction =:tra  "
 					+ "AND p.interfaceModifiedDate IS NOT NULL")
 					.setParameter("tra", "REQUIRE")
 					.getResultList();
@@ -840,7 +847,7 @@ public class MaterialData implements IMaterialData {
 								.setParameter("line", p.getId().getPicklistLine())
 								.setParameter("tra", "REQUIRE")
 								.getSingleResult();
-						require.setExternalCustTo(new BigDecimal(1));
+						require.setExternalCustToQty(new BigDecimal(1));
 						insertData(require);
 					}
 				}
