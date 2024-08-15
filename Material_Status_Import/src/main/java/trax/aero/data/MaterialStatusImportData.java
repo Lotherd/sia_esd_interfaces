@@ -825,8 +825,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		pnInventoryHistory.setTransactionType(transactionType);
 		pnInventoryHistory.setQty( (pick.getQtyPicked()));
 		pnInventoryHistory.setToLocation(location);
-		
-		
+		pnInventoryHistory.setOrderNo(new BigDecimal( pick.getId().getPicklist()));
+		pnInventoryHistory.setOrderType("PICKLST");
 		try {
 			pnInventoryHistory.getId().setTransactionNo(getTransactionNo("PNINVHIS").longValue());
 		} catch (Exception e) {
