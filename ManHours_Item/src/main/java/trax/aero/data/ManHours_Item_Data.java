@@ -212,10 +212,42 @@ public class ManHours_Item_Data {
 
 	    ArrayList<INT14_18_SND> list = new ArrayList<>();
 	    Set<String> processedCombinations = new HashSet<>();
-	    String sqlManHRIT = "SELECT * FROM (SELECT DISTINCT W.WO, W.RFO_NO, WTI.OPS_NO, WT.TASK_CARD, WT.TASK_CARD_CATEGORY, WT.TASK_CARD_DESCRIPTION, WT.NON_ROUTINE, WT.BILLABLE_HOURS, WA.WO_ACTUAL_TRANSACTION, " +
-	                        "RANK() OVER (ORDER BY WA.WO_ACTUAL_TRANSACTION DESC) AS rnk FROM WO W, WO_TASK_CARD WT, WO_TASK_CARD_ITEM WTI, WO_ACTUALS WA " +
-	                        "WHERE W.SOURCE_TYPE NOT IN ('E8', 'X3') AND W.RFO_NO IS NOT NULL AND WTI.OPS_NO IS NOT NULL AND W.WO = WT.WO AND W.WO = WTI.WO AND W.WO = WA.WO AND WT.TASK_CARD = WTI.TASK_CARD " +
-	                        "AND WT.STATUS = 'CLOSED' AND ( WT.INTERFACE_SAP_TRANSFERRED_FLAG IS NULL OR WT.INTERFACE_SAP_TRANSFERRED_FLAG = '3')) WHERE rnk = 1";
+	    String sqlManHRIT =  "WITH ranked_data AS ( " +
+	    	    "    SELECT " +
+	    	    "        w.wo, " +
+	    	    "        w.rfo_no, " +
+	    	    "        wti.ops_no, " +
+	    	    "        wt.task_card, " +
+	    	    "        wt.task_card_category, " +
+	    	    "        wt.task_card_description, " +
+	    	    "        wt.non_routine, " +
+	    	    "        wa.hours, " +
+	    	    "        wa.wo_actual_transaction, " +
+	    	    "        RANK() OVER ( " +
+	    	    "            PARTITION BY wt.task_card " +
+	    	    "            ORDER BY wa.wo_actual_transaction DESC " +
+	    	    "        ) AS rnk " +
+	    	    "    FROM " +
+	    	    "        wo w " +
+	    	    "    JOIN " +
+	    	    "        wo_task_card wt ON w.wo = wt.wo " +
+	    	    "    JOIN " +
+	    	    "        wo_task_card_item wti ON w.wo = wti.wo AND wt.task_card = wti.task_card " +
+	    	    "    JOIN " +
+	    	    "        wo_actuals wa ON w.wo = wa.wo AND wt.task_card = wa.task_card " +
+	    	    "    WHERE " +
+	    	    "        w.source_type NOT IN ( 'E8', 'X3' ) " +
+	    	    "        AND w.rfo_no IS NOT NULL " +
+	    	    "        AND wti.ops_no IS NOT NULL " +
+	    	    "        AND wt.status = 'CLOSED' " +
+	    	    "        AND ((wt.interface_sap_transferred_flag IS NULL OR wt.interface_sap_transferred_flag = '3')OR (wt.interface_sap_transferred_flag = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y'))" +
+	    	    ") " +
+	    	    "SELECT " +
+	    	    "    * " +
+	    	    "FROM " +
+	    	    "    ranked_data " +
+	    	    "WHERE " +
+	    	    "    rnk = 1";
 
 	    String sqlAction = "SELECT CASE WHEN wt.non_routine = 'Y' THEN (" +
                 "SELECT DISTINCT LISTAGG(single_record, ' | ') WITHIN GROUP (ORDER BY rn) AS single_string " +
@@ -268,7 +300,20 @@ public class ManHours_Item_Data {
 
 	    String sqlmarking = "SELECT INVOICED_FLAG FROM WO_ACTUALS WHERE WO = ? AND TASK_CARD = ?"; 
 
-	    String sqlMark = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ?";
+	    String sqlMark = "UPDATE WO_TASK_CARD " +
+                "SET INTERFACE_SAP_TRANSFERRED_FLAG = " +
+                "    CASE " +
+                "        WHEN INTERFACE_STEP IS NULL THEN 'R' " +
+                "        WHEN INTERFACE_STEP = '1' THEN 'Y' " +
+                "    END, " +
+                "    INTERFACE_STEP = " +
+                "    CASE " +
+                "        WHEN INTERFACE_STEP IS NULL THEN '1' " +
+                "        WHEN INTERFACE_STEP = '1' THEN 'D' " +
+                "    END " +
+                "WHERE WO = ? " +
+                "  AND TASK_CARD = ? " +
+                "  AND (INTERFACE_STEP IS NULL OR INTERFACE_STEP = '1')";
 	    
 	   // String sqlMark2 = "UPDATE WO_ACTUALS SET INTERFACE_ESD_TRANSFERRED_FLAG = 'Y' WHERE WO = ?";
 
@@ -300,12 +345,12 @@ public class ManHours_Item_Data {
 	                String taskCard = rs1.getString(4);
 	                String combinationKey = wo + "-" + taskCard;
 
-	                // Skip if this combination has already been processed
+	                
 	                if (processedCombinations.contains(combinationKey)) {
 	                    continue;
 	                }
 
-	                // If we're starting a new work order, save the previous one
+	              
 	                if (currentWO == null || !currentWO.equals(wo)) {
 	                    if (currentReq != null) {
 	                        list.add(currentReq);
@@ -358,11 +403,11 @@ public class ManHours_Item_Data {
 	               // pstmt5.setString(1, currentReq.getWO());
 	               // pstmt5.executeUpdate();
 
-	                // Mark this combination as processed
+	               
 	                processedCombinations.add(combinationKey);
 	            }
 
-	            // Add the last work order
+	          
 	            if (currentReq != null) {
 	                list.add(currentReq);
 	            }
