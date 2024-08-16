@@ -600,10 +600,6 @@ public class RelationMaster implements Serializable {
 	@Column(name="SV_DISCOUNT")
 	private BigDecimal svDiscount;
 
-	@Lob
-	@Column(name="SYS_NC00160$")
-	private String sysNc00160$;
-
 	@Column(name="TAX_OFFICE_NAME")
 	private String taxOfficeName;
 
@@ -2299,13 +2295,6 @@ public class RelationMaster implements Serializable {
 		this.svDiscount = svDiscount;
 	}
 
-	public String getSysNc00160$() {
-		return this.sysNc00160$;
-	}
-
-	public void setSysNc00160$(String sysNc00160$) {
-		this.sysNc00160$ = sysNc00160$;
-	}
 
 	public String getTaxOfficeName() {
 		return this.taxOfficeName;
