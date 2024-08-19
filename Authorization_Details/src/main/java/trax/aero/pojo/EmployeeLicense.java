@@ -1,104 +1,86 @@
 package trax.aero.pojo;
 
-import java.util.ArrayList;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-
-
 public class EmployeeLicense {
 
-	private String StaffNumber;
-	
-	private String Trade;
+    private String StaffNumber;
+    private String Trade;
+    private String AuthorizationNumber;
+    private String AuthorizationExpiryDate;
+    private String AuthorizationStatus;
+    private String OrganizationCustomerText;
+    private String RecordItemName;
+    private String RecordItemParent;
+    private String RecordItemAuthority;
 
-	private String AuthorizationNumber ;
-	
-	private String AuthorizationExpiryDate;
-	
-	private String AuthorizationStatus;
-	
-	//private ArrayList<String> ThirdPartyAirlinesLicense ;
+    public String getStaffNumber() {
+        return StaffNumber;
+    }
 
-	
-	
-	private ArrayList<ThirdParty> ThirdParty;
-	
+    public void setStaffNumber(String staffNumber) {
+        StaffNumber = staffNumber;
+    }
 
+    public String getTrade() {
+        return Trade;
+    }
 
-	public String getStaffNumber() {
-		return StaffNumber;
-	}
+    public void setTrade(String trade) {
+        Trade = trade;
+    }
 
-	public void setStaffNumber(String staffNumber) {
-		StaffNumber = staffNumber;
-	}
+    public String getAuthorizationNumber() {
+        return AuthorizationNumber;
+    }
 
-	public String getTrade() {
-		return Trade;
-	}
+    public void setAuthorizationNumber(String authorizationNumber) {
+        AuthorizationNumber = authorizationNumber;
+    }
 
-	public void setTrade(String trade) {
-		Trade = trade;
-	}
+    public String getAuthorizationExpiryDate() {
+        return AuthorizationExpiryDate;
+    }
 
-	public String getAuthorizationNumber() {
-		return AuthorizationNumber;
-	}
+    public void setAuthorizationExpiryDate(String authorizationExpiryDate) {
+        AuthorizationExpiryDate = authorizationExpiryDate;
+    }
 
-	public void setAuthorizationNumber(String authorizationNumber) {
-		AuthorizationNumber = authorizationNumber;
-	}
+    public String getAuthorizationStatus() {
+        return AuthorizationStatus;
+    }
 
-	public String getAuthorizationExpiryDate() {
-		return AuthorizationExpiryDate;
-	}
+    public void setAuthorizationStatus(String authorizationStatus) {
+        AuthorizationStatus = authorizationStatus;
+    }
 
-	public void setAuthorizationExpiryDate(String authorizationExpiryDate) {
-		AuthorizationExpiryDate = authorizationExpiryDate;
-	}
+    public String getOrganizationCustomerText() {
+        return OrganizationCustomerText;
+    }
 
-	
-	//public ArrayList<String> getThirdPartyAirlinesLicense() {
-	//	return ThirdPartyAirlinesLicense;
-	//}
+    public void setOrganizationCustomerText(String organizationCustomerText) {
+        OrganizationCustomerText = organizationCustomerText;
+    }
 
-	//public void setThirdPartyAirlinesLicense(ArrayList<String> thirdPartyAirlinesLicense) {
-	//	ThirdPartyAirlinesLicense = thirdPartyAirlinesLicense;
-	//}
+    public String getRecordItemName() {
+        return RecordItemName;
+    }
 
-	
+    public void setRecordItemName(String recordItemName) {
+        RecordItemName = recordItemName;
+    }
 
-	
+    public String getRecordItemParent() {
+        return RecordItemParent;
+    }
 
-	
+    public void setRecordItemParent(String recordItemParent) {
+        RecordItemParent = recordItemParent;
+    }
 
-	
+    public String getRecordItemAuthority() {
+        return RecordItemAuthority;
+    }
 
-	public String getAuthorizationStatus() {
-		return AuthorizationStatus;
-	}
-
-	public void setAuthorizationStatus(String authorizationStatus) {
-		AuthorizationStatus = authorizationStatus;
-	}
-
-	
-
-	public ArrayList<ThirdParty> getThirdParty() {
-		return ThirdParty;
-	}
-
-	public void setThirdParty(ArrayList<ThirdParty> thirdParty) {
-		ThirdParty = thirdParty;
-	}
-
-	
-	
-	
-
-	
-	
+    public void setRecordItemAuthority(String recordItemAuthority) {
+        RecordItemAuthority = recordItemAuthority;
+    }
 }

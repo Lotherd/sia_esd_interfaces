@@ -105,23 +105,21 @@ public class Creation_Equipment_Data {
 		
 		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
 		
-		String sqlPrevStatus = "SELECT WA1.STATUS " +
-                "FROM WO_AUDIT WA1 " +
-                "JOIN ( " +
-                "    SELECT WA2.WO, MAX(WA2.MODIFIED_DATE) AS PREV_DATE " +
-                "    FROM WO_AUDIT WA2 " +
-                "    JOIN ( " +
-                "        SELECT MAX(MODIFIED_DATE) AS MAX_CONF_SLOT_DATE, WO " +
-                "        FROM WO_AUDIT " +
-                "        WHERE STATUS = 'CONF SLOT' " +
-                "        AND WO = ? " +  
-                "        GROUP BY WO " +
-                "    ) WA3 ON WA2.WO = WA3.WO " +
-                "    WHERE WA2.MODIFIED_DATE < WA3.MAX_CONF_SLOT_DATE " +
-                "    AND WA2.WO = ? " + 
-                "    GROUP BY WA2.WO, WA3.MAX_CONF_SLOT_DATE " +
-                ") WA4 ON WA1.WO = WA4.WO AND WA1.MODIFIED_DATE = WA4.PREV_DATE " +
-                "WHERE WA1.WO = ?";
+		String sqlPrevStatus = "SELECT STATUS " +
+                "FROM ( " +
+                "    SELECT WA1.STATUS " +
+                "    FROM WO_AUDIT WA1 " +
+                "    WHERE WA1.WO = ? " +
+                "    AND WA1.MODIFIED_DATE < ( " +
+                "        SELECT MAX(WA2.MODIFIED_DATE) " +
+                "        FROM WO_AUDIT WA2 " +
+                "        WHERE WA2.WO = ? " +
+                "        AND WA2.STATUS = 'CONF SLOT' " +
+                "    ) " +
+                "    AND WA1.STATUS != 'CONF SLOT' " +
+                "    ORDER BY WA1.MODIFIED_DATE DESC " +
+                ") " +
+                "WHERE ROWNUM = 1";
 		
 		
 		
@@ -152,7 +150,6 @@ public class Creation_Equipment_Data {
 	                
 	                psStatus.setString(1, request.getWO());
 	                psStatus.setString(2, request.getWO());
-	                psStatus.setString(3, request.getWO());
 	                ResultSet rs = psStatus.executeQuery();
 	                
 	                String prevStatus = null;

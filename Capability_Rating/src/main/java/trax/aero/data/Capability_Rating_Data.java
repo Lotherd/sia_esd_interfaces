@@ -1,12 +1,17 @@
 package trax.aero.data;
 
+import java.math.BigDecimal;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.ZoneId;
@@ -14,6 +19,8 @@ import java.time.ZoneId;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.LockModeType;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
@@ -22,6 +29,7 @@ import trax.aero.controller.Capability_Rating_Controller;
 import trax.aero.exception.CustomizeHandledException;
 import trax.aero.interfaces.ICapability_Rating_Data;
 import trax.aero.logger.LogManager;
+import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.PartAuthorityESD;
 import trax.aero.model.PartAuthorityESD_PK;
 import trax.aero.model.PnMaster;
@@ -37,7 +45,7 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	
 
 	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
-	
+	Logger logger = LogManager.getLogger("CapabilityRat");
 	
 	public Capability_Rating_Data() {
 		
@@ -197,7 +205,7 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	        System.out.println("INSERTING Authority: " + element.getAuthorityType() + " and PN: " + element.getPartNo() + " into the Trax DataBase");
 	        insertData(auth);
 	        
-	        boolean isActive = (!auth.getAuthorityDate().isEmpty() && !element.getQltyStatus().equalsIgnoreCase("Terminated"));
+	        boolean isActive = (!auth.getAuthorityDate().equalsIgnoreCase("null") && !element.getQltyStatus().equalsIgnoreCase("Terminated"));
 	        String activeStatus = isActive ? "Y" : "N";
 	        System.out.println("Preparing to check and insert/update PN_AUTHORITY_APPROVAL with ACTIVE: " + activeStatus);
 	        
@@ -269,12 +277,90 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 		return (data != null && !data.isEmpty() ? true:false);
 	}
 	
-	private <T> void insertData( T data) 
-	{
-			
-		em.merge(data);
-		em.flush();
-		
-	}
+
+	
+	public boolean lockAvailable(String notificationType) {
+		InterfaceLockMaster lock;
+		try {
+			lock = em
+					.createQuery("SELECT i FROM InterfaceLockMaster i WHERE i.interfaceType = :type", InterfaceLockMaster.class)
+					.setParameter("type", notificationType)
+					.getSingleResult();
+			em.refresh(lock);
+		} catch (NoResultException e) {
+			lock = new InterfaceLockMaster();
+			lock.setInterfaceType(notificationType);
+			lock.setLocked(new BigDecimal(0)); 
+			insertData(lock);
+			return true;
+		}
+
+		if (lock.getLocked().intValue() == 1) {
+			LocalDateTime now = LocalDateTime.now();
+			LocalDateTime lockTime = LocalDateTime.ofInstant(lock.getLockedDate().toInstant(), ZoneId.systemDefault());
+			Duration duration = Duration.between(lockTime, now);
+			if (duration.getSeconds() >= lock.getMaxLock().longValue()) {
+				lock.setLocked(new BigDecimal(0)); 
+				insertData(lock);
+				return true;
+			}
+			return false; 
+		} else {
+			lock.setLocked(new BigDecimal(1)); 
+			insertData(lock);
+			return true;
+		}
+	  }
+
+	  private <T> void insertData(T data) {
+		try {
+		  if (!em.getTransaction().isActive()) em.getTransaction().begin();
+		  em.merge(data);
+		  em.getTransaction().commit();
+		} catch (Exception e) {
+		  logger.severe(e.toString());
+		}
+	  }
+
+	  public void lockTable(String notificationType) {
+		em.getTransaction().begin();
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type",InterfaceLockMaster.class)
+		  .setParameter("type", notificationType)
+		  .getSingleResult();
+		lock.setLocked(new BigDecimal(1));    lock.setLockedDate(
+		  Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
+		);
+		InetAddress address = null;
+
+		try {
+		  address = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+		  logger.info(e.getMessage());
+		}
+
+		lock.setCurrentServer(address.getHostName());
+		em.merge(lock);
+		em.getTransaction().commit();
+	  }
+
+	  public void unlockTable(String notificationType) {
+		em.getTransaction().begin();
+		InterfaceLockMaster lock = em
+		  .createQuery(
+			"SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type",
+			InterfaceLockMaster.class
+		  )
+		  .setParameter("type", notificationType)
+		  .getSingleResult();
+		lock.setLocked(new BigDecimal(0));
+		lock.setUnlockedDate(
+		  Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
+		);
+
+		em.merge(lock);
+		em.getTransaction().commit();
+	  }
+	
+	
 
 }

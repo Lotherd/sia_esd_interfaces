@@ -25,25 +25,38 @@ public class Start
 	Logger logger = LogManager.getLogger("AuthDetails");
 	
 	@PostConstruct
-	public void start()
-	{
-		timer = new RunAble();
-		
-		if (scheduledServ == null) {
-			int scheduledPoolSize = 1;
-			logger.info("Creating default Scheduled Executor Service [poolSize =" + String.valueOf(scheduledPoolSize) + "]");
-			this.scheduledServ = Executors.newScheduledThreadPool(scheduledPoolSize);
-		}
-		scheduledServ.scheduleAtFixedRate(timer, 30, Long.parseLong(System.getProperty("AuthorizationD_interval")), TimeUnit.SECONDS);
-	
+	public void start() {
+	    timer = new RunAble();
+
+	    if (scheduledServ == null) {
+	        int scheduledPoolSize = 1;
+	        logger.info("Creating default Scheduled Executor Service [poolSize =" + scheduledPoolSize + "]");
+	        this.scheduledServ = Executors.newScheduledThreadPool(scheduledPoolSize);
+	    }
+
+	    String intervalProperty = System.getProperty("AuthorizationD_interval");
+	    long interval;
+
+	    try {
+	        if (intervalProperty != null && !intervalProperty.isEmpty()) {
+	            interval = Long.parseLong(intervalProperty);
+	        } else {
+	            throw new NumberFormatException("AuthorizationD_interval property is not set or is empty");
+	        }
+	    } catch (NumberFormatException e) {
+	        logger.severe("Failed to parse AuthorizationD_interval property: " + e.getMessage());
+	        interval = 60L; // Default interval in seconds
+	        logger.info("Using default interval of " + interval + " seconds.");
+	    }
+
+	    scheduledServ.scheduleAtFixedRate(timer, 30, interval, TimeUnit.SECONDS);
 	}
+
 	@PreDestroy
-	public void stop() 
-	{
-		if(!scheduledServ.isShutdown()) 
-		{
-			scheduledServ.shutdown();
-		}
+	public void stop() {
+	    if (scheduledServ != null && !scheduledServ.isShutdown()) {
+	        scheduledServ.shutdown();
+	    }
 	}
 	
 }
