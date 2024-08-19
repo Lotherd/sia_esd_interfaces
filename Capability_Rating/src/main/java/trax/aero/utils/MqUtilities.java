@@ -19,11 +19,11 @@ public class MqUtilities {
 	private static final int PORT = Integer.valueOf(System.getProperty("CapabilityRating_Port")).intValue(); // Listener port for your queue manager
     private static final String CHANNEL = System.getProperty("CapabilityRating_Channel"); // Channel name
     private static final String QMGR = System.getProperty("CapabilityRating_qmgr"); // Queue manager name
-    private static final String APP_USER = System.getProperty("CapabilityRating_user"); // User name that application uses to connect to MQ
+   private static final String APP_USER = System.getProperty("CapabilityRating_user"); // User name that application uses to connect to MQ
     private static final String APP_PASSWORD = System.getProperty("CapabilityRating_password"); // Password that the application uses to connect to MQ
     private static final String QUEUE_NAME_SENDER = System.getProperty("CapabilityRating_send"); // Queue that the application uses to put and get messages to and from
     private static final String QUEUE_NAME_RECEIVE = System.getProperty("CapabilityRating_receive");
-    private static final String CIPHER_SUITE = System.getProperty("CapabilityRating_CipherSuite"); // Cipher suite for SSL/TLS
+   private static final String CIPHER_SUITE = System.getProperty("CapabilityRating_CipherSuite"); // Cipher suite for SSL/TLS
     
     private static final String TRUSTSTORE_PATH = System.getProperty("CapabilityRating_trustStore");
     private static final String TRUSTSTORE_PASSWORD = System.getProperty("CapabilityRating_trustStorePassword");

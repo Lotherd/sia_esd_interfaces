@@ -17,6 +17,10 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -100,10 +104,12 @@ public class TECO_Handling_Data {
 	    }
 	}
 	
-	private static Map<String, Integer> attemptCounts = new HashMap<>();
+private static Map<String, Integer> attemptCounts = new HashMap<>();
 	
 	public String markTransaction(INT15_TRAX request) {
 	    String executed = "OK";
+	    
+	    
 	    
 	    String sqlUpdate = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE WHERE WO = ?";
 	    String revert = "UPDATE WO SET STATUS = ? WHERE wo = ? ";
@@ -135,6 +141,11 @@ public class TECO_Handling_Data {
 	            "END " +
 	            "WHERE WO = ? " +
 	            "AND ((STATUS IN ('CLOSED', 'CANCEL')) OR (STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL)) ";
+	    
+	    
+	    String svocheck = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
+	    
+	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? ";
 
 	    try {
 	        if (con == null) {
@@ -148,6 +159,8 @@ public class TECO_Handling_Data {
 	        PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	        PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 	        PreparedStatement pstmt4 = con.prepareStatement(sqlMark2);
+	        PreparedStatement svoch = con.prepareStatement(svocheck);
+	        PreparedStatement svomark = con.prepareStatement(sqlMArk2);
 
 	        if (request != null) {
 	            String exceptionId = request.getExceptionId();
@@ -157,9 +170,28 @@ public class TECO_Handling_Data {
 
 	            if (exceptionId != null && exceptionId.equalsIgnoreCase("53")) {
 	                String wo = request.getWO();
+
 	                if (wo != null && !wo.isEmpty()) {
 	                    pstmt1.setString(1, wo);
 	                    pstmt1.executeUpdate();
+	                    
+	                    svoch.setString(1, request.getWO());
+	                    svoch.setString(2, request.getTC_number());
+		                ResultSet rs = svoch.executeQuery();
+		                
+		                String SVO = null;
+		                if (rs.next()) {
+		                	SVO = rs.getString("SVO_NO");
+		                }else {
+		                	SVO = null;
+		                }
+		                
+		                if(SVO != null && !SVO.isEmpty()){
+		                	svomark.setString(1, wo);
+		                	svomark.setString(2, request.getTC_number());
+		                	svomark.executeUpdate();
+		                }
+	                    
 	                }
 	                
 	                psDeleteError.setString(1, request.getWO());
@@ -292,9 +324,11 @@ public class TECO_Handling_Data {
 	    }*/
 
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE SVO_NO = ? AND TRANSACTION_NO = ?";
+	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ? ";
 
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlSVO);
-	         PreparedStatement pstmt2 = con.prepareStatement(sqlMark)) {
+	         PreparedStatement pstmt2 = con.prepareStatement(sqlMark);
+	    	PreparedStatement pstmt3 = con.prepareStatement(sqlMArk2)) {
 
 	        /*if (MaxRecord != null && !MaxRecord.isEmpty()) {
 	            pstmt1.setString(1, MaxRecord);
@@ -311,7 +345,7 @@ public class TECO_Handling_Data {
 	                req.setSAP_number(rs1.getString("SVO_NO"));
 	                req.setWO(rs1.getString("WO"));
 	                req.setWO_Completion_date(rs1.getString("COMPLETION_DATE") != null ? rs1.getString("COMPLETION_DATE") : "");
-	                req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "");
+	                req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "00:00:00");
 	                req.setStatus(rs1.getString("STATUS"));
 	                req.setReason_teco(rs1.getString("REOPEN_REASON"));
 	                req.setNotification_number(rs1.getString("SOURCE_REF") != null &&  rs1.getString("SOURCE_TYPE").equals("E4") ? rs1.getString("SOURCE_REF") : "");
@@ -326,6 +360,10 @@ public class TECO_Handling_Data {
 	                
 	                pstmt2.setString(1, rs1.getString("SVO_NO"));
 	                pstmt2.setString(2, rs1.getString("TRANSACTION_NO"));
+	                pstmt2.executeUpdate();
+	                
+	                pstmt3.setString(1, rs1.getString("WO"));
+	                pstmt3.setString(2, rs1.getString("TASK_CARD"));
 	                pstmt2.executeUpdate();
 	            }
 	        }
@@ -361,114 +399,67 @@ public class TECO_Handling_Data {
 
 	    ArrayList<INT15_SND> list = new ArrayList<>();
 
-	    String sqlRFO = "SELECT DISTINCT " +
-                "    W.RFO_NO, " +
-                "    W.WO, " +
-                "    TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, " +
-                "    TO_CHAR(W.COMPLETION_DATE, 'HH24:MI:SS') AS COMPLETION_TIME, " +
-                "    CASE " +
-                "        WHEN W.STATUS = 'CLOSED' AND NOT EXISTS ( " +
-                "                SELECT 1 " +
-                "                FROM WO_TASK_CARD WT_INNER " +
-                "                WHERE WT_INNER.WO = W.WO " +
-                "                  AND WT_INNER.STATUS != 'CLOSED') " +
-                "        THEN 'CLOSED' " +
-                "        WHEN W.STATUS = 'CLOSED' AND NOT EXISTS ( " +
-                "                SELECT 1 " +
-                "                FROM WO_TASK_CARD WT_INNER " +
-                "                WHERE WT_INNER.WO = W.WO " +
-                "                  AND WT_INNER.STATUS != 'CANCEL') " +
-                "        THEN 'CANCEL' " +
-                "        ELSE W.STATUS " +
-                "    END AS STATUS, " +
-                "    W.REOPEN_REASON, " + 
-                "    W.SOURCE_REF, " +
-                "    W.SOURCE_TYPE " +
-                "FROM WO W " +
-                "JOIN WO_TASK_CARD WT ON W.WO = WT.WO " +
-                "LEFT JOIN PN_INVENTORY_HISTORY ATH ON W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD " +
-                "WHERE W.RFO_NO IS NOT NULL " +
-                "  AND ( " +
-                "    (W.STATUS = 'CLOSED' " +
-                "        AND (W.interface_teco_flag = 'D' OR W.interface_teco_flag IS NULL) " +
-                "  		AND WT.INV_CHECK = 'Y' " +
-                "        AND NOT EXISTS ( " +
-                "            SELECT 1 " +
-                "            FROM WO_TASK_CARD WT_INNER " +
-                "            WHERE WT_INNER.WO = W.WO " +
-                "              AND WT_INNER.STATUS != 'CLOSED' " +
-                "        ) " +
-                "        AND ( " +
-                "            (ATH.SVO_NO IS NULL OR ATH.TRANSACTION_TYPE IS NOT NULL) " +
-                "            OR " +
-                "            (ATH.SVO_NO IS NOT NULL " +
-                "                AND ATH.INTERFACE_TRANSFER_FLAG = 'D' " +
-                "                AND ATH.TRANSACTION_TYPE = 'REMOVE' " +
-                "                AND NOT EXISTS ( " +
-                "                    SELECT 1 " +
-                "                    FROM PN_INVENTORY_HISTORY ATH_INNER " +
-                "                    WHERE ATH_INNER.WO = W.WO " +
-                "                      AND ATH_INNER.INTERFACE_TRANSFER_FLAG = 'N' " +
-                "                ) " +
-                "            ) " +
-                "        ) " +
+	    String sqlRFO ="SELECT DISTINCT " +
+                "w.rfo_no, " +
+                "w.wo, " +
+                "TO_CHAR(w.completion_date, 'DD-MM-YYYY') AS completion_date, " +
+                "TO_CHAR(w.completion_date, 'HH24:MI:SS') AS completion_time, " +
+                "CASE " +
+                "    WHEN w.status = 'CLOSED' " +
+                "         AND NOT EXISTS ( " +
+                "        SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED' " +
                 "    ) " +
-                "    OR (W.STATUS = 'CLOSED' " +
-                "        AND (W.interface_teco_flag = 'D' OR W.interface_teco_flag IS NULL) " +
-                "  		AND WT.INV_CHECK IS NULL " +
-                "        AND NOT EXISTS ( " +
-                "            SELECT 1 " +
-                "            FROM WO_TASK_CARD WT_INNER " +
-                "            WHERE WT_INNER.WO = W.WO " +
-                "              AND WT_INNER.STATUS != 'CANCEL' " +
-                "        ) " +
-                "        AND ( " +
-                "            (ATH.SVO_NO IS NULL OR ATH.TRANSACTION_TYPE IS NOT NULL) " +
-                "            OR " +
-                "            (ATH.SVO_NO IS NOT NULL " +
-                "                AND ATH.INTERFACE_TRANSFER_FLAG = 'D' " +
-                "                AND ATH.TRANSACTION_TYPE = 'REMOVE' " +
-                "                AND NOT EXISTS ( " +
-                "                    SELECT 1 " +
-                "                    FROM PN_INVENTORY_HISTORY ATH_INNER " +
-                "                    WHERE ATH_INNER.WO = W.WO " +
-                "                      AND ATH_INNER.INTERFACE_TRANSFER_FLAG = 'N' " +
-                "                ) " +
-                "            ) " +
-                "        ) " +
+                "         AND ( " +
+                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+                "             OR " +
+                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y') " +
+                "         ) THEN 'CLOSED' " +
+                "    WHEN w.status = 'CLOSED' " +
+                "         AND NOT EXISTS ( " +
+                "        SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL' " +
                 "    ) " +
-                "    OR " +
-                "    (W.STATUS = 'OPEN' " +
-                "        AND W.REOPEN_REASON IS NOT NULL " +
-                "        AND (W.interface_teco_flag = 'Y' OR W.interface_teco_flag IS NULL) " +
-                "    AND (NOT EXISTS ( " +
-                "            SELECT 1 " +
-                "            FROM WO_TASK_CARD WT_INNER " +
-                "            WHERE WT_INNER.WO = W.WO " +
-                "              AND WT_INNER.STATUS != 'CLOSED' " +
-                "        ) " +
-                "    OR NOT EXISTS ( " +
-                "            SELECT 1 " +
-                "            FROM WO_TASK_CARD WT_INNER " +
-                "            WHERE WT_INNER.WO = W.WO " +
-                "              AND WT_INNER.STATUS != 'CANCEL' " +
-                "        )) " +
-                "        AND ( " +
-                "            (ATH.SVO_NO IS NULL OR ATH.TRANSACTION_TYPE IS NOT NULL) " +
-                "            OR " +
-                "            (ATH.SVO_NO IS NOT NULL " +
-                "                AND ATH.INTERFACE_TRANSFER_FLAG = 'D' " +
-                "                AND ATH.TRANSACTION_TYPE = 'REMOVE' " +
-                "                AND NOT EXISTS ( " +
-                "                    SELECT 1 " +
-                "                    FROM PN_INVENTORY_HISTORY ATH_INNER " +
-                "                    WHERE ATH_INNER.WO = W.WO " +
-                "                      AND ATH_INNER.INTERFACE_TRANSFER_FLAG = 'N' " +
-                "                ) " +
-                "            ) " +
-                "        ) " +
-                "    ) " +
-                "  ) ";
+                "         AND ( " +
+                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+                "             OR " +
+                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y') " +
+                "         ) THEN 'CANCEL' " +
+                "    ELSE w.status " +
+                "END AS status, " +
+                "w.reopen_reason, " +
+                "w.source_ref, " +
+                "w.source_type " +
+                "FROM wo w " +
+                "JOIN wo_task_card wt ON w.wo = wt.wo " +
+                "LEFT JOIN pn_inventory_history ath ON w.wo = ath.wo AND wt.task_card = ath.task_card " +
+                "WHERE w.rfo_no IS NOT NULL " +
+                "AND ( " +
+                "    (w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check = 'Y' " +
+                "    AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +
+                "    AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
+                "    OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND ath.transaction_type = 'REMOVE' " +
+                "    AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
+                "    AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+                "    OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
+                ") " +
+                "OR " +
+                "(w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check IS NULL " +
+                "AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL') " +
+                "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
+                "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND ath.transaction_type = 'REMOVE' " +
+                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
+                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+                "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
+                ") " +
+                "OR " +
+                "(w.status = 'OPEN' AND w.reopen_reason IS NOT NULL AND (w.interface_teco_flag = 'Y' OR w.interface_teco_flag IS NULL) " +
+                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +
+                "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL')) " +
+                "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
+                "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND ath.transaction_type = 'REMOVE' " +
+                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
+                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+                "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
+                "))";
 
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ?";
 	    String sqlMark2 = "UPDATE WO SET INTERFACE_TECO_FLAG = CASE " +
@@ -525,9 +516,6 @@ public class TECO_Handling_Data {
 
 	    return list;
 	}
-
-
-	
 	public String setOpsLine(String opsLine, String email) throws Exception {
 	    String Executed = "OK";
 
