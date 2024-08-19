@@ -37,7 +37,7 @@ import trax.aero.model.OrderDetail;
 import trax.aero.model.OrderHeader;
 
 import trax.aero.model.Wo;
-
+import trax.aero.model.WoShopDetail;
 import trax.aero.outbound.MT_TRAX_RCV_I21_4121_RES;
 import trax.aero.util.EmailSender;
 
@@ -125,7 +125,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 								
 					
 					String pn = detail.getPn();
-					
+					String sn = "";
 					pn = pn.replaceAll("IN", "\"");
 					pn = pn.replaceAll("FT", "'");
 					
@@ -133,17 +133,23 @@ public class PartRequisitionData implements IPartRequisitionData {
 					{
 						pn=  pn.substring(0, pn.indexOf(":"));
 					}
-					
+					if(w.getWoShopDetails() != null) {
+						for(WoShopDetail sd  : w.getWoShopDetails()) {
+							if(sd.getPn().equalsIgnoreCase(detail.getPn())) {
+								sn = sd.getPnSn();
+							}
+						}
+					}
 					
 					requisition.setMaterial(pn);
-					requisition.setESN(detail.getSn());
+					requisition.setESN(sn);
 					requisition.setQuantity(detail.getQtyRequire().toString());
 					requisition.setTrax_repair_order(String.valueOf(detail.getId().getOrderNumber()));
 					requisition.setTrax_repair_order_line(String.valueOf(detail.getId().getOrderLine()));
 					requisition.setWO(new Long( w.getWo()).toString());
 					requisition.setTrax_WO_location(w.getLocation());
 					requisition.setDelivery_date(convertDateToString(detail.getDeliveryDate()));	
-					requisition.setItem_text(getNote(detail.getNotes()));
+					requisition.setItem_text(detail.getRemarks());
 					
 				
 					requisitions.add(requisition);
@@ -288,23 +294,25 @@ public class PartRequisitionData implements IPartRequisitionData {
 		require.setExternalKPRNumber(reqs.getKPR_number());
 		require.setExternalPRItem(reqs.getPR_item());
 		require.setExternalReleaseStrategy(reqs.getRelease_Strategy());
-		if(require.getExternalKPRNumber() !=null) {
-			OrderHeader header = (OrderHeader) em.createQuery("SELECT p FROM OrderHeader"
-					+ " p where p.id.orderNumber =:pick and p.id.orderType =:tra")
-					.setParameter("pick",  require.getOrderHeader().getId().getOrderNumber())
-					.setParameter("tra", require.getOrderHeader().getId().getOrderType())
-					.getSingleResult();
-			header.setStatus("CLOSED");
-			require.setStatus("CLOSED");
-			insertData(header);
-		}
+		
 		
 			if(reqs.getMessage_code() != null && reqs.getMessage_code().equalsIgnoreCase("53"))
 			{
 				logger.info("IDOCStatus 53");
-						//require.setInterfaceSyncFlag(null);
-						require.setInterfaceSyncDate(null);
-						insertData(require);
+				
+				if(require.getExternalKPRNumber() !=null) {
+					OrderHeader header = (OrderHeader) em.createQuery("SELECT p FROM OrderHeader"
+							+ " p where p.id.orderNumber =:pick and p.id.orderType =:tra")
+							.setParameter("pick",  require.getOrderHeader().getId().getOrderNumber())
+							.setParameter("tra", require.getOrderHeader().getId().getOrderType())
+							.getSingleResult();
+					header.setStatus("CLOSED");
+					require.setStatus("CLOSED");
+					insertData(header);
+				}
+				//require.setInterfaceSyncFlag(null);
+				require.setInterfaceSyncDate(null);
+				insertData(require);
 				//TODO
 				emailer.sendEmail("Kindly get the PR approved and released in SAP:  PR # "+reqs.getKPR_number()+" and "
 				+ "Strategic code "+reqs.getRelease_Strategy()+" & WO # "+require.getOrderHeader().getWo()+

@@ -30,6 +30,8 @@
         <class>trax.aero.model.OrderDetailPK</class>
         <class>trax.aero.model.OrderHeader</class>
         <class>trax.aero.model.OrderHeaderPK</class>
+        <class>trax.aero.model.WoShopDetail</class>
+		<class>trax.aero.model.WoShopDetailPK</class>
          <shared-cache-mode>NONE</shared-cache-mode>
 		<properties>
 			<property name="hibernate.dialect"

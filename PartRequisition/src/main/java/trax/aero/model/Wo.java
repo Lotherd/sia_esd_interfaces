@@ -356,6 +356,10 @@ public class Wo implements Serializable {
 
 	@Column(name="WORK_STARTED")
 	private String workStarted;
+	
+	//bi-directional many-to-one association to WoShopDetail
+		@OneToMany(mappedBy="woBean")
+		private List<WoShopDetail> woShopDetails;
 
 	
 	public Wo() {
@@ -1297,5 +1301,26 @@ public class Wo implements Serializable {
 		this.rfoNo = rfoNo;
 	}
 	
+	public List<WoShopDetail> getWoShopDetails() {
+		return this.woShopDetails;
+	}
+
+	public void setWoShopDetails(List<WoShopDetail> woShopDetails) {
+		this.woShopDetails = woShopDetails;
+	}
+
+	public WoShopDetail addWoShopDetail(WoShopDetail woShopDetail) {
+		getWoShopDetails().add(woShopDetail);
+		woShopDetail.setWoBean(this);
+
+		return woShopDetail;
+	}
+
+	public WoShopDetail removeWoShopDetail(WoShopDetail woShopDetail) {
+		getWoShopDetails().remove(woShopDetail);
+		woShopDetail.setWoBean(null);
+
+		return woShopDetail;
+	}
 
 }
