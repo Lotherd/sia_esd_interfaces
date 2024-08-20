@@ -136,7 +136,7 @@ public class Authorization_Controller_Data {
     }
     
     private EmployeeControl setEmployeeControl(EmployeeLicense e) {
-        DateFormat format = new SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH);
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
         EmployeeControl license = null;
         boolean expire = false;
         
