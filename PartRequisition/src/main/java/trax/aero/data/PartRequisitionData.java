@@ -178,7 +178,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 					emailer.sendEmail("Trax was unable to call SAP Order:" +requisition.getTrax_repair_order() 
 					+" Line:"+ requisition.getTrax_repair_order_line(), "Part Requisition Interface Message");
 					logError("Trax was unable to call SAP Order:" +requisition.getTrax_repair_order() 
-					+" Line:"+ requisition.getTrax_repair_order_line(), "Part Requisition Interface Message");
+					+" Line:"+ requisition.getTrax_repair_order_line(), "Part Requisition Interface Message"
+					,requisition.getTrax_repair_order(), requisition.getWO());
 				}else {
 					markSent(requisition);
 					
@@ -338,7 +339,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 				emailer.sendEmail("Received acknowledgement with Status: " + reqs.getMessage_code() +", Error: "+reqs.getSuccess_Error_message() +"\n"+ orders,
 						"Part Requisition Interface Message") ;
 				logError("Received acknowledgement with Status: " + reqs.getMessage_code() +", Error: "+reqs.getSuccess_Error_message() +"\n"+ orders,
-						"Part Requisition Interface Message");
+						"Part Requisition Interface Message",
+						String.valueOf(require.getId().getOrderNumber()),String.valueOf(require.getOrderHeader().getWo()) );
 				
 			}else {
 				logger.info("IDOCStatus unkown");
@@ -354,7 +356,9 @@ public class PartRequisitionData implements IPartRequisitionData {
 				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders,
 						"Part Requisition Interface Message") ;
 				logError("Received acknowledgement with NULL Success Error Log\n" +orders,
-						"Part Requisition Interface Message");
+						"Part Requisition Interface Message",
+						String.valueOf(require.getId().getOrderNumber()),
+						String.valueOf(require.getOrderHeader().getWo()));
 			}
 			
 	}
@@ -451,7 +455,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 		}
 	}
 	
-	private void logError(String error, String header) {
+	private void logError(String error, String header,String orderNumber, String wo) {
 		
 		InterfaceAudit ia = null;
 		ia = new InterfaceAudit();
@@ -460,6 +464,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 		ia.setTransactionObject("I21");
 		ia.setTransactionDate(new Date());
 		ia.setCreatedBy("TRAX_IFACE");
+		ia.setOrderNumber(new BigDecimal(orderNumber));
+		ia.setEo(wo);
 		ia.setModifiedBy("TRAX_IFACE");
 		ia.setCreatedDate(new Date());
 		ia.setModifiedDate(new Date());
