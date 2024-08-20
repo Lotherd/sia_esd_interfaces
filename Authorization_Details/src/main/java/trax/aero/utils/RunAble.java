@@ -164,6 +164,7 @@ public class RunAble implements Runnable {
                 }
             }
         } catch (Throwable e) {
+        	e.printStackTrace();
             logger.severe(e.toString());
         }
     }
