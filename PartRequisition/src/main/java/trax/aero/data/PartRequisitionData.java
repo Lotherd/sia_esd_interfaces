@@ -31,6 +31,7 @@ import trax.aero.client.ServiceClient;
 import trax.aero.inbound.MT_TRAX_SND_I21_4121_REQ;
 import trax.aero.interfaces.IPartRequisitionData;
 import trax.aero.logger.LogManager;
+import trax.aero.model.InterfaceAudit;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.NotePad;
 import trax.aero.model.OrderDetail;
@@ -175,6 +176,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 					
 					markSentFailed(requisition);
 					emailer.sendEmail("Trax was unable to call SAP Order:" +requisition.getTrax_repair_order() 
+					+" Line:"+ requisition.getTrax_repair_order_line(), "Part Requisition Interface Message");
+					logError("Trax was unable to call SAP Order:" +requisition.getTrax_repair_order() 
 					+" Line:"+ requisition.getTrax_repair_order_line(), "Part Requisition Interface Message");
 				}else {
 					markSent(requisition);
@@ -334,6 +337,9 @@ public class PartRequisitionData implements IPartRequisitionData {
 				orders = orders + "( OrderNumber: "+ reqs.getTrax_repair_order() + " line: "+ reqs.getTrax_repair_order_line() + "),";
 				emailer.sendEmail("Received acknowledgement with Status: " + reqs.getMessage_code() +", Error: "+reqs.getSuccess_Error_message() +"\n"+ orders,
 						"Part Requisition Interface Message") ;
+				logError("Received acknowledgement with Status: " + reqs.getMessage_code() +", Error: "+reqs.getSuccess_Error_message() +"\n"+ orders,
+						"Part Requisition Interface Message");
+				
 			}else {
 				logger.info("IDOCStatus unkown");
 				String orders = "";			
@@ -347,6 +353,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 					
 				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders,
 						"Part Requisition Interface Message") ;
+				logError("Received acknowledgement with NULL Success Error Log\n" +orders,
+						"Part Requisition Interface Message");
 			}
 			
 	}
@@ -443,6 +451,43 @@ public class PartRequisitionData implements IPartRequisitionData {
 		}
 	}
 	
+	private void logError(String error, String header) {
+		
+		InterfaceAudit ia = null;
+		ia = new InterfaceAudit();
+		ia.setTransaction(getSeqNoInterfaceAudit().longValue());
+		ia.setTransactionType("ERROR");
+		ia.setTransactionObject("I21");
+		ia.setTransactionDate(new Date());
+		ia.setCreatedBy("TRAX_IFACE");
+		ia.setModifiedBy("TRAX_IFACE");
+		ia.setCreatedDate(new Date());
+		ia.setModifiedDate(new Date());
+		ia.setExceptionId(new BigDecimal(-2000));
+		ia.setExceptionByTrax("Y");
+		ia.setExceptionDetail(header);
+		ia.setExceptionStackTrace(error);
+		ia.setExceptionClassTrax("PartRequisition_I21");	
+		
+		insertData(ia);
+	}
+	
+	private BigDecimal getSeqNoInterfaceAudit()
+	{		
+		logger.info("Finding next seq");
+		try
+		{
+			BigDecimal transaction = (BigDecimal)this.em.createNativeQuery("select seq_interface_audit.NextVal "
+					+ "FROM DUAL").getSingleResult();		
+			return transaction;			
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			throw e;
+		}
+		
+	}
 	
 }
 
