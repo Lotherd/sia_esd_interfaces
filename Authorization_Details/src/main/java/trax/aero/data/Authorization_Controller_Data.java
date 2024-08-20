@@ -117,7 +117,7 @@ public class Authorization_Controller_Data {
             if (employeeSkill.getId().getSkill().contains("AH") || 
                 employeeSkill.getId().getSkill().contains("LAE")) {
                 
-                DateFormat format = new SimpleDateFormat("dd.MM.yyyy", Locale.ENGLISH);
+                DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
                 employeeSkill.setModifiedBy("TRAX_IFACE");
                 employeeSkill.setModifiedDate(new Date());
                 employeeSkill.setLicense(e.getAuthorizationNumber());
