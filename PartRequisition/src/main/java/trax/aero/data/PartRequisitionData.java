@@ -294,18 +294,21 @@ public class PartRequisitionData implements IPartRequisitionData {
 		require.setExternalKPRNumber(reqs.getKPR_number());
 		require.setExternalPRItem(reqs.getPR_item());
 		require.setExternalReleaseStrategy(reqs.getRelease_Strategy());
-		
+		OrderHeader header = (OrderHeader) em.createQuery("SELECT p FROM OrderHeader"
+				+ " p where p.id.orderNumber =:pick and p.id.orderType =:tra")
+				.setParameter("pick",  require.getOrderHeader().getId().getOrderNumber())
+				.setParameter("tra", require.getOrderHeader().getId().getOrderType())
+				.getSingleResult();
+		header.setStatus("HOLD");
+		require.setStatus("HOLD");
+		insertData(header);
 		
 			if(reqs.getMessage_code() != null && reqs.getMessage_code().equalsIgnoreCase("53"))
 			{
 				logger.info("IDOCStatus 53");
 				
 				if(require.getExternalKPRNumber() !=null) {
-					OrderHeader header = (OrderHeader) em.createQuery("SELECT p FROM OrderHeader"
-							+ " p where p.id.orderNumber =:pick and p.id.orderType =:tra")
-							.setParameter("pick",  require.getOrderHeader().getId().getOrderNumber())
-							.setParameter("tra", require.getOrderHeader().getId().getOrderType())
-							.getSingleResult();
+					
 					header.setStatus("CLOSED");
 					require.setStatus("CLOSED");
 					insertData(header);
