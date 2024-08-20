@@ -22,7 +22,7 @@ public class EmailSender
 		toEmail = email;
 	}
 	
-	public void sendEmail(String error) 
+	public void sendEmail(String error , String header) 
 	{
 
 		try {
@@ -42,7 +42,7 @@ public class EmailSender
 			}
 			
 			
-			email.setSubject("Part Requisition Interface Message");
+			email.setSubject(header);
 			
 			email.setMsg(error);
 			
