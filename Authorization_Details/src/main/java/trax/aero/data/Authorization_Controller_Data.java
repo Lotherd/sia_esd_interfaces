@@ -313,11 +313,6 @@ public class Authorization_Controller_Data {
             Authorization_Details_Controller.addError("Cannot insert/update Employee: " + e.getStaffNumber() + " due to ERROR AuthorizationExpiryDate");
             return false;
         }
-        
-        if (e.getAuthorizationStatus() == null || e.getAuthorizationStatus().isEmpty()) {
-            Authorization_Details_Controller.addError("Cannot insert/update Employee: " + e.getStaffNumber() + " due to ERROR AuthorizationStatus");
-            return false;
-        }
 
         return true;
     }

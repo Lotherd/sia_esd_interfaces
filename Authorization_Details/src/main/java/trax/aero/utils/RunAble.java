@@ -133,8 +133,7 @@ public class RunAble implements Runnable {
 
                     for (String[] row : allData) {
                         employee = new EmployeeLicense();
-                        employee.setStaffNumber(row[0]);
-                        employee.setTrade(row[1]);
+                        employee.setStaffNumber(row[1]);
                         employee.setAuthorizationNumber(row[2]);
                         employee.setOrganizationCustomerText(row[3]);
                         employee.setRecordItemName(row[4]);
