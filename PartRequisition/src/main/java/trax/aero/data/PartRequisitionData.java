@@ -134,11 +134,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 						pn=  pn.substring(0, pn.indexOf(":"));
 					}
 					if(w.getWoShopDetails() != null) {
-						for(WoShopDetail sd  : w.getWoShopDetails()) {
-							if(sd.getPn().equalsIgnoreCase(detail.getPn())) {
-								sn = sd.getPnSn();
-							}
-						}
+						sn = w.getWoShopDetails().get(0).getPnSn();
 					}
 					
 					requisition.setMaterial(pn);
@@ -179,7 +175,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 					
 					markSentFailed(requisition);
 					emailer.sendEmail("Trax was unable to call SAP Order:" +requisition.getTrax_repair_order() 
-					+" Line:"+ requisition.getTrax_repair_order_line());
+					+" Line:"+ requisition.getTrax_repair_order_line(), "Part Requisition Interface Message");
 				}else {
 					markSent(requisition);
 					
@@ -314,10 +310,19 @@ public class PartRequisitionData implements IPartRequisitionData {
 				require.setInterfaceSyncDate(null);
 				insertData(require);
 				//TODO
-				emailer.sendEmail("Kindly get the PR approved and released in SAP:  PR # "+reqs.getKPR_number()+" and "
-				+ "Strategic code "+reqs.getRelease_Strategy()+" & WO # "+require.getOrderHeader().getWo()+
-				 ", ESN # "+require.getSn()+", TC# "+require.getTaskCard()+", REMOVAL PN "+require.getPn()
-				 +", SN "+require.getSn());
+				Wo w = getWo(require.getOrderHeader().getWo());
+				String esn = "";
+				if(w.getWoShopDetails() != null) {
+					esn = w.getWoShopDetails().get(0).getPnSn();
+				}
+				
+				emailer.sendEmail("Kindly get the PR approved and released in SAP: "+ System.lineSeparator() + System.lineSeparator() 
+				+"WO # "+require.getOrderHeader().getWo()+ System.lineSeparator() + System.lineSeparator() 
+				+"PR # "+reqs.getKPR_number()+" and Strategic code "+reqs.getRelease_Strategy()+ System.lineSeparator() + System.lineSeparator() 
+				+"ESN # "+esn + System.lineSeparator() + System.lineSeparator() 
+				+"TC# "+require.getTaskCard() + System.lineSeparator() + System.lineSeparator() 
+				+"REMOVAL PN : "+require.getPn() +", SN : "+require.getSn() + System.lineSeparator(),
+				 "Purchase Requisition Successful for WO:" + require.getOrderHeader().getWo() + " PN :" +require.getPn());
 				
 			}else if(reqs.getMessage_code() != null){
 				logger.info("IDOCStatus 51");
@@ -327,7 +332,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 				
 				insertData(require);
 				orders = orders + "( OrderNumber: "+ reqs.getTrax_repair_order() + " line: "+ reqs.getTrax_repair_order_line() + "),";
-				emailer.sendEmail("Received acknowledgement with Status: " + reqs.getMessage_code() +", Error: "+reqs.getSuccess_Error_message() +"\n"+ orders) ;
+				emailer.sendEmail("Received acknowledgement with Status: " + reqs.getMessage_code() +", Error: "+reqs.getSuccess_Error_message() +"\n"+ orders,
+						"Part Requisition Interface Message") ;
 			}else {
 				logger.info("IDOCStatus unkown");
 				String orders = "";			
@@ -339,7 +345,8 @@ public class PartRequisitionData implements IPartRequisitionData {
 						
 				orders = orders + "( OrderNumber: "+ reqs.getTrax_repair_order() + " line: "+ reqs.getTrax_repair_order_line() + "),";
 					
-				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders ) ;
+				emailer.sendEmail("Received acknowledgement with NULL Success Error Log\n" +orders,
+						"Part Requisition Interface Message") ;
 			}
 			
 	}
