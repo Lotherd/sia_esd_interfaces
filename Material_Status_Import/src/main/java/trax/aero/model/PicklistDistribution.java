@@ -136,7 +136,7 @@ public class PicklistDistribution implements Serializable {
 
 	//bi-directional many-to-one association to PicklistHeader
 	@ManyToOne
-	@JoinColumn(name="PICKLIST")
+	@JoinColumn(name="PICKLIST" ,insertable = false, updatable = false)
 	private PicklistHeader picklistHeader;
 
 	//bi-directional many-to-one association to PicklistDistributionRec
