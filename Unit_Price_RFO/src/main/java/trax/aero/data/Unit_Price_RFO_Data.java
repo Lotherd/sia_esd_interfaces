@@ -29,6 +29,8 @@ import trax.aero.logger.LogManager;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.pojo.INT27_SND;
 import trax.aero.pojo.INT27_TRAX;
+import trax.aero.pojo.Operation_SND;
+import trax.aero.pojo.Operation_TRAX;
 import trax.aero.pojo.OpsLineEmail;
 import trax.aero.utils.DataSourceClient;
 import trax.aero.utils.ErrorType;
@@ -99,6 +101,26 @@ public class Unit_Price_RFO_Data {
 	public String markTransaction(INT27_TRAX request) {
 	    executed = "OK";
 	    
+	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL AND GET_PRICE = NULL WHERE WO = ? ";
+	    
+	    String updateprice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL AND GET_PRICE = NULL WHERE WO = ? ";
+	    
+	    try (PreparedStatement pstmt1 = con.prepareStatement(pridedone);
+		         PreparedStatement ps1 = con.prepareStatement(updateprice)){
+	    	for(Operation_TRAX o : request.getOperation()) {
+	    		if(request.getWO() != null && !request.getWO().isEmpty()) {
+	                pstmt1.setString(1, request.getWO());
+	                pstmt1.executeUpdate();
+	            }
+	    		
+	    	}
+	    }catch (SQLException e) {
+	        executed = e.toString();
+	        Unit_Price_RFO_Controller.addError(executed);
+	        logger.severe(executed);
+	    } 
+	    
+	    
 	    return executed;
 	}
 	
@@ -117,10 +139,106 @@ public class Unit_Price_RFO_Data {
 	        }
 	    }
 
-	    ArrayList<INT27_SND> list = new ArrayList<>();
+	    ArrayList<INT27_SND> list = new ArrayList<INT27_SND>();
+		ArrayList<Operation_SND> orlist = new ArrayList<Operation_SND>();
 	    
+	    String sqlPRICE = "SELECT DISTINCT W.WO, W.MOD_NO, W.RFO_NO, PDR.LEGACY_BATCH, WSD.PN " +
+                "FROM WO W " +
+                "INNER JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
+                "INNER JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
+                "INNER JOIN PICKLIST_HEADER PH ON W.WO = PH.WO " +
+                "INNER JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
+                "WHERE W.RFO_NO IS NOT NULL " +
+                "AND W.MOD_NO IS NOT NULL " +
+                "AND WA.GET_PRICE IS NOT NULL "+ 
+                "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL ";
 	    
+	    String markPrice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? ";
 	    
+	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
+	    	sqlPRICE = "SELECT * FROM (" + sqlPRICE;
+	    }
+	    
+	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
+	    	sqlPRICE = sqlPRICE + " ) WHERE ROWNUM <= ?";
+	    }
+	    
+	    PreparedStatement pstmt1 = null;
+		 ResultSet rs1 = null;
+		 PreparedStatement pstmt2 = null;
+		 ResultSet rs2 = null;
+		 
+		 try {
+				pstmt1 = con.prepareStatement(sqlPRICE);
+				pstmt2 = con.prepareStatement(markPrice);
+				if(MaxRecord != null && !MaxRecord.isEmpty()) {
+					pstmt1.setString(1, MaxRecord);
+				}
+				
+				rs1 = pstmt1.executeQuery();
+				
+				if(rs1 != null) {
+					while(rs1.next()) {
+						logger.info("Processing WO: " + rs1.getString(1) + ", RFO: " + rs1.getString(3));
+						INT27_SND req = new INT27_SND();
+						orlist = new ArrayList<Operation_SND>();
+						req.setOperation(orlist);
+						Operation_SND Inbound = new Operation_SND();
+						
+						if(rs1.getString(1) != null) {
+							req.setWO(rs1.getString(1));
+						} else {
+							req.setWO("");
+						}
+						
+						if(rs1.getString(2) != null) {
+							req.setWBS(rs1.getString(2));
+						} else {
+							req.setWBS("");
+						}
+						
+						if(rs1.getString(3) != null) {
+							req.setRFO(rs1.getString(3));
+						} else {
+							req.setRFO("");
+						}
+						
+						if(rs1.getString(4) != null) {
+							Inbound.setBatch(rs1.getString(4));
+						}else {
+							Inbound.setBatch("");
+						}
+						
+						if(rs1.getString(5) != null) {
+							Inbound.setPN(rs1.getString(3));;
+						}else {
+							Inbound.setPN("");
+						}
+
+						req.getOperation().add(Inbound);
+						list.add(req);
+						
+						
+						pstmt2.setString(1, req.getWO());
+						rs2 = pstmt2.executeQuery();
+						
+					}
+				}
+				
+				if (rs1 != null && !rs1.isClosed()) rs1.close();
+		 }catch (Exception e) {
+		      e.printStackTrace();
+		      executed = e.toString();
+		      Unit_Price_RFO_Controller.addError(e.toString());
+
+		      logger.severe(executed);
+		      throw new Exception("Issue found");
+		}finally {
+		      if (rs1 != null && !rs1.isClosed()) rs1.close();
+		      if (pstmt1 != null && !pstmt1.isClosed()) pstmt1.close();
+		      if (pstmt2 != null && !pstmt2.isClosed()) pstmt2.close();
+
+		}
 	    return list;
 	}
 	
