@@ -83,7 +83,6 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			e.printStackTrace();
 			MaterialStatusImportController.addError(e.toString());
             logger.severe(e.toString());
-            em.getTransaction().rollback();
             exceuted = e.toString();
 		}
 		finally
@@ -925,7 +924,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		
 		//CONSIABLE then hold old batch
 		
-		stockTransfer.setGoodsRcvdBatch(new BigDecimal( pnInventoryDetail.getBatch()));
+		stockTransfer.setGoodsRcvdBatch((pnInventoryDetail.getGoodsRcvdBatch()));
 				
 				
 		pnInventoryDetail.setModifiedBy("TRAX_IFACE");
