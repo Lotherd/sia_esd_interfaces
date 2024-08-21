@@ -142,10 +142,14 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            "WHERE WO = ? " +
 	            "AND ((STATUS IN ('CLOSED', 'CANCEL')) OR (STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL)) ";
 	    
+	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = NULL WHERE WO = ? AND TASK_CARD = ? ";
+	    
 	    
 	    String svocheck = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
 	    
-	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? ";
+	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'Y' WHERE WO = ? ";
+	    
+	    String sqlmarksvo = "UPDATE WO SET SVO_USED = NULL WHERE WO = ?";
 
 	    try {
 	        if (con == null) {
@@ -159,8 +163,10 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	        PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	        PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 	        PreparedStatement pstmt4 = con.prepareStatement(sqlMark2);
+	        PreparedStatement pstmt5 = con.prepareStatement(sqlMark3);
 	        PreparedStatement svoch = con.prepareStatement(svocheck);
 	        PreparedStatement svomark = con.prepareStatement(sqlMArk2);
+	        PreparedStatement svomark2 = con.prepareStatement(sqlmarksvo);
 
 	        if (request != null) {
 	            String exceptionId = request.getExceptionId();
@@ -188,8 +194,12 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 		                
 		                if(SVO != null && !SVO.isEmpty()){
 		                	svomark.setString(1, wo);
-		                	svomark.setString(2, request.getTC_number());
 		                	svomark.executeUpdate();
+		                	
+		                	
+		                	svomark2.setString(1, wo);
+		                	svomark2.executeUpdate();
+		                	
 		                }
 	                    
 	                }
@@ -217,10 +227,18 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 
 	                        try {
 	                            Thread.sleep(300000);
-
+	                            
+	                            String Flag = request.getFlag();
+	                            
+	                            if(Flag.equalsIgnoreCase("N")) {
 	                            pstmt4.setString(1, request.getWO());
 	                            pstmt4.executeUpdate();
-
+	                            } else if (Flag.equalsIgnoreCase("Y")) {
+	                            	pstmt5.setString(1, request.getWO());
+	                            	pstmt5.setString(2, request.getTC_number());
+		                            pstmt5.executeUpdate();
+	                            }
+	                            
 	                            if (attempt >= 3) {
 	                                executed = "Failed after 3 attempts: Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 	                                TECO_Handling_Controller.addError(executed);
@@ -319,22 +337,14 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            + "AND (W.STATUS = 'CLOSED' OR W.STATUS = 'CANCEL' OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL)) "
 	            + "AND ATH.INTERFACE_TRANSFER_FLAG IS NULL AND ATH.TRANSACTION_TYPE = 'REMOVE'";
 
-	    /*if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	        sqlSVO = "SELECT * FROM (" + sqlSVO + ") WHERE ROWNUM <= ?";
-	    }*/
-
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE SVO_NO = ? AND TRANSACTION_NO = ?";
-	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ? ";
+	    String sqlMark2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ? ";
+	    String sqlmarksvo = "UPDATE WO SET SVO_USED = 'Y' WHERE WO = ?";
 
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlSVO);
 	         PreparedStatement pstmt2 = con.prepareStatement(sqlMark);
-	    	PreparedStatement pstmt3 = con.prepareStatement(sqlMArk2)) {
-
-	        /*if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	            pstmt1.setString(1, MaxRecord);
-	        }*/
-
-	        //logger.info("Executing SQL query: " + sqlSVO);
+	         PreparedStatement pstmt3 = con.prepareStatement(sqlMark2);
+	    	PreparedStatement pstmt4 = con.prepareStatement(sqlmarksvo);) {
 
 	        try (ResultSet rs1 = pstmt1.executeQuery()) {
 	            while (rs1.next()) {
@@ -364,7 +374,10 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	                
 	                pstmt3.setString(1, rs1.getString("WO"));
 	                pstmt3.setString(2, rs1.getString("TASK_CARD"));
-	                pstmt2.executeUpdate();
+	                pstmt3.executeUpdate(); 
+	                
+	                pstmt4.setString(1, rs1.getString("WO"));
+	                pstmt4.executeUpdate(); 
 	            }
 	        }
 	    } catch (SQLException e) {
@@ -431,7 +444,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "FROM wo w " +
                 "JOIN wo_task_card wt ON w.wo = wt.wo " +
                 "LEFT JOIN pn_inventory_history ath ON w.wo = ath.wo AND wt.task_card = ath.task_card " +
-                "WHERE w.rfo_no IS NOT NULL " +
+                "WHERE w.rfo_no IS NOT NULL AND SVO_USED IS NULL " +
                 "AND ( " +
                 "    (w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check = 'Y' " +
                 "    AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +

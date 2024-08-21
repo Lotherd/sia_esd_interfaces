@@ -25,7 +25,7 @@ public class Unit_Price_RFO_Controller {
 	static String fromEmail = System.getProperty("fromEmail");
 	static String host = System.getProperty("fromHost");
 	static String port = System.getProperty("fromPort");
-	static String toEmail = System.getProperty("ManHR_toEmail");
+	static String toEmail = System.getProperty("UnitPrice_toEmail");
 	
 	public Unit_Price_RFO_Controller() {
 		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");

@@ -167,6 +167,33 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	            e.printStackTrace();
 	        }
 	        
+	        
+	        System.out.println("CHECKING EMPLOYEE_TYPE: " + element.getClcfNo() + " into the Trax DataBase");
+	        try {
+	            String checkEmTypeStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'EMPLICTYP' AND SYSTEM_CODE = ?";
+	            Query checkEmType = em.createNativeQuery(checkEmTypeStr);
+	            checkEmType.setParameter(1, auth.getPnType());
+	            long count = ((Number) checkEmType.getSingleResult()).longValue();
+	            System.out.println("Count of records found: " + count);
+	            
+	            if (count == 0) {
+	                System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
+	                String insertEmTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
+	                                           "VALUES ('EMPLICTYP', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25' )";
+	                Query insertEmTypeQueryObj = em.createNativeQuery(insertEmTypeQuery);
+	                insertEmTypeQueryObj.setParameter(1, auth.getPnType());
+	                insertEmTypeQueryObj.setParameter(2, auth.getPnType());
+	                insertEmTypeQueryObj.executeUpdate();
+	                System.out.println("Successfully inserted into SYSTEM_TRAN_CODE");
+	            } else {
+	                System.out.println("Record already exists. No insertion needed.");
+	            }
+	        } catch (Exception e) {
+	            System.out.println("Error occurred while checking or inserting/updating SYSTEM_TRAN_CODE");
+	            e.printStackTrace();
+	        }
+	        
+	        
 	        System.out.println("CHECKING AUTHORITY TRANSCODE: " + element.getAuthorityType() + " into the Trax DataBase");
 	        try {
 	            String checkAuthStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'AUTHAPPROVAL' AND SYSTEM_CODE = ?";
@@ -183,6 +210,31 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	                insertAuthQueryObj.setParameter(1, auth.getId().getAuthority());
 	                insertAuthQueryObj.setParameter(2, auth.getId().getAuthority());
 	                insertAuthQueryObj.executeUpdate();
+	                System.out.println("Successfully inserted into SYSTEM_TRAN_CODE");
+	            } else {
+	                System.out.println("Record already exists. No insertion needed.");
+	            }
+	        } catch (Exception e) {
+	            System.out.println("Error occurred while checking or inserting/updating SYSTEM_TRAN_CODE");
+	            e.printStackTrace();
+	        }
+	        
+	        System.out.println("CHECKING EMPLOYEE AUTHORITY TRANSCODE: " + element.getAuthorityType() + " into the Trax DataBase");
+	        try {
+	            String checkEAuthStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'EMPLICAUT' AND SYSTEM_CODE = ?";
+	            Query checkEAuth = em.createNativeQuery(checkEAuthStr);
+	            checkEAuth.setParameter(1, auth.getId().getAuthority());
+	            long count = ((Number) checkEAuth.getSingleResult()).longValue();
+	            System.out.println("Count of records found: " + count);
+	            
+	            if (count == 0) {
+	                System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
+	                String insertEAuthQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
+	                                         "VALUES ('EMPLICAUT', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25')";
+	                Query insertEAuthQueryObj = em.createNativeQuery(insertEAuthQuery);
+	                insertEAuthQueryObj.setParameter(1, auth.getId().getAuthority());
+	                insertEAuthQueryObj.setParameter(2, auth.getId().getAuthority());
+	                insertEAuthQueryObj.executeUpdate();
 	                System.out.println("Successfully inserted into SYSTEM_TRAN_CODE");
 	            } else {
 	                System.out.println("Record already exists. No insertion needed.");
