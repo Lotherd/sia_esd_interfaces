@@ -20,7 +20,7 @@ public class EmailSender
 		toEmail = email;
 	}
 	
-	public void sendEmail(String error, String wo, String ac) 
+	public void sendEmail(String error, String wo, String rfo) 
 	{
 
 		try {
@@ -42,7 +42,7 @@ public class EmailSender
 
 
 
-			email.setSubject("ZPRINT Interface with WO#" +wo + " for A/C " + ac);
+			email.setSubject("ZPRINT Interface with WO#" +wo + " for RFO " + rfo);
 			
 			email.setMsg(error);
 			
@@ -56,4 +56,42 @@ public class EmailSender
 		
 	}
 
+	public void sendEmail(String error) 
+	{
+
+		try {
+			String fromEmail = System.getProperty("fromEmail");
+			String host = System.getProperty("fromHost");
+			String port = System.getProperty("fromPort");
+			
+			Email email = new SimpleEmail();
+			email.setHostName(host);
+			email.setSmtpPort(Integer.valueOf(port));
+			email.setFrom(fromEmail);
+			
+			ArrayList<String> emailsList = new ArrayList<String>(Arrays.asList(toEmail.split(",")));
+			for(String toEmails : emailsList)
+			{
+				email.addTo(toEmails);
+			}
+			
+
+
+
+			email.setSubject("ZPRINT Interface ERROR");
+			
+			email.setMsg(error);
+			
+			email.send();
+		} 
+		catch (EmailException e) 
+		{
+			logger.severe(e.toString());
+		}
+
+		
+	}
+	
 }
+
+

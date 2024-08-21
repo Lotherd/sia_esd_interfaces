@@ -278,6 +278,9 @@ public class Wo implements Serializable {
 	@Column(name="SCHEDULE_COMPLETION_HOUR")
 	private BigDecimal scheduleCompletionHour;
 
+	@Column(name="RFO_NO")
+	private String rfoNo;
+	
 	@Column(name="SCHEDULE_COMPLETION_MINUTE")
 	private BigDecimal scheduleCompletionMinute;
 
@@ -357,6 +360,10 @@ public class Wo implements Serializable {
 	//bi-directional many-to-one association to WoTaskCard
 	@OneToMany(mappedBy="woBean")
 	private List<WoTaskCard> woTaskCards;
+	
+	//bi-directional many-to-one association to WoShopDetail
+			@OneToMany(mappedBy="woBean")
+			private List<WoShopDetail> woShopDetails;
 	
 	
 	public Wo() {
@@ -1312,6 +1319,36 @@ public class Wo implements Serializable {
 		return woTaskCard;
 	}
 	
+	public List<WoShopDetail> getWoShopDetails() {
+		return this.woShopDetails;
+	}
+
+	public void setWoShopDetails(List<WoShopDetail> woShopDetails) {
+		this.woShopDetails = woShopDetails;
+	}
+
+	public WoShopDetail addWoShopDetail(WoShopDetail woShopDetail) {
+		getWoShopDetails().add(woShopDetail);
+		woShopDetail.setWoBean(this);
+
+		return woShopDetail;
+	}
+
+	public WoShopDetail removeWoShopDetail(WoShopDetail woShopDetail) {
+		getWoShopDetails().remove(woShopDetail);
+		woShopDetail.setWoBean(null);
+
+		return woShopDetail;
+	}
+	
+	
+	public String getRfoNo() {
+		return rfoNo;
+	}
+
+	public void setRfoNo(String rfoNo) {
+		this.rfoNo = rfoNo;
+	}
 	
 
 	
