@@ -191,6 +191,9 @@ public class Wo implements Serializable {
 
 	@Column(name="NH_WO")
 	private BigDecimal nhWo;
+	
+	@Column(name="RFO_NO")
+	private String rfoNo;
 
 	private BigDecimal notes;
 
@@ -278,9 +281,6 @@ public class Wo implements Serializable {
 	@Column(name="SCHEDULE_COMPLETION_HOUR")
 	private BigDecimal scheduleCompletionHour;
 
-	@Column(name="RFO_NO")
-	private String rfoNo;
-	
 	@Column(name="SCHEDULE_COMPLETION_MINUTE")
 	private BigDecimal scheduleCompletionMinute;
 
@@ -356,15 +356,11 @@ public class Wo implements Serializable {
 
 	@Column(name="WORK_STARTED")
 	private String workStarted;
-
-	//bi-directional many-to-one association to WoTaskCard
-	@OneToMany(mappedBy="woBean")
-	private List<WoTaskCard> woTaskCards;
 	
 	//bi-directional many-to-one association to WoShopDetail
-			@OneToMany(mappedBy="woBean")
-			private List<WoShopDetail> woShopDetails;
-	
+		@OneToMany(mappedBy="woBean")
+		private List<WoShopDetail> woShopDetails;
+
 	
 	public Wo() {
 	}
@@ -1297,26 +1293,12 @@ public class Wo implements Serializable {
 		this.workStarted = workStarted;
 	}
 
-	public List<WoTaskCard> getWoTaskCards() {
-		return this.woTaskCards;
+	public String getRfoNo() {
+		return rfoNo;
 	}
 
-	public void setWoTaskCards(List<WoTaskCard> woTaskCards) {
-		this.woTaskCards = woTaskCards;
-	}
-
-	public WoTaskCard addWoTaskCard(WoTaskCard woTaskCard) {
-		getWoTaskCards().add(woTaskCard);
-		woTaskCard.setWoBean(this);
-
-		return woTaskCard;
-	}
-
-	public WoTaskCard removeWoTaskCard(WoTaskCard woTaskCard) {
-		getWoTaskCards().remove(woTaskCard);
-		woTaskCard.setWoBean(null);
-
-		return woTaskCard;
+	public void setRfoNo(String rfoNo) {
+		this.rfoNo = rfoNo;
 	}
 	
 	public List<WoShopDetail> getWoShopDetails() {
@@ -1340,17 +1322,5 @@ public class Wo implements Serializable {
 
 		return woShopDetail;
 	}
-	
-	
-	public String getRfoNo() {
-		return rfoNo;
-	}
-
-	public void setRfoNo(String rfoNo) {
-		this.rfoNo = rfoNo;
-	}
-	
-
-	
 
 }

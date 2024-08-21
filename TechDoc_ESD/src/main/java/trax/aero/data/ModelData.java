@@ -1,5 +1,6 @@
 package trax.aero.data;
 
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.PreparedStatement;
@@ -18,7 +19,6 @@ import javax.persistence.Persistence;
 import trax.aero.logger.LogManager;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.Wo;
-import trax.aero.model.WoTaskCard;
 import trax.aero.pojo.I74_Request;
 import trax.aero.util.EmailSender;
 
@@ -38,7 +38,6 @@ public class ModelData {
 	public String ac = "";
 	
 	
-	public ArrayList<WoTaskCard> cusList = new ArrayList<WoTaskCard>();
 	
 	
 	public ModelData()
@@ -147,74 +146,70 @@ public class ModelData {
 	}
 	
 			
-			public boolean lockAvailable(String notificationType)
+	public boolean lockAvailable(String notificationType)
+	{
+		
+		//em.getTransaction().begin();
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
+				.setParameter("type", notificationType).getSingleResult();
+		em.refresh(lock);
+		//logger.info("lock " + lock.getLocked());
+		if(lock.getLocked().intValue() == 1)
+		{				
+			LocalDateTime today = LocalDateTime.now();
+			LocalDateTime locked = LocalDateTime.ofInstant(lock.getLockedDate().toInstant(), ZoneId.systemDefault());
+			Duration diff = Duration.between(locked, today);
+			if(diff.getSeconds() >= lock.getMaxLock().longValue())
 			{
-				
-				//em.getTransaction().begin();
-				InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-						.setParameter("type", notificationType).getSingleResult();
-				em.refresh(lock);
-				//logger.info("lock " + lock.getLocked());
-				if(lock.getLocked() == 1)
-				{				
-					LocalDateTime today = LocalDateTime.now();
-					LocalDateTime locked = LocalDateTime.ofInstant(lock.getLockedDate().toInstant(), ZoneId.systemDefault());
-					Duration diff = Duration.between(locked, today);
-					if(diff.getSeconds() >= lock.getMax())
-					{
-						lock.setLocked(1);
-						insertData(lock);
-						return true;
-					}
-					return false;
-				}
-				else
-				{
-					lock.setLocked(1);
-					insertData(lock);
-					return true;
-				}
-				
+				lock.setLocked(new BigDecimal(1));
+				insertData(lock);
+				return true;
 			}
+			return false;
+		}
+		else
+		{
+			lock.setLocked(new BigDecimal(1));
+			insertData(lock);
+			return true;
+		}
+		
+	}
+	
+	
+	public void lockTable(String notificationType)
+	{
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
+				.setParameter("type", notificationType).getSingleResult();
+		lock.setLocked(new BigDecimal(1));
+		//logger.info("lock " + lock.getLocked());
+		
+		lock.setLockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
+		InetAddress address = null;
+		try {
+			address = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
 			
-			
-			public void lockTable(String notificationType)
-			{
-				em.getTransaction().begin();
-				InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-						.setParameter("type", notificationType).getSingleResult();
-				lock.setLocked(1);
-				//logger.info("lock " + lock.getLocked());
-				
-				lock.setLockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
-				InetAddress address = null;
-				try {
-					address = InetAddress.getLocalHost();
-				} catch (UnknownHostException e) {
-					
-					logger.info(e.getMessage());
-					//e.printStackTrace();
-				}
-				lock.setServer(address.getHostName());
-				//em.lock(lock, LockModeType.NONE);
-				em.merge(lock);
-				em.getTransaction().commit();
-			}
-			
-			public void unlockTable(String notificationType)
-			{
-				em.getTransaction().begin();
-				
-				InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-						.setParameter("type", notificationType).getSingleResult();
-				lock.setLocked(0);
-				//logger.info("lock " + lock.getLocked());
-				
-				lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
-				//em.lock(lock, LockModeType.NONE);
-				em.merge(lock);
-				em.getTransaction().commit();
-			}
+			logger.info(e.getMessage());
+			//e.printStackTrace();
+		}
+		lock.setCurrentServer(address.getHostName());
+		//em.lock(lock, LockModeType.NONE);
+		insertData(lock);
+	}
+	
+	public void unlockTable(String notificationType)
+	{
+		
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
+				.setParameter("type", notificationType).getSingleResult();
+		lock.setLocked(new BigDecimal(0));
+		//logger.info("lock " + lock.getLocked());
+		
+		lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
+		//em.lock(lock, LockModeType.NONE);
+		insertData(lock);
+	}
 			
 			
 			
