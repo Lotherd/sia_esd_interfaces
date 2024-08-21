@@ -190,7 +190,7 @@
       </dependencies>
     </plugin>
   </plugins>
-  <finalName>Techdoc_Service</finalName>
+  <finalName>Techdoc_ESD_Service</finalName>
 </build>
 
 
