@@ -18,7 +18,7 @@ import javax.persistence.Persistence;
 import trax.aero.logger.LogManager;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.Wo;
-import trax.aero.pojo.I74_Request;
+import trax.aero.pojo.I9_I29_Request;
 import trax.aero.util.EmailSender;
 
 
@@ -49,7 +49,7 @@ public class ModelData {
 	}
 	
 	
-	public String markTransaction(I74_Request req) throws Exception
+	public String markTransaction(I9_I29_Request req) throws Exception
 	{
 		//setting up variables
 		String exceuted = "OK";
@@ -60,7 +60,7 @@ public class ModelData {
 		{
 			
 				Wo wo = em.createQuery("Select w From Wo w where w.id.wo =:work", Wo.class)
-						.setParameter("work",Long.valueOf( req.getReasonForTECO_reversal()))
+						.setParameter("work",Long.valueOf( req.getWO()))
 						.getSingleResult();
 				
 				wo.setInterfaceModifiedDate(new Date());
@@ -77,10 +77,10 @@ public class ModelData {
 		
 	}
 	
-	public ArrayList<I74_Request> getTaskCards() throws Exception
+	public ArrayList<I9_I29_Request> getTaskCards() throws Exception
 	{
 		
-		ArrayList<I74_Request> list = new ArrayList<I74_Request>();
+		ArrayList<I9_I29_Request> list = new ArrayList<I9_I29_Request>();
 		List<Wo> wos = null;
 
 		
@@ -93,8 +93,8 @@ public class ModelData {
 			{
 				wos = this.em.createQuery("SELECT p FROM Wo p where "
 						+ "( p.interfaceModifiedDate IS NULL  ) and p.module = :type and   "
-						+ " p.rfo is not null")
-						.setParameter("flag", "SHOP")
+						+ " p.rfoNo is not null")
+						.setParameter("type", "SHOP")
 						.getResultList();
 			}
 			catch(Exception e)
@@ -109,15 +109,15 @@ public class ModelData {
 				{
 					
 					logger.info("Processing WO : " + wo.getWo() + " RFO: " + wo.getRfoNo());
-					I74_Request Inbound = new I74_Request();
+					I9_I29_Request Inbound = new I9_I29_Request();
 						
-					Inbound.setOrderNumber(String.valueOf(wo.getWo()));
-					Inbound.setReasonForTECO_reversal(wo.getRfoNo());
+					Inbound.setWO(String.valueOf(wo.getWo()));
+					Inbound.setRFO_NO(wo.getRfoNo());
 					
 					String pn = "";
 					String sn = "";
 					
-					if(wo.getWoShopDetails() != null) {
+					if(wo.getWoShopDetails() != null && !wo.getWoShopDetails().isEmpty()) {
 						sn = wo.getWoShopDetails().get(0).getPnSn();
 						pn =wo.getWoShopDetails().get(0).getPn();
 					}
@@ -128,6 +128,8 @@ public class ModelData {
 					{
 						pn=  pn.substring(0, pn.indexOf(":"));
 					}
+					Inbound.setPN(pn);
+					Inbound.setPN_SN(sn);
 					
 					list.add(Inbound);	
 					
@@ -138,6 +140,7 @@ public class ModelData {
 		}
 		catch (Exception e) 
         {
+			e.printStackTrace();
             logger.severe(e.toString());
             throw new Exception("Issue found");
 		}

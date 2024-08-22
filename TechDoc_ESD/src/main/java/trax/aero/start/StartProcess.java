@@ -4,12 +4,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import trax.aero.util.TimerExecutor;
 
 
@@ -32,6 +31,7 @@ public class StartProcess
 		scheduledServ.scheduleAtFixedRate(timer, 30, Integer.valueOf(System.getProperty("TECH_interval")), TimeUnit.SECONDS);
 		
 	}
+	
 	
 	@PreDestroy
 	public void stopTimer()
