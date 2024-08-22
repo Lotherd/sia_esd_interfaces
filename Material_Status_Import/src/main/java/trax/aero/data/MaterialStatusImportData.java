@@ -252,14 +252,25 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 
 
 	private PnInventoryDetail getPnInventoryDetail(MaterialStatusImportMaster input, PicklistHeader pick) {
-		PnInventoryDetail pnInventoryDetail = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
-				+ " and p.createdBy != :create ", PnInventoryDetail.class)
-				.setParameter("par", input.getPN())
-				.setParameter("loc", pick.getLocation())
-				.setParameter("create", "ISSUEIFACE")
-				.getSingleResult();
-		logger.info("Found PnInventoryDetail");
-		return pnInventoryDetail;
+		try {
+			PnInventoryDetail pnInventoryDetail = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
+					+ " and p.createdBy != :create ", PnInventoryDetail.class)
+					.setParameter("par", input.getPN())
+					.setParameter("loc", pick.getLocation())
+					.setParameter("create", "ISSUEIFACE")
+					.getSingleResult();
+			logger.info("Found PnInventoryDetail");
+			return pnInventoryDetail;
+		}catch (Exception e) {
+			List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
+					+ " and p.createdBy != :create order by p.qtyAvailable desc")
+					.setParameter("par", input.getPN())
+					.setParameter("loc", pick.getLocation())
+					.setParameter("create", "ISSUEIFACE")
+					.getResultList();
+			logger.info("pnInventoryDetails SIZE " +pnInventoryDetails.size());
+			return pnInventoryDetails.get(0);
+		}
 	}
 	
 	private WoTaskCard getWoTaskCard(MaterialStatusImportMaster input) {
