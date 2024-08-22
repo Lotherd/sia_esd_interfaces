@@ -59,7 +59,8 @@ public class Run implements Runnable {
                             }
                         } else if (input != null && "51".equalsIgnoreCase(input.getExceptionId())) {
                             logger.severe("SVO failed with ExceptionId 51 for WO: " + svoRequest.getWO());
-                            // Do not remove from pending, as we do not have a success
+                            // Call markTransaction to handle the error and potentially retry
+                            data.markTransaction(input);
                         }
                     } else {
                         throw new Exception("Failed to send SVO request.");
@@ -177,5 +178,4 @@ public class Run implements Runnable {
             e.printStackTrace();
         }
     }
-
 }

@@ -232,7 +232,7 @@ String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
 	                    req.setNotification("");
 	                }
 
-	                req.setNotificationNO(rs1.getString(10) != null ? rs1.getString(10) : "");
+	                req.setNotificationNO(rs1.getString(10) != null && "N".equalsIgnoreCase(rs1.getString(14)) ? rs1.getString(10) : "");
 
 	                logger.info("TECH CTL: " + rs1.getString(8) + ", 3P Flag: " + rs1.getString(14) + ", WBS: " + rs1.getString(11));
 
