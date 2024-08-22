@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -246,11 +247,12 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	        
 	        System.out.println("Updating PN_MASTER " + element.getPartNo() + " into the Trax DataBase");
 	        System.out.println("TECH_CONTROL: " + auth.getTechControl() + " PN_TYPE: " + auth.getPnType());
-	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ? WHERE PN = ?";
+	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ? WHERE PN = ? OR PN LIKE ?";
 	        Query updatePN = em.createNativeQuery(updatePnMaster);
 	        updatePN.setParameter(1, auth.getTechControl());
 	        updatePN.setParameter(2, auth.getPnType());
 	        updatePN.setParameter(3, auth.getId().getPn());
+	        updatePN.setParameter(4, auth.getId().getPn() + "-%");
 	        updatePN.executeUpdate();
 	        System.out.println("Successfully updated PN_MASTER");
 	        
@@ -262,60 +264,88 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	        System.out.println("Preparing to check and insert/update PN_AUTHORITY_APPROVAL with ACTIVE: " + activeStatus);
 	        
 	        try {
-	            String checkQueryStr = "SELECT COUNT(*) FROM PN_AUTHORITY_APPROVAL WHERE PN = ? AND AUTHORITY = ?";
-	            Query checkQuery = em.createNativeQuery(checkQueryStr);
-	            checkQuery.setParameter(1, auth.getId().getPn());
-	            checkQuery.setParameter(2, auth.getId().getAuthority());
-	            long count = ((Number) checkQuery.getSingleResult()).longValue();
-	            System.out.println("Count of records found: " + count);
-	            
-	            if (count > 0) {
-	                System.out.println("Record exists. Updating ACTIVE field in PN_AUTHORITY_APPROVAL");
-	                String updateQueryStr = "UPDATE PN_AUTHORITY_APPROVAL SET AUTH_STATUS = ? WHERE PN = ? AND AUTHORITY = ?";
-	                Query updateQuery = em.createNativeQuery(updateQueryStr);
-	                updateQuery.setParameter(1, activeStatus);
-	                updateQuery.setParameter(2, auth.getId().getPn());
-	                updateQuery.setParameter(3, auth.getId().getAuthority());
-	                updateQuery.executeUpdate();
-	                System.out.println("Successfully updated PN_AUTHORITY_APPROVAL");
-	                
-	                if (activeStatus.equalsIgnoreCase("N")) {
-	                    String deleteAuth = "DELETE FROM PN_AUTHORITY_APPROVAL WHERE PN = ? AND AUTHORITY = ?";
-	                    Query deleteAuthObj = em.createNativeQuery(deleteAuth);
-	                    deleteAuthObj.setParameter(1, auth.getId().getPn());
-	                    deleteAuthObj.setParameter(2, auth.getId().getAuthority());
-	                    deleteAuthObj.executeUpdate();
-	                    System.out.println("Successfully inactive record into PN_AUTHORITY_APPROVAL");
+	            // Check if there are any PNs with a ':' suffix in the PN_MASTER table
+	            String checkPnMasterStr = "SELECT PN FROM PN_MASTER WHERE PN = ? OR PN LIKE ?";
+	            Query checkPnMasterQuery = em.createNativeQuery(checkPnMasterStr);
+	            checkPnMasterQuery.setParameter(1, auth.getId().getPn());
+	            checkPnMasterQuery.setParameter(2, auth.getId().getPn() + "-%");
+	            List<String> matchingPNs = checkPnMasterQuery.getResultList();
+	            System.out.println("Matching PNs in PN_MASTER: " + matchingPNs);
+
+	            if (!matchingPNs.isEmpty()) {
+	                // If matching PNs are found in PN_MASTER, proceed with operations in PN_AUTHORITY_APPROVAL
+	                String checkQueryStr = "SELECT COUNT(*) FROM PN_AUTHORITY_APPROVAL WHERE PN = ? OR PN LIKE ? AND AUTHORITY = ?";
+	                Query checkQuery = em.createNativeQuery(checkQueryStr);
+	                checkQuery.setParameter(1, auth.getId().getPn());
+	                checkQuery.setParameter(2, auth.getId().getPn() + "-%");
+	                checkQuery.setParameter(3, auth.getId().getAuthority());
+	                long count = ((Number) checkQuery.getSingleResult()).longValue();
+	                System.out.println("Count of records found: " + count);
+
+	                if (count > 0) {
+	                    System.out.println("Record exists. Updating AUTH_STATUS field in PN_AUTHORITY_APPROVAL");
+	                    String updateQueryStr = "UPDATE PN_AUTHORITY_APPROVAL SET AUTH_STATUS = ? WHERE PN = ? OR PN LIKE ? AND AUTHORITY = ?";
+	                    Query updateQuery = em.createNativeQuery(updateQueryStr);
+	                    updateQuery.setParameter(1, activeStatus);
+	                    updateQuery.setParameter(2, auth.getId().getPn());
+	                    updateQuery.setParameter(3, auth.getId().getPn() + "-%");
+	                    updateQuery.setParameter(4, auth.getId().getAuthority());
+	                    updateQuery.executeUpdate();
+	                    System.out.println("Successfully updated PN_AUTHORITY_APPROVAL");
+
+	                    if (activeStatus.equalsIgnoreCase("N")) {
+	                        String deleteAuth = "DELETE FROM PN_AUTHORITY_APPROVAL WHERE PN = ? OR PN LIKE ? AND AUTHORITY = ?";
+	                        Query deleteAuthObj = em.createNativeQuery(deleteAuth);
+	                        deleteAuthObj.setParameter(1, auth.getId().getPn());
+	                        deleteAuthObj.setParameter(2, auth.getId().getPn() + "-%");
+	                        deleteAuthObj.setParameter(3, auth.getId().getAuthority());
+	                        deleteAuthObj.executeUpdate();
+	                        System.out.println("Successfully inactivated record in PN_AUTHORITY_APPROVAL");
+	                    }
+	                } else {
+	                    System.out.println("Record does not exist. Inserting into PN_AUTHORITY_APPROVAL");
+
+	                    // First, insert the exact PN
+	                    String insertQuery = "INSERT INTO PN_AUTHORITY_APPROVAL (PN, AUTHORITY, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, WO, PRINTED, REASON, PN_SN, AUTH_STATUS, EXTERNAL_SELECTED) " +
+	                                         "VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, NULL)";
+	                    Query insertQueryObj = em.createNativeQuery(insertQuery);
+	                    insertQueryObj.setParameter(1, auth.getId().getPn());
+	                    insertQueryObj.setParameter(2, auth.getId().getAuthority());
+	                    insertQueryObj.setParameter(3, "TRAX_IFACE");
+	                    insertQueryObj.setParameter(4, new Date());
+	                    insertQueryObj.setParameter(5, "TRAX_IFACE");
+	                    insertQueryObj.setParameter(6, new Date());
+	                    insertQueryObj.setParameter(7, activeStatus);
+	                    insertQueryObj.executeUpdate();
+	                    System.out.println("Successfully inserted record for PN: " + auth.getId().getPn());
+
+	                    // Now, insert for each PN with a ':' suffix
+	                    for (String pn : matchingPNs) {
+	                        if (!pn.equals(auth.getId().getPn())) { // Avoid duplicate insertions
+	                            insertQueryObj.setParameter(1, pn);
+	                            insertQueryObj.executeUpdate();
+	                            System.out.println("Successfully inserted record for PN: " + pn);
+	                        }
+	                    }
+
+	                    if (activeStatus.equalsIgnoreCase("N")) {
+	                        String deleteAuth = "DELETE FROM PN_AUTHORITY_APPROVAL WHERE PN = ? OR PN LIKE ? AND AUTHORITY = ?";
+	                        Query deleteAuthObj = em.createNativeQuery(deleteAuth);
+	                        deleteAuthObj.setParameter(1, auth.getId().getPn());
+	                        deleteAuthObj.setParameter(2, auth.getId().getPn() + "-%");
+	                        deleteAuthObj.setParameter(3, auth.getId().getAuthority());
+	                        deleteAuthObj.executeUpdate();
+	                        System.out.println("Successfully inactivated record in PN_AUTHORITY_APPROVAL");
+	                    }
 	                }
 	            } else {
-	                System.out.println("Record does not exist. Inserting into PN_AUTHORITY_APPROVAL");
-	                String insertQuery = "INSERT INTO PN_AUTHORITY_APPROVAL (PN, AUTHORITY, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, WO, PRINTED, REASON, PN_SN, AUTH_STATUS, EXTERNAL_SELECTED) " +
-	                                     "VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, NULL)";
-	                Query insertQueryObj = em.createNativeQuery(insertQuery);
-	                insertQueryObj.setParameter(1, auth.getId().getPn());
-	                insertQueryObj.setParameter(2, auth.getId().getAuthority());
-	                insertQueryObj.setParameter(3, "TRAX_IFACE");
-	                insertQueryObj.setParameter(4, new Date());
-	                insertQueryObj.setParameter(5, "TRAX_IFACE");
-	                insertQueryObj.setParameter(6, new Date());
-	                insertQueryObj.setParameter(7, activeStatus);
-	                insertQueryObj.executeUpdate();
-	                System.out.println("Successfully inserted into PN_AUTHORITY_APPROVAL");
-	                
-	                if (activeStatus.equalsIgnoreCase("N")) {
-	                    String deleteAuth = "DELETE FROM PN_AUTHORITY_APPROVAL WHERE PN = ? AND AUTHORITY = ?";
-	                    Query deleteAuthObj = em.createNativeQuery(deleteAuth);
-	                    deleteAuthObj.setParameter(1, auth.getId().getPn());
-	                    deleteAuthObj.setParameter(2, auth.getId().getAuthority());
-	                    deleteAuthObj.executeUpdate();
-	                    System.out.println("Successfully inactive record into PN_AUTHORITY_APPROVAL");
-	                }
+	                System.out.println("No matching PNs found in PN_MASTER. Skipping operations.");
 	            }
 	        } catch (Exception e) {
 	            System.out.println("Error occurred while checking or inserting/updating PN_AUTHORITY_APPROVAL");
 	            e.printStackTrace();
 	        }
-	        
+
 	        return item;
 	    } catch (Exception e) {
 	        System.out.println("An error occurred during the import process.");
@@ -324,14 +354,14 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 	    }
 	}
 
-	
+
 	private boolean checkValueString(String data) {
 		return (data != null && !data.isEmpty() ? true:false);
 	}
 	
 
 	
-	public boolean lockAvailable(String notificationType) {
+	/*public boolean lockAvailable(String notificationType) {
 		InterfaceLockMaster lock;
 		try {
 			lock = em
@@ -362,19 +392,17 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 			insertData(lock);
 			return true;
 		}
-	  }
+	  }*/
 
-	  private <T> void insertData(T data) {
-		try {
-		  if (!em.getTransaction().isActive()) em.getTransaction().begin();
-		  em.merge(data);
-		  em.getTransaction().commit();
-		} catch (Exception e) {
-		  logger.severe(e.toString());
-		}
-	  }
+	private <T> void insertData( T data) 
+	{
+			
+		em.merge(data);
+		em.flush();
+		
+	}
 
-	  public void lockTable(String notificationType) {
+	  /*public void lockTable(String notificationType) {
 		em.getTransaction().begin();
 		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type",InterfaceLockMaster.class)
 		  .setParameter("type", notificationType)
@@ -411,7 +439,7 @@ public class Capability_Rating_Data  implements ICapability_Rating_Data{
 
 		em.merge(lock);
 		em.getTransaction().commit();
-	  }
+	  }*/
 	
 	
 

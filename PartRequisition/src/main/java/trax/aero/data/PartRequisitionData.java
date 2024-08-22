@@ -472,13 +472,27 @@ public class PartRequisitionData implements IPartRequisitionData {
 		ia.setModifiedBy("TRAX_IFACE");
 		ia.setCreatedDate(new Date());
 		ia.setModifiedDate(new Date());
-		ia.setExceptionId(new BigDecimal(-2000));
+		ia.setExceptionId(new BigDecimal(51));
 		ia.setExceptionByTrax("Y");
-		ia.setExceptionDetail(header);
+	    String extractedError = extractErrorDetail(error);
+	    ia.setExceptionDetail(extractedError);
 		ia.setExceptionStackTrace(error);
 		ia.setExceptionClassTrax("PartRequisition_I21");	
 		
 		insertData(ia);
+	}
+	
+	private String extractErrorDetail(String error) {
+	    // Find the position after "Error:"
+	    int startIndex = error.indexOf("Error:") + "Error:".length();
+	    int endIndex = error.indexOf(";", startIndex);
+	    
+	    if (startIndex != -1 && endIndex != -1) {
+	        return error.substring(startIndex, endIndex + 1).trim();
+	    } else {
+	        // Fallback if the specific pattern is not found
+	        return error;
+	    }
 	}
 	
 	private BigDecimal getSeqNoInterfaceAudit()

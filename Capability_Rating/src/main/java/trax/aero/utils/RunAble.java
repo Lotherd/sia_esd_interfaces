@@ -41,17 +41,11 @@ public class RunAble implements Runnable {
         }
     }
     
-    public void run() 
-	{
-		try {
-			if(data.lockAvailable("I25"))
-			{
-				data.lockTable("I25");
-				process();
-				data.unlockTable("I25");
-			}
-		}catch(Exception e) {
-			e.printStackTrace();
-		}		
-	}
+    public void run() {
+        try {
+            process();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }        
+    }
 }

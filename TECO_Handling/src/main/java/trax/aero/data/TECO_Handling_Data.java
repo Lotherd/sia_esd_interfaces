@@ -113,6 +113,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	    
 	    String sqlUpdate = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE WHERE WO = ?";
 	    String revert = "UPDATE WO SET STATUS = ? WHERE wo = ? ";
+	    String STATUS = "SELECT STATUS FROM WO WHERE WO = ? ";
 	    String sqlPrevStatus  = "SELECT WA1.STATUS " +
 	            "FROM WO_AUDIT WA1 " +
 	            "JOIN ( " +
@@ -142,6 +143,25 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            "WHERE WO = ? " +
 	            "AND ((STATUS IN ('CLOSED', 'CANCEL')) OR (STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL)) ";
 	    
+	   String sqlMARK2 = "UPDATE PN_INVENTORY_HISTORY ATH " +
+	             "SET ATH.INTERFACE_TECO_FLAG = (" +
+	             "    SELECT CASE " +
+	             "        WHEN W.STATUS IN ('CLOSED') THEN 'D' " +
+	             "        WHEN W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL THEN 'Y' " +
+	             "    END " +
+	             "    FROM WO W " +
+	             "    WHERE W.WO = ATH.WO " +
+	             "    AND W.WO = ? " +
+	             "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
+	             ") " +
+	             "WHERE EXISTS (" +
+	             "    SELECT 1 " +
+	             "    FROM WO W " +
+	             "    WHERE W.WO = ATH.WO " +
+	             "    AND W.WO = ? " +
+	             "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
+	             ")";
+	    
 	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = NULL WHERE WO = ? AND TASK_CARD = ? ";
 	    
 	    
@@ -159,10 +179,12 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	        
 	        PreparedStatement pstmt1 = con.prepareStatement(sqlUpdate);
 	        PreparedStatement pstmt2 = con.prepareStatement(revert);
+	        PreparedStatement Status = con.prepareStatement(STATUS);
 	        PreparedStatement psStatus = con.prepareStatement(sqlPrevStatus);
 	        PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	        PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 	        PreparedStatement pstmt4 = con.prepareStatement(sqlMark2);
+	        PreparedStatement pstmt41 = con.prepareStatement(sqlMARK2);
 	        PreparedStatement pstmt5 = con.prepareStatement(sqlMark3);
 	        PreparedStatement svoch = con.prepareStatement(svocheck);
 	        PreparedStatement svomark = con.prepareStatement(sqlMArk2);
@@ -272,15 +294,53 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	                    psInsertError.setString(4, request.getExceptionDetail());
 	                    psInsertError.executeUpdate();
 	                    
+	                 
+	                    
+	                    String Flag = request.getFlag();
+	                    
+	                    
+	                    if(Flag.equalsIgnoreCase("N")) {
+                            pstmt4.setString(1, request.getWO());
+                            pstmt4.executeUpdate();
+                           
+                            } else if (Flag.equalsIgnoreCase("Y")) {
+                            	pstmt5.setString(1, request.getWO());
+                            	pstmt5.setString(2, request.getTC_number());
+	                            pstmt5.executeUpdate();
+                            }
+	                    
+	                    if(Flag.equalsIgnoreCase("N")) {
 	                    pstmt4.setString(1, request.getWO());
                         pstmt4.executeUpdate();
-
+	                    }else if (Flag.equalsIgnoreCase("Y")) {
+	                    	pstmt41.setString(1, request.getWO());
+	                    	pstmt41.setString(2, request.getWO());
+	                        pstmt41.executeUpdate();
+	                    }
+	                    
+	                    Status.setString(1, request.getWO());
+	                    ResultSet rs1 = Status.executeQuery();
+	                    
 	                    psStatus.setString(1, request.getWO());
 	                    psStatus.setString(2, request.getWO());
 	                    psStatus.setString(3, request.getWO());
 	                    ResultSet rs = psStatus.executeQuery();
 	                    
-	                    String prevStatus = rs.next() ? rs.getString("STATUS") : "GENERATION";
+	                    
+	                    String currentStatus = "";
+	                    String prevStatus = "GENERATION";
+	                  
+	                    if (rs1.next()) {
+	                        currentStatus = rs1.getString("STATUS");
+	                    }
+	                    
+	                    if (rs.next()) {
+	                        String statusFromAudit = rs.getString("STATUS");
+	                        
+	                        if (!currentStatus.equals(statusFromAudit)) {
+	                            prevStatus = statusFromAudit;
+	                        }
+	                    }
 	                    
 	                    pstmt2.setString(1, prevStatus);
 	                    pstmt2.setString(2, request.getWO());
@@ -330,13 +390,31 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 
 	    ArrayList<INT15_SND> list = new ArrayList<>();
 
-	    String sqlSVO = "SELECT DISTINCT ATH.SVO_NO, W.WO, TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, "
-	            + "TO_CHAR(W.COMPLETION_TIME, 'HH24:MI:SS') AS COMPLETION_TIME, W.STATUS, W.REOPEN_REASON, W.SOURCE_REF, "
-	            + "WT.TASK_CARD, ATH.TRANSACTION_NO, W.SOURCE_TYPE "
-	            + "FROM WO W, WO_TASK_CARD WT, PN_INVENTORY_HISTORY ATH "
-	            + "WHERE W.WO = WT.WO AND W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD AND W.RFO_NO IS NOT NULL AND WT.INV_CHECK = 'Y' "
-	            + "AND (W.STATUS = 'CLOSED' OR W.STATUS = 'CANCEL' OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL)) "
-	            + "AND ATH.INTERFACE_TRANSFER_FLAG IS NULL AND ATH.TRANSACTION_TYPE = 'REMOVE'";
+	    String sqlSVO = "SELECT DISTINCT " +
+	             "ATH.SVO_NO, " +
+	             "W.WO, " +
+	             "TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, " +
+	             "TO_CHAR(W.COMPLETION_TIME, 'HH24:MI:SS') AS COMPLETION_TIME, " +
+	             "W.STATUS, " +
+	             "W.REOPEN_REASON, " +
+	             "W.SOURCE_REF, " +
+	             "WT.TASK_CARD, " +
+	             "ATH.TRANSACTION_NO, " +
+	             "W.SOURCE_TYPE " +
+	             "FROM WO W " +
+	             "JOIN WO_TASK_CARD WT ON W.WO = WT.WO " +
+	             "JOIN PN_INVENTORY_HISTORY ATH ON W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD " +
+	             "WHERE W.RFO_NO IS NOT NULL " +
+	             "AND WT.INV_CHECK = 'Y' " +
+	             "AND ( " +
+	             "    (W.STATUS = 'CLOSED' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
+	             "    OR " +
+	             "    (W.STATUS = 'CANCEL' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
+	             "    OR " +
+	             "    (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL AND (ATH.INTERFACE_TECO_FLAG = 'Y' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
+	             ") " +
+	             "AND ATH.INTERFACE_TRANSFER_FLAG IS NULL " +
+	             "AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL') ";
 
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE SVO_NO = ? AND TRANSACTION_NO = ?";
 	    String sqlMark2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ? ";
@@ -450,7 +528,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "    (w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check = 'Y' " +
                 "    AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +
                 "    AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
-                "    OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND ath.transaction_type = 'REMOVE' " +
+                "    OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
                 "    AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
                 "    AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
                 "    OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
@@ -459,7 +537,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "(w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check IS NULL " +
                 "AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL') " +
                 "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
-                "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND ath.transaction_type = 'REMOVE' " +
+                "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
                 "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
                 "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
                 "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
@@ -469,7 +547,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +
                 "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL')) " +
                 "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
-                "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND ath.transaction_type = 'REMOVE' " +
+                "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
                 "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
                 "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
                 "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
