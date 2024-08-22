@@ -21,7 +21,7 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 import trax.aero.logger.LogManager;
-import trax.aero.pojo.I74_Request;
+import trax.aero.pojo.I9_I29_Request;
 
 public class TaskCardPoster 
 {
@@ -29,7 +29,7 @@ public class TaskCardPoster
 	private String body = null;
 	
 	
-	public boolean postTaskCard(I74_Request data , String URL)
+	public boolean postTaskCard(I9_I29_Request data , String URL)
 	{
 		 String ID = System.getProperty("Post_ID");
 		 String Password = System.getProperty("Post_Password");
@@ -73,7 +73,7 @@ public class TaskCardPoster
 				builder = builder.header("Accept", MediaType.APPLICATION_XML + ";charset=utf-8" + ";charset=utf-8");
 				builder = builder.header(HttpHeaders.AUTHORIZATION, "Basic "+ new String(Base64.getEncoder().encode(auth.getBytes())));
 				
-				logger.info("POSTING Order Number:" + data.getOrderNumber() +" Order STATUS: " +data.getTRAXStatus()+ " to URL: " + url);
+				logger.info("POSTING RFO:" + data.getRFO_NO() +" WO: " +data.getWO()+ " to URL: " + url);
 				
 		
 				response = builder.post(Entity.entity(data, MediaType.APPLICATION_XML + ";charset=utf-8"));
