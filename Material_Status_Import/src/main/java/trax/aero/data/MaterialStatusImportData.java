@@ -104,13 +104,20 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		PicklistDistribution picklistDistributionREQ = null;
 		
 		WoTaskCard woTaskCard = null;
-		
+		String partNumber_Tool ;
+		partNumber_Tool = input.getPN().replaceAll("\"", "IN");
+		partNumber_Tool = partNumber_Tool.replaceAll("'", "FT");
+		if(!partNumber_Tool.contains(":"))
+		{
+			partNumber_Tool = partNumber_Tool.concat(":UPLOAD");
+		}
+		input.setPN(partNumber_Tool);
 		
 		//check if object has min values
 		if(input != null  && checkMinValue(input)) 
 		{
 			logger.info("After checkMinValue");
-			String partNumber_Tool ;
+			partNumber_Tool = "";
 			partNumber_Tool = input.getPN().replaceAll("\"", "IN");
 			partNumber_Tool = partNumber_Tool.replaceAll("'", "FT");
 			if(!partNumber_Tool.contains(":"))
