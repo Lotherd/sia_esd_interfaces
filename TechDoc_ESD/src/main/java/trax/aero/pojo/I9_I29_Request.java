@@ -1,13 +1,11 @@
 package trax.aero.pojo;
 
-import java.util.ArrayList;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name="MT_TRAX_SND_I9_29_REQ", namespace="http://singaporeair.com/mro/TRAX")
+@XmlRootElement(name="MT_TRAX_I9_I29_4139", namespace="http://singaporeair.com/mro/ESDTRAX")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class I9_I29_Request {
 	
