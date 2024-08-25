@@ -167,9 +167,9 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	    
 	    String svocheck = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
 	    
-	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'Y' WHERE WO = ? ";
+	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? ";
 	    
-	    String sqlmarksvo = "UPDATE WO SET SVO_USED = NULL WHERE WO = ?";
+	    String sqlmarksvo = "UPDATE WO SET SVO_USED = NULL WHERE WO = ? AND NOT EXISTS (SELECT 1 FROM WO_TASK_CARD WHERE WO = WO.WO AND SVO_SENT <> 'Y') ";
 
 	    try {
 	        if (con == null) {
@@ -216,6 +216,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 		                
 		                if(SVO != null && !SVO.isEmpty()){
 		                	svomark.setString(1, wo);
+		                	svomark.setString(2, request.getTC_number());
 		                	svomark.executeUpdate();
 		                	
 		                	
@@ -530,8 +531,6 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "    AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
                 "    OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
                 "    AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
-                "    AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
-                "    OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
                 ") " +
                 "OR " +
                 "(w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check IS NULL " +
@@ -539,8 +538,6 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
                 "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
                 "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
-                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
-                "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
                 ") " +
                 "OR " +
                 "(w.status = 'OPEN' AND w.reopen_reason IS NOT NULL AND (w.interface_teco_flag = 'Y' OR w.interface_teco_flag IS NULL) " +
@@ -549,8 +546,6 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
                 "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
                 "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
-                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
-                "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y'))" +
                 "))";
 
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ?";
