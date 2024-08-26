@@ -26,7 +26,7 @@ public class MqUtilities {
     private static final String CIPHER_SUITE = System.getProperty("CapabilityRating_CipherSuite"); // Cipher suite for SSL/TLS
     
     private static final String TRUSTSTORE_PATH = System.getProperty("CapabilityRating_trustStore");
-   private static final String TRUSTSTORE_PASSWORD = System.getProperty("CapabilityRating_trustStorePassword");
+    private static final String TRUSTSTORE_PASSWORD = System.getProperty("CapabilityRating_trustStorePassword");
     private static final String TRUSTSTORE_TYPE = System.getProperty("CapabilityRating_trustStoreType", "JKS");
     
     public static MQQueueConnectionFactory createMQQueueConnectionFactory() throws JMSException {
@@ -43,9 +43,9 @@ public class MqUtilities {
 	    mqQueueConnectionFactory.setQueueManager(QMGR);//service provider 
         mqQueueConnectionFactory.setTransportType(JMSC.MQJMS_TP_CLIENT_MQ_TCPIP);
        
-       mqQueueConnectionFactory.setStringProperty(WMQConstants.USERID, APP_USER); 
-       mqQueueConnectionFactory.setStringProperty(WMQConstants.PASSWORD,APP_PASSWORD );
-      mqQueueConnectionFactory.setStringProperty(WMQConstants.WMQ_SSL_CIPHER_SUITE, CIPHER_SUITE); // Set the cipher suite
+        mqQueueConnectionFactory.setStringProperty(WMQConstants.USERID, APP_USER); 
+        mqQueueConnectionFactory.setStringProperty(WMQConstants.PASSWORD,APP_PASSWORD );
+        mqQueueConnectionFactory.setStringProperty(WMQConstants.WMQ_SSL_CIPHER_SUITE, CIPHER_SUITE); // Set the cipher suite
 	    return mqQueueConnectionFactory;
     }
     

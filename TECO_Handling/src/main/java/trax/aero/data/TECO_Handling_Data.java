@@ -376,7 +376,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	public ArrayList<INT15_SND> getSVO() throws Exception {
 	    executed = "OK";
 
-	    // Ensure connection is available
+	    // Asegurar que la conexión esté disponible
 	    if (this.con == null || this.con.isClosed()) {
 	        try {
 	            this.con = DataSourceClient.getConnection();
@@ -392,73 +392,72 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	    ArrayList<INT15_SND> list = new ArrayList<>();
 
 	    String sqlSVO = "SELECT DISTINCT " +
-	             "ATH.SVO_NO, " +
-	             "W.WO, " +
-	             "TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, " +
-	             "TO_CHAR(W.COMPLETION_TIME, 'HH24:MI:SS') AS COMPLETION_TIME, " +
-	             "W.STATUS, " +
-	             "W.REOPEN_REASON, " +
-	             "W.SOURCE_REF, " +
-	             "WT.TASK_CARD, " +
-	             "ATH.TRANSACTION_NO, " +
-	             "W.SOURCE_TYPE " +
-	             "FROM WO W " +
-	             "JOIN WO_TASK_CARD WT ON W.WO = WT.WO " +
-	             "JOIN PN_INVENTORY_HISTORY ATH ON W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD " +
-	             "WHERE W.RFO_NO IS NOT NULL " +
-	             "AND WT.INV_CHECK = 'Y' " +
-	             "AND ( " +
-	             "    (W.STATUS = 'CLOSED' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
-	             "    OR " +
-	             "    (W.STATUS = 'CANCEL' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
-	             "    OR " +
-	             "    (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL AND (ATH.INTERFACE_TECO_FLAG = 'Y' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
-	             ") " +
-	             "AND ATH.INTERFACE_TRANSFER_FLAG IS NULL " +
-	             "AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL') ";
+	            "ATH.SVO_NO, " +
+	            "W.WO, " +
+	            "TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, " +
+	            "TO_CHAR(W.COMPLETION_TIME, 'HH24:MI:SS') AS COMPLETION_TIME, " +
+	            "W.STATUS, " +
+	            "W.REOPEN_REASON, " +
+	            "W.SOURCE_REF, " +
+	            "WT.TASK_CARD, " +
+	            "ATH.TRANSACTION_NO, " +
+	            "W.SOURCE_TYPE " +
+	            "FROM WO W " +
+	            "JOIN WO_TASK_CARD WT ON W.WO = WT.WO " +
+	            "JOIN PN_INVENTORY_HISTORY ATH ON W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD " +
+	            "WHERE W.RFO_NO IS NOT NULL " +
+	            "AND WT.INV_CHECK = 'Y' " +
+	            "AND ( " +
+	            "    (W.STATUS = 'CLOSED' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
+	            "    OR " +
+	            "    (W.STATUS = 'CANCEL' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
+	            "    OR " +
+	            "    (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL AND (ATH.INTERFACE_TECO_FLAG = 'Y' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
+	            ") " +
+	            "AND ATH.INTERFACE_TRANSFER_FLAG IS NULL " +
+	            "AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL')";
 
-	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE SVO_NO = ? AND TRANSACTION_NO = ?";
-	    String sqlMark2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ? ";
+	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ?";
+	    String sqlMark2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ?";
 	    String sqlmarksvo = "UPDATE WO SET SVO_USED = 'Y' WHERE WO = ?";
 
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlSVO);
 	         PreparedStatement pstmt2 = con.prepareStatement(sqlMark);
 	         PreparedStatement pstmt3 = con.prepareStatement(sqlMark2);
-	    	PreparedStatement pstmt4 = con.prepareStatement(sqlmarksvo);) {
+	         PreparedStatement pstmt4 = con.prepareStatement(sqlmarksvo);
+	         ResultSet rs1 = pstmt1.executeQuery()) {
 
-	        try (ResultSet rs1 = pstmt1.executeQuery()) {
-	            while (rs1.next()) {
-	                logger.info("Processing SVO: " + rs1.getString("SVO_NO"));
+	        while (rs1.next()) {
+	            logger.info("Processing SVO: " + rs1.getString("SVO_NO"));
 
-	                INT15_SND req = new INT15_SND();
+	            INT15_SND req = new INT15_SND();
+	            req.setSAP_number(rs1.getString("SVO_NO"));
+	            req.setWO(rs1.getString("WO"));
+	            req.setWO_Completion_date(rs1.getString("COMPLETION_DATE") != null ? rs1.getString("COMPLETION_DATE") : "");
+	            req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "00:00:00");
+	            req.setStatus(rs1.getString("STATUS"));
+	            req.setReason_teco(rs1.getString("REOPEN_REASON"));
+	            req.setNotification_number(rs1.getString("SOURCE_REF") != null && rs1.getString("SOURCE_TYPE").equals("E4") ? rs1.getString("SOURCE_REF") : "");
+	            req.setTC_number(rs1.getString("TASK_CARD") != null ? rs1.getString("TASK_CARD") : "");
+	            req.setTransaction(rs1.getString("TRANSACTION_NO") != null ? rs1.getString("TRANSACTION_NO") : "");
+	            req.setFlag("Y");
 
-	                req.setSAP_number(rs1.getString("SVO_NO"));
-	                req.setWO(rs1.getString("WO"));
-	                req.setWO_Completion_date(rs1.getString("COMPLETION_DATE") != null ? rs1.getString("COMPLETION_DATE") : "");
-	                req.setWO_Completion_time(rs1.getString("COMPLETION_TIME") != null ? rs1.getString("COMPLETION_TIME") : "00:00:00");
-	                req.setStatus(rs1.getString("STATUS"));
-	                req.setReason_teco(rs1.getString("REOPEN_REASON"));
-	                req.setNotification_number(rs1.getString("SOURCE_REF") != null &&  rs1.getString("SOURCE_TYPE").equals("E4") ? rs1.getString("SOURCE_REF") : "");
-	                req.setTC_number(rs1.getString("TASK_CARD") != null ? rs1.getString("TASK_CARD") : "");
-	                req.setTransaction(rs1.getString("TRANSACTION_NO") != null ? rs1.getString("TRANSACTION_NO") : "");
-	                req.setFlag("Y");
+	            list.add(req);
 
-	                list.add(req);
-
-	                // Log parameter values
-	                logger.info("Marking SVO_NO: " + rs1.getString("SVO_NO") + " Transaction NO: " + rs1.getString("TRANSACTION_NO"));
-	                
-	                pstmt2.setString(1, rs1.getString("SVO_NO"));
-	                pstmt2.setString(2, rs1.getString("TRANSACTION_NO"));
-	                pstmt2.executeUpdate();
-	                
-	                pstmt3.setString(1, rs1.getString("WO"));
-	                pstmt3.setString(2, rs1.getString("TASK_CARD"));
-	                pstmt3.executeUpdate(); 
-	                
-	                pstmt4.setString(1, rs1.getString("WO"));
-	                pstmt4.executeUpdate(); 
-	            }
+	            // Log parameter values
+	            logger.info("Marking SVO_NO: " + rs1.getString("SVO_NO") + " Transaction NO: " + rs1.getString("TRANSACTION_NO"));
+	            
+	            // Actualiza las tablas correspondientes
+	            pstmt2.setString(1, rs1.getString("WO"));
+	            pstmt2.setString(2, rs1.getString("TASK_CARD"));
+	            pstmt2.executeUpdate();
+	            
+	            pstmt3.setString(1, rs1.getString("WO"));
+	            pstmt3.setString(2, rs1.getString("TASK_CARD"));
+	            pstmt3.executeUpdate();
+	            
+	            pstmt4.setString(1, rs1.getString("WO"));
+	            pstmt4.executeUpdate();
 	        }
 	    } catch (SQLException e) {
 	        logger.severe("SQLException occurred: " + e.getMessage());
