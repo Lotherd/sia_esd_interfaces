@@ -140,7 +140,7 @@ public class Authorization_Controller_Data {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
         boolean expire = false;
 
-        // Manejo de issuedAuthority
+        
         List<String> issuedAuthorities = e.getRecordItemAuthority() == null
                 ? em.createQuery("SELECT s.systemCode FROM SystemTranCode s WHERE s.systemTransaction = :transaction", String.class)
                     .setParameter("transaction", "EMPLICAUT")
