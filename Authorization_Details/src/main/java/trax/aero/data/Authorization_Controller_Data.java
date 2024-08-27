@@ -141,21 +141,34 @@ public class Authorization_Controller_Data {
         boolean expire = false;
 
         
-        List<String> issuedAuthorities = e.getRecordItemAuthority() == null
-                ? em.createQuery("SELECT s.systemCode FROM SystemTranCode s WHERE s.systemTransaction = :transaction", String.class)
+        List<String> issuedAuthorities = em.createQuery("SELECT s.id.systemCode FROM SystemTranCode s WHERE s.id.systemTransaction = :transaction", String.class)
                     .setParameter("transaction", "EMPLICAUT")
-                    .getResultList()
-                : Collections.singletonList(e.getRecordItemAuthority());
+                    .getResultList();
+                if(e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty())
+                	{
+                	//Collections.singletonList(e.getRecordItemAuthority());
+                	issuedAuthorities.addAll(Collections.singletonList(e.getRecordItemAuthority()));
+                	}
 
-        int controlItemNumber = 1;
+        
 
         for (String issuedAuthority : issuedAuthorities) {
             EmployeeControl license = null;
+            
+         // Retrieve the maximum CONTROL_ITEM value as a Long
+            Long maxControlItem = em.createQuery("SELECT COALESCE(MAX(e.id.controlItem), 0) FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr", Long.class)
+                    .setParameter("em", e.getStaffNumber())
+                    .setParameter("tr", "LICENCE")
+                    .getSingleResult();
+
+            // Set controlItemNumber to the next value
+            long controlItemNumber = maxControlItem + 1L;
 
             try {
-                license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr ", EmployeeControl.class)
+                license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr AND issued_authority = :auth ", EmployeeControl.class)
                         .setParameter("em", e.getStaffNumber())
                         .setParameter("tr", "LICENCE")
+                        .setParameter("auth", issuedAuthority)
                         .getSingleResult();
             } catch (Exception ex) {
                 license = new EmployeeControl();
@@ -165,18 +178,21 @@ public class Authorization_Controller_Data {
                 license.setCreatedBy("TRAX_IFACE");
                 license.getId().setEmployee(e.getStaffNumber());
                 license.getId().setEmployeeControl("LICENCE");
+                license.setSkillesd(e.getRecordItemParent());
                 license.setDateIssued(new Date());
                 license.setExpirationOptional("Y");
+                license.getId().setControlItem(controlItemNumber);
+                controlItemNumber++;
             }
 
             license.setReference(e.getAuthorizationNumber());
             license.getId().setEmployee(e.getStaffNumber());
             license.setIssuedAuthority(issuedAuthority);
             license.setLicenceType(e.getAuthorizationNumber());
+            license.setSkillesd(e.getRecordItemParent());
 
             
-            license.getId().setControlItem(controlItemNumber);
-            controlItemNumber++;
+           
 
             if (Inactive.contains(e.getAuthorizationStatus())) {
                 license.setStatus("INACTIVE");
@@ -203,7 +219,7 @@ public class Authorization_Controller_Data {
             license.setModifiedBy("TRAX_IFACE");
             license.setModifiedDate(new Date());
 
-            logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem());
+            logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem() + " AUTH: " + issuedAuthority + " SKILL: " + e.getRecordItemParent() );
             insertData(license);
         }
     }
