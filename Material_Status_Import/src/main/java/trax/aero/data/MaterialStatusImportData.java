@@ -269,10 +269,9 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			logger.info("Found PnInventoryDetail");
 			return pnInventoryDetail;
 		}catch (Exception e) {
-			List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
+			List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null "
 					+ " and p.createdBy != :create order by p.qtyAvailable desc")
 					.setParameter("par", input.getPN())
-					.setParameter("loc", pick.getLocation())
 					.setParameter("create", "ISSUEIFACE")
 					.getResultList();
 			logger.info("pnInventoryDetails SIZE " +pnInventoryDetails.size());
