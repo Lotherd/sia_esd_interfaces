@@ -93,8 +93,12 @@ public class ModelData {
 			{
 				wos = this.em.createQuery("SELECT p FROM Wo p where "
 						+ "( p.interfaceModifiedDate IS NULL  ) and p.module = :type and   "
-						+ " p.rfoNo is not null")
+						+ " p.rfoNo is not null and p.thirdPartyWo = :party and "
+						+ "( p.sourceType = :so or p.sourceType = :sou )")
 						.setParameter("type", "SHOP")
+						.setParameter("party", "Y")
+						.setParameter("so", "E8")
+						.setParameter("sou", "X3")
 						.getResultList();
 			}
 			catch(Exception e)

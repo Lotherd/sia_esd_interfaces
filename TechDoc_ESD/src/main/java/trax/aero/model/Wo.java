@@ -324,6 +324,9 @@ public class Wo implements Serializable {
 	@Column(name="THIRD_PARTY_WO")
 	private String thirdPartyWo;
 
+	@Column(name="SOURCE_TYPE")
+	private String sourceType;
+	
 	private String vendor;
 
 	@Column(name="WARRANTY_INDICATOR")
@@ -1321,6 +1324,14 @@ public class Wo implements Serializable {
 		woShopDetail.setWoBean(null);
 
 		return woShopDetail;
+	}
+
+	public String getSourceType() {
+		return sourceType;
+	}
+
+	public void setSourceType(String sourceType) {
+		this.sourceType = sourceType;
 	}
 
 }
