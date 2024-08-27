@@ -96,6 +96,7 @@ public class RunAble implements Runnable {
              CSVWriter writer = new CSVWriter(outputfile, ';', CSVWriter.NO_QUOTE_CHARACTER,
                      CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END)) {
             writer.writeAll(data);
+           writer.close();
         }
 
         logger.info("DONE processing file " + output.getName());
@@ -130,6 +131,8 @@ public class RunAble implements Runnable {
                              .build()) {
 
                     List<String[]> allData = csvReader.readAll();
+                    csvReader.close();
+                    filereader.close();
 
                     for (String[] row : allData) {
                         employee = new EmployeeLicense();

@@ -59,6 +59,9 @@ public class EmployeeControl implements Serializable {
 
 	@Column(name="VERIFY_DATE")
 	private Date verifyDate;
+	
+	@Column(name="SKILL_ESD")
+	private String skillesd;
 
 	public EmployeeControl() {
 	}
@@ -190,5 +193,15 @@ public class EmployeeControl implements Serializable {
 	public void setVerifyDate(Date verifyDate) {
 		this.verifyDate = verifyDate;
 	}
+
+	public String getSkillesd() {
+		return skillesd;
+	}
+
+	public void setSkillesd(String skillesd) {
+		this.skillesd = skillesd;
+	}
+	
+	
 
 }
