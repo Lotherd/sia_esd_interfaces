@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -135,64 +136,78 @@ public class Authorization_Controller_Data {
         }
     }
     
-    private EmployeeControl setEmployeeControl(EmployeeLicense e) {
+    private void setEmployeeControl(EmployeeLicense e) {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-        EmployeeControl license = null;
         boolean expire = false;
+
         
-        try {
-            license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr AND e.reference = :ref", EmployeeControl.class)
-                    .setParameter("em", e.getStaffNumber())
-                    .setParameter("ref", e.getAuthorizationNumber())
-                    .setParameter("tr", "LICENCE")
-                    .getSingleResult();
-        } catch (Exception ex) {
-            license = new EmployeeControl();
-            EmployeeControlPK employeepk = new EmployeeControlPK();
-            license.setId(employeepk);
-            license.setCreatedDate(new Date());
-            license.setCreatedBy("TRAX_IFACE");
+        List<String> issuedAuthorities = e.getRecordItemAuthority() == null
+                ? em.createQuery("SELECT s.systemCode FROM SystemTranCode s WHERE s.systemTransaction = :transaction", String.class)
+                    .setParameter("transaction", "EMPLICAUT")
+                    .getResultList()
+                : Collections.singletonList(e.getRecordItemAuthority());
+
+        int controlItemNumber = 1;
+
+        for (String issuedAuthority : issuedAuthorities) {
+            EmployeeControl license = null;
+
+            try {
+                license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr ", EmployeeControl.class)
+                        .setParameter("em", e.getStaffNumber())
+                        .setParameter("tr", "LICENCE")
+                        .getSingleResult();
+            } catch (Exception ex) {
+                license = new EmployeeControl();
+                EmployeeControlPK employeepk = new EmployeeControlPK();
+                license.setId(employeepk);
+                license.setCreatedDate(new Date());
+                license.setCreatedBy("TRAX_IFACE");
+                license.getId().setEmployee(e.getStaffNumber());
+                license.getId().setEmployeeControl("LICENCE");
+                license.setDateIssued(new Date());
+                license.setExpirationOptional("Y");
+            }
+
+            license.setReference(e.getAuthorizationNumber());
             license.getId().setEmployee(e.getStaffNumber());
-            license.getId().setEmployeeControl("LICENCE");
-            license.getId().setControlItem(getLine(e.getStaffNumber(), "CONTROL_ITEM", "Employee_Control", "EMPLOYEE"));
-            license.setDateIssued(new Date());
-            license.setExpirationOptional("Y");
+            license.setIssuedAuthority(issuedAuthority);
+            license.setLicenceType(e.getAuthorizationNumber());
+
+            
+            license.getId().setControlItem(controlItemNumber);
+            controlItemNumber++;
+
+            if (Inactive.contains(e.getAuthorizationStatus())) {
+                license.setStatus("INACTIVE");
+                expire = true;
+            } else {
+                license.setStatus("ACTIVE");
+            }
+
+            try {
+                license.setExpireDate(format.parse(e.getAuthorizationExpiryDate()));
+            } catch (ParseException e1) {
+                logger.severe("Error parsing expiration date for license: " + license.getReference());
+            }
+
+            if (license.getExpireDate().before(new Date())) {
+                expire = true;
+            }
+
+            if (expire) {
+                logger.warning("WARNING Employee License is expired: " + license.getReference() + " Expire Date: " + license.getExpireDate() + " Status: " + license.getStatus());
+                removeStampSign(e);
+            }
+
+            license.setModifiedBy("TRAX_IFACE");
+            license.setModifiedDate(new Date());
+
+            logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem());
+            insertData(license);
         }
-        
-        license.setReference(e.getAuthorizationNumber());
-        license.getId().setEmployee(e.getStaffNumber());
-        license.setIssuedAuthority("CAAS");
-        license.setLicenceType("Part-66");
-        
-        if (Inactive.contains(e.getAuthorizationStatus())) {
-            license.setStatus("INACTIVE");
-            expire = true;
-        } else {
-            license.setStatus("ACTIVE");
-        }
-        
-        try {
-            license.setExpireDate(format.parse(e.getAuthorizationExpiryDate()));
-        } catch (ParseException e1) {
-            logger.severe("Error parsing expiration date for license: " + license.getReference());
-        }
-        
-        if (license.getExpireDate().before(new Date())) {
-            expire = true;
-        }
-        
-        if (expire) {
-            logger.warning("WARNING Employee License is expired: " + license.getReference() + " Expire Date: " + license.getExpireDate() + " Status: " + license.getStatus());
-            removeStampSign(e);
-        }
-        
-        license.setModifiedBy("TRAX_IFACE");
-        license.setModifiedDate(new Date());
-        
-        logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem());
-        insertData(license);
-        return license;
     }
+
     
     private void removeStampSign(EmployeeLicense e) {
         List<BlobTable> blobs = null;

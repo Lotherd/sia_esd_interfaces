@@ -46,29 +46,34 @@ public class Run implements Runnable {
 
                     pendingWOs.add(svoRequest.getWO());  // Mark WO as pending
 
-                    boolean success = sendSVORequest(svoRequest, poster);
+                    try {
+                        boolean success = sendSVORequest(svoRequest, poster);
 
-                    if (success) {
-                        INT15_TRAX input = receiveResponse(poster, INT15_TRAX.class);
+                        if (success) {
+                            INT15_TRAX input = receiveResponse(poster, INT15_TRAX.class);
 
-                        if (input != null && "53".equalsIgnoreCase(input.getExceptionId())) {
-                            pendingWOs.remove(svoRequest.getWO());  // Remove from pending on success
-                            executed = data.markTransaction(input);
-                            if (!"OK".equalsIgnoreCase(executed)) {
-                                throw new Exception("Error processing SVO with ExceptionId 53.");
+                            if (input != null && "53".equalsIgnoreCase(input.getExceptionId())) {
+                                pendingWOs.remove(svoRequest.getWO());  // Remove from pending on success
+                                executed = data.markTransaction(input);
+                                if (!"OK".equalsIgnoreCase(executed)) {
+                                    throw new Exception("Error processing SVO with ExceptionId 53.");
+                                }
+                            } else if (input != null && "51".equalsIgnoreCase(input.getExceptionId())) {
+                                logger.severe("SVO failed with ExceptionId 51 for WO: " + svoRequest.getWO());
+                                // Handle the error without throwing exception to continue processing other SVOs
+                                data.markTransaction(input);
                             }
-                        } else if (input != null && "51".equalsIgnoreCase(input.getExceptionId())) {
-                            logger.severe("SVO failed with ExceptionId 51 for WO: " + svoRequest.getWO());
-                            // Call markTransaction to handle the error and potentially retry
-                            data.markTransaction(input);
+                        } else {
+                            throw new Exception("Failed to send SVO request.");
                         }
-                    } else {
-                        throw new Exception("Failed to send SVO request.");
+                    } catch (Exception e) {
+                        logger.severe("Error processing SVO: " + svoRequest.getWO() + " - " + e.toString());
+                        // Log the error but continue with the next SVO
                     }
                 }
             }
 
-            logger.info("SVO processing completed, now processing RFO...");
+            //logger.info("SVO processing completed, now processing RFO...");
             rfoRequests.addAll(data.getRFO());
             processRFORequests(rfoRequests, poster, pendingWOs);
 
@@ -77,7 +82,7 @@ public class Run implements Runnable {
             TECO_Handling_Controller.addError(e.toString());
             TECO_Handling_Controller.sendEmailRequest(svoRequests.isEmpty() ? rfoRequests : svoRequests);
         } finally {
-            logger.info("Processing finished.");
+           // logger.info("Processing finished.");
         }
     }
 
