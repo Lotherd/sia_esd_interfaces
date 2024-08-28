@@ -134,7 +134,8 @@ public class ModelData {
 					}
 					Inbound.setPN(pn);
 					Inbound.setPN_SN(sn);
-					
+					wo.setInterfaceModifiedDate(new Date());
+					insertData(wo);
 					list.add(Inbound);	
 					
 				}
