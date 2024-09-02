@@ -97,16 +97,16 @@ public class CreationBatch_Data {
 	public String markTransaction(INT30_TRAX request) {
 		executed = "OK";
 		
-		String sqlselect = "SELECT BATCH, PN, WO, TASK_CARD FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL ";
+		String sqlselect = "SELECT  PN, WO, TASK_CARD FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL AND PN = ?";
 		
-		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'Y' WHERE BATCH = ?, PN = ?, WO = ?, TASK_CARD = ? ";
+		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'Y' WHERE PN = ? AND WO = ? AND TASK_CARD = ? ";
 		
-		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE BATCH = ?, PN = ?, WO = ?, TASK_CARD = ? ";
+		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE LEGACY_BATCH = ? AND PN = ? AND WO = ? AND TASK_CARD = ? ";
 		
 		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	             + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I30', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Batch I_30', sysdate, sysdate FROM dual";
 		
-		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
+		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ? ";
 		
 		try (PreparedStatement pstmt1 = con.prepareStatement(sqlselect);
 			 PreparedStatement pstmt2 = con.prepareStatement(update);
@@ -115,26 +115,26 @@ public class CreationBatch_Data {
 		     PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)) {
 			
 			if (request != null) {
+	          
+	            pstmt1.setString(1, request.getPN());
+	            ResultSet rs1 = pstmt1.executeQuery();
 				
-				ResultSet rs1 = pstmt1.executeQuery();
 				
 				if (rs1.next()) {  // Call next() to move the cursor to the first row
-					String batch = rs1.getString(1);
 					//String pn = rs1.getString(2);
-					String wo = rs1.getString(3);
-					String tc = rs1.getString(4);
+					String wo = rs1.getString(2);
+					String tc = rs1.getString(3);
 					
 					if (request.getEXCEPTION_ID().equalsIgnoreCase("53")) {
 						
 						pstmt2.setString(1, request.getLEGACY_BATCH());
-						pstmt2.setString(2, batch);
-						pstmt2.setString(3, request.getPN());
-						pstmt2.setString(4, wo);
-						pstmt2.setString(5, tc);
+						pstmt2.setString(2, request.getPN());
+						pstmt2.setString(3, wo);
+						pstmt2.setString(4, tc);
 						pstmt2.executeUpdate();
 						
-						psDeleteError.setString(1, request.getPN());
-	                    psDeleteError.setString(2, request.getLEGACY_BATCH());
+						psDeleteError.setString(1, request.getLEGACY_BATCH());
+	                    psDeleteError.setString(2, request.getPN());
 	                    psDeleteError.executeUpdate();
 					} else {
 						executed = "Request SAP Batch: " + request.getLEGACY_BATCH() + ", Error Code: " + request.getEXCEPTION_ID() + ", Remarks: " + request.getEXCEPTION_DETAIL() + ", Material: " + request.getPN();
