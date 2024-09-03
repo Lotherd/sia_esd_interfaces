@@ -102,6 +102,10 @@ public class Run implements Runnable {
                         if (!"OK".equalsIgnoreCase(executed)) {
                             throw new Exception("Error processing RFO with ExceptionId 53.");
                         }
+                    } else if (input != null && "51".equalsIgnoreCase(input.getExceptionId())) {
+                        logger.severe("RFO failed with ExceptionId 51 for WO: " + rfoRequest.getWO());
+                       
+                        data.markTransaction(input);
                     } else {
                         throw new Exception("Received RFO Response with Error or unexpected ExceptionId.");
                     }
