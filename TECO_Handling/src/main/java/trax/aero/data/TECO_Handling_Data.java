@@ -162,12 +162,24 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	             "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
 	             ")";
 	    
-	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = NULL WHERE WO = ? AND TASK_CARD = ? ";
+	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = NULL WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ?";
 	    
 	    
 	    String svocheck = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
 	    
-	    String sqlMArk2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? ";
+	    String sqlHistoryMark = "UPDATE PN_INVENTORY_HISTORY SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ? ";
+	    
+	    String sqlMArk2 = "UPDATE WO_TASK_CARD " +
+	    	    "SET SVO_SENT = 'Y' " +
+	    	    "WHERE WO = ? " +
+	    	    "AND TASK_CARD = ? " +
+	    	    "AND NOT EXISTS ( " +
+	    	    "    SELECT 1 " +
+	    	    "    FROM PN_INVENTORY_HISTORY " +
+	    	    "    WHERE WO = WO_TASK_CARD.WO " +
+	    	    "    AND TASK_CARD = WO_TASK_CARD.TASK_CARD " +
+	    	    "    AND (SVO_SENT IS NULL OR SVO_SENT <> 'Y') " +
+	    	    ")";
 	    
 	    String sqlmarksvo = "UPDATE WO SET SVO_USED = NULL WHERE WO = ? AND NOT EXISTS (SELECT 1 FROM WO_TASK_CARD WHERE WO = WO.WO AND SVO_SENT <> 'Y') ";
 
@@ -189,6 +201,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	        PreparedStatement svoch = con.prepareStatement(svocheck);
 	        PreparedStatement svomark = con.prepareStatement(sqlMArk2);
 	        PreparedStatement svomark2 = con.prepareStatement(sqlmarksvo);
+	        PreparedStatement svosent = con.prepareStatement(sqlHistoryMark);
 
 	        if (request != null) {
 	            String exceptionId = request.getExceptionId();
@@ -215,6 +228,12 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 		                }
 		                
 		                if(SVO != null && !SVO.isEmpty()){
+		                	
+		                	svosent.setString(1, wo);
+		                	svosent.setString(2, request.getTC_number());
+		                	svosent.setString(3, request.getRFO_NO());
+		                	svosent.executeUpdate();
+		                	
 		                	svomark.setString(1, wo);
 		                	svomark.setString(2, request.getTC_number());
 		                	svomark.executeUpdate();
@@ -260,6 +279,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	                            } else if (Flag.equalsIgnoreCase("Y")) {
 	                            	pstmt5.setString(1, request.getWO());
 	                            	pstmt5.setString(2, request.getTC_number());
+	                            	pstmt5.setString(3, request.getRFO_NO());
 		                            pstmt5.executeUpdate();
 	                            }
 	                            
@@ -395,7 +415,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            "ATH.SVO_NO, " +
 	            "W.WO, " +
 	            "TO_CHAR(W.COMPLETION_DATE, 'DD-MM-YYYY') AS COMPLETION_DATE, " +
-	            "TO_CHAR(W.COMPLETION_TIME, 'HH24:MI:SS') AS COMPLETION_TIME, " +
+	            "TO_CHAR(W.COMPLETION_DATE, 'HH24:MI:SS') AS COMPLETION_TIME, " +
 	            "W.STATUS, " +
 	            "W.REOPEN_REASON, " +
 	            "W.SOURCE_REF, " +
@@ -417,7 +437,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            "AND ATH.INTERFACE_TRANSFER_FLAG IS NULL " +
 	            "AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL')";
 
-	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ?";
+	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ?";
 	    String sqlMark2 = "UPDATE WO_TASK_CARD SET SVO_SENT = 'S' WHERE WO = ? AND TASK_CARD = ?";
 	    String sqlmarksvo = "UPDATE WO SET SVO_USED = 'Y' WHERE WO = ?";
 
@@ -447,9 +467,10 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            // Log parameter values
 	            logger.info("Marking SVO_NO: " + rs1.getString("SVO_NO") + " Transaction NO: " + rs1.getString("TRANSACTION_NO"));
 	            
-	            // Actualiza las tablas correspondientes
+	           
 	            pstmt2.setString(1, rs1.getString("WO"));
 	            pstmt2.setString(2, rs1.getString("TASK_CARD"));
+	            pstmt2.setString(3, rs1.getString("SVO_NO"));
 	            pstmt2.executeUpdate();
 	            
 	            pstmt3.setString(1, rs1.getString("WO"));

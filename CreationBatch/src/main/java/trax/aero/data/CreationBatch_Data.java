@@ -97,82 +97,75 @@ public class CreationBatch_Data {
 	public String markTransaction(INT30_TRAX request) {
 		executed = "OK";
 		
-		String sqlselect = "SELECT BATCH, PN, WO, TASK_CARD FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL ";
+		String sqlselect = "SELECT  PN, WO, TASK_CARD FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL AND PN = ?";
 		
-		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'Y' WHERE BATCH = ?, PN = ?, WO = ?, TASK_CARD = ? ";
+		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'Y' WHERE PN = ? AND WO = ? AND TASK_CARD = ? ";
 		
-		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE BATCH = ?, PN = ?, WO = ?, TASK_CARD = ? ";
+		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE LEGACY_BATCH = ? AND PN = ? AND WO = ? AND TASK_CARD = ? ";
 		
 		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-                 + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I30', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Batch I_30', sysdate, sysdate FROM dual";
+	             + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I30', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Batch I_30', sysdate, sysdate FROM dual";
 		
-		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
+		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ? ";
 		
-		try(PreparedStatement pstmt1 = con.prepareStatement(sqlselect);
-				 PreparedStatement pstmt2 = con.prepareStatement(update);
-				 PreparedStatement pstmt3 = con.prepareStatement(errorunmark);
-				 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
-		         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)){
+		try (PreparedStatement pstmt1 = con.prepareStatement(sqlselect);
+			 PreparedStatement pstmt2 = con.prepareStatement(update);
+			 PreparedStatement pstmt3 = con.prepareStatement(errorunmark);
+			 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
+		     PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)) {
 			
-			if(request != null) {
+			if (request != null) {
+	          
+	            pstmt1.setString(1, request.getPN());
+	            ResultSet rs1 = pstmt1.executeQuery();
 				
-				pstmt1.executeQuery();
 				
-				ResultSet rs1 = null;
-				rs1 = pstmt1.executeQuery();
-				
-				String batch = rs1.getString(1);
-				//String pn = rs1.getString(2);
-				String wo = rs1.getString(3);
-				String tc = rs1.getString(4);
-				
-				if (request.getEXCEPTION_ID().equalsIgnoreCase("53")) {
+				if (rs1.next()) {  // Call next() to move the cursor to the first row
+					//String pn = rs1.getString(2);
+					String wo = rs1.getString(2);
+					String tc = rs1.getString(3);
 					
-					pstmt2.setString(1, request.getLEGACY_BATCH());
-					pstmt2.setString(2, batch);
-					pstmt2.setString(3, request.getPN());
-					pstmt2.setString(4, wo);
-					pstmt2.setString(5, tc);
-					pstmt2.executeQuery();
-					
-					
-					psDeleteError.setString(1, request.getPN());
-                    psDeleteError.setString(2, request.getLEGACY_BATCH());
-                    psDeleteError.executeUpdate();
-				}
-				
-				if (!request.getEXCEPTION_ID().equalsIgnoreCase("53")){
-					executed = "Request SAP Batch: " + request.getLEGACY_BATCH() + ", Error Code: " + request.getEXCEPTION_ID() + ", Remarks: " + request.getEXCEPTION_DETAIL()+ ", Material: " + request.getPN();
-					CreationBatch_Controller.addError(executed);
-					
-					psInsertError.setString(1, request.getPN());
-                    psInsertError.setString(2, request.getLEGACY_BATCH());
-                    psInsertError.setString(3, request.getEXCEPTION_ID());
-                    psInsertError.setString(4, request.getEXCEPTION_DETAIL());
-                    psInsertError.executeUpdate();
-                    
-                    pstmt3.setString(1, request.getLEGACY_BATCH());
-                    pstmt3.setString(2, request.getPN());
-                    pstmt3.setString(3, wo);
-                    pstmt3.setString(4, tc);
-                    pstmt3.executeQuery();
+					if (request.getEXCEPTION_ID().equalsIgnoreCase("53")) {
+						
+						pstmt2.setString(1, request.getLEGACY_BATCH());
+						pstmt2.setString(2, request.getPN());
+						pstmt2.setString(3, wo);
+						pstmt2.setString(4, tc);
+						pstmt2.executeUpdate();
+						
+						psDeleteError.setString(1, request.getLEGACY_BATCH());
+	                    psDeleteError.setString(2, request.getPN());
+	                    psDeleteError.executeUpdate();
+					} else {
+						executed = "Request SAP Batch: " + request.getLEGACY_BATCH() + ", Error Code: " + request.getEXCEPTION_ID() + ", Remarks: " + request.getEXCEPTION_DETAIL() + ", Material: " + request.getPN();
+						CreationBatch_Controller.addError(executed);
+						
+						psInsertError.setString(1, request.getPN());
+	                    psInsertError.setString(2, request.getLEGACY_BATCH());
+	                    psInsertError.setString(3, request.getEXCEPTION_ID());
+	                    psInsertError.setString(4, request.getEXCEPTION_DETAIL());
+	                    psInsertError.executeUpdate();
+	                    
+	                    pstmt3.setString(1, request.getLEGACY_BATCH());
+	                    pstmt3.setString(2, request.getPN());
+	                    pstmt3.setString(3, wo);
+	                    pstmt3.setString(4, tc);
+	                    pstmt3.executeUpdate();
+					}
 				} else {
-					psDeleteError.setString(1, request.getPN());
-                    psDeleteError.setString(2, request.getLEGACY_BATCH());
-                    psDeleteError.executeUpdate();
+					executed = "No records found for the given criteria.";
 				}
 			}
 			
+		} catch (SQLException e) {
+		    executed = e.toString();
+		    CreationBatch_Controller.addError(e.toString());
+		    logger.severe(e.toString());
 		}
-		
-		catch (SQLException e) {
-	        executed = e.toString();
-	        CreationBatch_Controller.addError(e.toString());
-	        logger.severe(e.toString());
-	    }
 		
 		return executed;
 	}
+
 	
 	
 	public ArrayList<INT30_SND> getPN() throws Exception{
@@ -192,11 +185,26 @@ public class CreationBatch_Data {
 		
 		ArrayList<INT30_SND> list = new ArrayList<INT30_SND>();
 		
-		String sqlPN = "SELECT W.CUSTOMER, WT.PN, H.WO, H.TASK_CARD  FROM WO W JOIN WO_TASK_CARD WT ON WT.WO = W.WO \r\n" +
-					   "JOIN PN_INVENTORY_HISTORY H ON WT.WO = H.WO AND WT.TASK_CARD = H.TASK_CARD AND WT.PN = H.PN JOIN PN_MASTER PM ON WT.PN = PM.PN \r\n"+
-					   "JOIN SYSTEM_TRAN_CODE S ON W.SOURCE_TYPE = S.SYSTEM_CODE WHERE PM.CATEGORY IN ('B', 'C', 'D') AND S.SYSTEM_TRANSACTION = 'SOURCETYPE' \r\n"+
-					   "AND S.PARTY = '1P' AND H.INTERFACE_TRANSFER_FLAG IS NULL AND H.MADE_AS_CCS IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z \r\n"+
-					   "WHERE Z.CUSTOMER = W.CUSTOMER AND Z.PN = WT.PN)" ;
+		String sqlPN =  "SELECT W.CUSTOMER, H.PN, H.WO, H.TASK_CARD " +
+                "FROM WO W " +
+                "JOIN WO_TASK_CARD WT ON WT.WO = W.WO " +
+                "JOIN PN_INVENTORY_HISTORY H ON WT.WO = H.WO AND WT.TASK_CARD = H.TASK_CARD " +
+                "JOIN PN_MASTER PM ON H.PN = PM.PN " +
+                "JOIN SYSTEM_TRAN_CODE S ON W.SOURCE_TYPE = S.SYSTEM_CODE " +
+                "WHERE W.RFO_NO IS NOT NULL " +
+                "AND PM.CATEGORY IN ('B', 'C', 'D') " +
+                "AND (H.TRANSACTION_TYPE = 'REMOVE' OR H.TRANSACTION_TYPE = 'INSPECT') " +
+                "AND H.STATE_OF_PART = 'UNSERVICEABLE' " +
+                "AND S.SYSTEM_TRANSACTION = 'SOURCETYPE' " +
+                "AND S.PARTY = '1P' " +
+                "AND H.INTERFACE_TRANSFER_FLAG IS NULL " +
+                "AND H.MADE_AS_CCS IS NOT NULL " +
+                "AND NOT EXISTS (" +
+                "    SELECT 1 " +
+                "    FROM ZEPARTSER_MASTER Z " +
+                "    WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(W.CUSTOMER, '0') " +
+                "    AND Z.PN = H.PN" +
+                ")";
 		
 		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
 		
@@ -229,7 +237,7 @@ public class CreationBatch_Data {
 		    		  INT30_SND req = new INT30_SND();
 		    		  
 		    		  if(rs1.getString(2) != null) {
-		    			  req.setPN(rs1.getString(1));
+		    			  req.setPN(rs1.getString(2));
 		    		  } else {
 		    			  req.setPN("");
 		    		  }
