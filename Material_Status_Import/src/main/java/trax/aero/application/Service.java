@@ -50,8 +50,14 @@ public class Service {
 			StringWriter sw = new StringWriter();
 			marshaller.marshal(input, sw);
 			logger.info("Input: " + sw.toString());
-			exceuted = data.updateMaterial(input);
-						
+			
+			if(input.getPICKLIST() != null && input.getPICKLIST_LINE() != null
+					&& !input.getPICKLIST().isEmpty() 
+					&& !input.getPICKLIST_LINE().isEmpty()) {
+				exceuted = data.updateMaterial(input);
+			}else {
+				data.logMaterialMovementMaster(sw.toString());
+			}		
         	if(!exceuted.equalsIgnoreCase("OK")) {
         		exceuted = "Issue found";
         		throw new Exception("Issue found");

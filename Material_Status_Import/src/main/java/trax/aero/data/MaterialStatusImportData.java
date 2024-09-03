@@ -1,10 +1,18 @@
 package trax.aero.data;
 
 
+import java.io.StringReader;
 import java.math.BigDecimal;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -14,6 +22,8 @@ import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -84,11 +94,6 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			MaterialStatusImportController.addError(e.toString());
             logger.severe(e.toString());
             exceuted = e.toString();
-		}
-		finally
-		{
-			//clean up 
-			em.clear();
 		}
 		return exceuted;
 	}
@@ -317,7 +322,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					logger.info("Found WoTaskCard 3");
 				
 				}catch(Exception exc) {
-					e.printStackTrace();
+					exc.printStackTrace();
 				}
 			}
 		}
@@ -1059,8 +1064,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				pid.setInventoryType("MAINTENANCE");	
 				try
 				{
-					String company = (String) this.em.createQuery("select p.profile from ProfileMaster p")
-							.getSingleResult();
+					String company = System.getProperty("profile_company");
 					pid.setGlCompany(company);
 				}
 				catch(Exception e1) {
@@ -1195,8 +1199,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		try
 		{	
 			ArrayList<PicklistDistribution>picklistdist = (ArrayList<PicklistDistribution>) em.createQuery("SELECT p FROM PicklistDistribution p where p.externalCustRes =:pi AND p.externalCustResItem =:it AND p.id.transaction =:tra AND p.id.distributionLine =:dl")
-					.setParameter("pi", input.getPICKLIST())
-					.setParameter("it", input.getPICKLIST_LINE())
+					.setParameter("pi", input.getEXTERNAL_CUST_RES())
+					.setParameter("it", input.getEXTERNAL_CUST_RES_ITEM())
 					.setParameter("tra", "REQUIRE")
 					.setParameter("dl",new Long(0) )
 					.getResultList();
@@ -1207,8 +1211,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		catch (Exception e)
 		{	
 			logger.info("PICKLIST NOT FOUND");
+			throw e;
 		}
-		return null;
 	}
 	
 	private PicklistHeader getPicklistHeaderTaskCard(WoTaskCard woTaskCard, MaterialStatusImportMaster m) {
@@ -1322,5 +1326,141 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		
 	}
 	
+	public void logMaterialMovementMaster(String materialMovementMaster) {
 		
+		InterfaceAudit ia = null;
+		ia = new InterfaceAudit();
+		ia.setTransaction(getSeqNoInterfaceAudit().longValue());
+		ia.setTransactionType("OUT");
+		ia.setTransactionObject("I11_I12_XML");
+		ia.setTransactionMethod("ADD");
+		ia.setTransactionDate(new Date());
+		ia.setCreatedBy("TRAX_IFACE");
+		ia.setModifiedBy("TRAX_IFACE");
+		ia.setCreatedDate(new Date());
+		ia.setModifiedDate(new Date());
+		ia.setMessageNeedsToBeSent("N");
+		ia.setMessageWasSent("N");
+		
+		ia.setExceptionStackTrace(materialMovementMaster);
+		insertData(ia);
+
+	}
+
+	public void processMaterialMovementMasterQueue() {
+		
+		try
+		{	
+			List<InterfaceAudit> interfaceAudits = em.createQuery("SELECT p FROM InterfaceAudit p WHERE p.transactionObject = :obj "
+					+ "and p.messageNeedsToBeSent = :tas ")
+					.setParameter("obj", "I11_I12_XML")
+					.setParameter("tas", "N")
+					.getResultList();
+			if(interfaceAudits != null && !interfaceAudits.isEmpty()) {
+				logger.info("Interface Audit SIZE " +interfaceAudits.size());
+				for(InterfaceAudit i : interfaceAudits) {
+					try 
+					{
+						if(!checkDateLimit(i.getTransactionDate())) {
+							StringReader sr = new StringReader(i.getExceptionStackTrace());
+							JAXBContext jc = JAXBContext.newInstance(MaterialStatusImportMaster.class);
+							Unmarshaller unmarshaller = jc.createUnmarshaller();
+							MaterialStatusImportMaster materialMovementMaster = (MaterialStatusImportMaster) unmarshaller.unmarshal(sr);	
+							
+							updateMaterials(materialMovementMaster);
+						}
+						em.refresh(i);
+						deleteData(i);
+					}
+					catch (Exception e) 
+			        {
+			            logger.severe(e.toString());
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{	
+			e.printStackTrace();
+			logger.info("PICKLIST NOT FOUND");
+		}
+	}
+	
+	
+	public boolean lockAvailable(String notificationType)
+	{
+		
+		//em.getTransaction().begin();
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
+				.setParameter("type", notificationType).getSingleResult();
+		em.refresh(lock);
+		//logger.info("lock " + lock.getLocked());
+		if(lock.getLocked().intValue() == 1)
+		{				
+			LocalDateTime today = LocalDateTime.now();
+			LocalDateTime locked = LocalDateTime.ofInstant(lock.getLockedDate().toInstant(), ZoneId.systemDefault());
+			Duration diff = Duration.between(locked, today);
+			if(diff.getSeconds() >= lock.getMaxLock().longValue())
+			{
+				lock.setLocked(new BigDecimal(1));
+				insertData(lock);
+				return true;
+			}
+			return false;
+		}
+		else
+		{
+			lock.setLocked(new BigDecimal(1));
+			insertData(lock);
+			return true;
+		}
+		
+	}
+	
+	
+	public void lockTable(String notificationType)
+	{
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
+				.setParameter("type", notificationType).getSingleResult();
+		lock.setLocked(new BigDecimal(1));
+		//logger.info("lock " + lock.getLocked());
+		
+		lock.setLockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
+		InetAddress address = null;
+		try {
+			address = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			
+			logger.info(e.getMessage());
+			//e.printStackTrace();
+		}
+		lock.setCurrentServer(address.getHostName());
+		//em.lock(lock, LockModeType.NONE);
+		insertData(lock);
+	}
+	
+	public void unlockTable(String notificationType)
+	{
+		
+		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
+				.setParameter("type", notificationType).getSingleResult();
+		lock.setLocked(new BigDecimal(0));
+		//logger.info("lock " + lock.getLocked());
+		
+		lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
+		//em.lock(lock, LockModeType.NONE);
+		insertData(lock);
+	}
+	
+	
+	boolean checkDateLimit(Date date) {
+		
+		int dateLimit = Integer.parseInt(System.getProperty("MaterialStatusImport_DateLimit"));
+	    // convert Date into Java 8 LocalDate
+	    LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	    LocalDate today = LocalDate.now();
+	    // count number of days between the given date and today
+	    long days = ChronoUnit.DAYS.between(localDate, today);
+	    return days > dateLimit;
+	}
 }

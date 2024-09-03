@@ -13,5 +13,15 @@ public interface IMaterialStatusImportData {
 
 	void logError(String error);
 
+	public void logMaterialMovementMaster(String string);
+
+	public void processMaterialMovementMasterQueue();
+
+	public void unlockTable(String string);
+
+	public void lockTable(String string);
+
+	public boolean lockAvailable(String string);
+
 	
 }
