@@ -173,8 +173,8 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            
 	            if (count == 0) {
 	                System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
-	                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
-	                                           "VALUES ('PNTYPE', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25' )";
+	                String insertPnTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB, STATUS) " +
+	                                           "VALUES ('PNTYPE', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25', 'ACTIVE' )";
 	                Query insertPnTypeQueryObj = em.createNativeQuery(insertPnTypeQuery);
 	                insertPnTypeQueryObj.setParameter(1, auth.getPnType());
 	                insertPnTypeQueryObj.setParameter(2, auth.getPnType());
@@ -199,8 +199,8 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            
 	            if (count == 0) {
 	                System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
-	                String insertEmTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
-	                                           "VALUES ('EMPLICTYP', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25' )";
+	                String insertEmTypeQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB, STATUS) " +
+	                                           "VALUES ('EMPLICTYP', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25', 'ACTIVE' )";
 	                Query insertEmTypeQueryObj = em.createNativeQuery(insertEmTypeQuery);
 	                insertEmTypeQueryObj.setParameter(1, auth.getPnType());
 	                insertEmTypeQueryObj.setParameter(2, auth.getPnType());
@@ -225,8 +225,8 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            
 	            if (count == 0) {
 	                System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
-	                String insertAuthQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
-	                                         "VALUES ('AUTHAPPROVAL', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25')";
+	                String insertAuthQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB, STATUS) " +
+	                                         "VALUES ('AUTHAPPROVAL', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25', 'ACTIVE')";
 	                Query insertAuthQueryObj = em.createNativeQuery(insertAuthQuery);
 	                insertAuthQueryObj.setParameter(1, auth.getId().getAuthority());
 	                insertAuthQueryObj.setParameter(2, auth.getId().getAuthority());
@@ -250,8 +250,8 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            
 	            if (count == 0) {
 	                System.out.println("Record does not exist. Inserting into SYSTEM_TRAN_CODE");
-	                String insertEAuthQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB) " +
-	                                         "VALUES ('EMPLICAUT', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25')";
+	                String insertEAuthQuery = "INSERT INTO SYSTEM_TRAN_CODE (SYSTEM_TRANSACTION, SYSTEM_CODE, SYSTEM_CODE_DESCRIPTION, PN_TRANSACTION, PN_COSTING_METHOD, CREATED_BY, CREATED_DATE, SYSTEM_TRAN_CODE_SUB, STATUS) " +
+	                                         "VALUES ('EMPLICAUT', ?, ?, 'C', 'A', 'TRAX_IFACE', SYSDATE, 'I25', 'ACTIVE')";
 	                Query insertEAuthQueryObj = em.createNativeQuery(insertEAuthQuery);
 	                insertEAuthQueryObj.setParameter(1, auth.getId().getAuthority());
 	                insertEAuthQueryObj.setParameter(2, auth.getId().getAuthority());

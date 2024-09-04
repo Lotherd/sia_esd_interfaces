@@ -129,7 +129,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            "    AND WA2.WO = ? " + 
 	            "    GROUP BY WA2.WO, WA3.MAX_DATE " +
 	            ") WA4 ON WA1.WO = WA4.WO AND WA1.MODIFIED_DATE = WA4.PREV_DATE " +
-	            "WHERE WA1.WO = ?";
+	            "WHERE WA1.WO = ? ";
 	    
 	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I15', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'TECO_Handling I_15', sysdate, sysdate FROM dual";
@@ -162,7 +162,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	             "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
 	             ")";
 	    
-	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = NULL WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ?";
+	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = NULL WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ? ";
 	    
 	    
 	    String svocheck = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
@@ -208,7 +208,11 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            String exceptionDetail = request.getExceptionDetail() != null ? request.getExceptionDetail().trim().toLowerCase() : "";
 
 	            logger.info("Checking condition for exceptionId: " + exceptionId + " and exceptionDetail: " + request.getExceptionDetail());
-
+	            
+	            if ("51".equalsIgnoreCase(exceptionId) && exceptionDetail.toLowerCase().contains("order is already in teco status, notification is completed")) {
+	                logger.info("Skipping processing for exceptionId 51 with detail: " + exceptionDetail);
+	                return executed;  
+	            }
 	            if (exceptionId != null && exceptionId.equalsIgnoreCase("53")) {
 	                String wo = request.getWO();
 
@@ -327,6 +331,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                             } else if (Flag.equalsIgnoreCase("Y")) {
                             	pstmt5.setString(1, request.getWO());
                             	pstmt5.setString(2, request.getTC_number());
+                            	pstmt5.setString(3, request.getRFO_NO());
 	                            pstmt5.executeUpdate();
                             }
 	                    
@@ -396,7 +401,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	public ArrayList<INT15_SND> getSVO() throws Exception {
 	    executed = "OK";
 
-	    // Asegurar que la conexión esté disponible
+	    
 	    if (this.con == null || this.con.isClosed()) {
 	        try {
 	            this.con = DataSourceClient.getConnection();

@@ -17,12 +17,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 
 import trax.aero.controller.Authorization_Details_Controller;
@@ -37,6 +40,7 @@ import trax.aero.model.EmployeeAuthorizationApvPK;
 import trax.aero.model.EmployeeControl;
 import trax.aero.model.EmployeeControlPK;
 import trax.aero.model.EmployeeSkill;
+import trax.aero.model.EmployeeSkillPK;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.RelationMaster;
 import trax.aero.model.SystemTranCode;
@@ -99,69 +103,126 @@ public class Authorization_Controller_Data {
     }
     
     private void setEmployeeSkillLicense(EmployeeLicense e) {
-        List<EmployeeSkill> employeeSkills = null;
-        
-        try {
-            employeeSkills = em.createQuery("SELECT e FROM EmployeeSkill e WHERE e.id.employee = :em", EmployeeSkill.class)
-                    .setParameter("em", e.getStaffNumber())
-                    .getResultList();
-        } catch (Exception e1) {
-            logger.info("Employee: " + e.getStaffNumber() + " does not have any skills.");
-            return;
-        }
+        // Define skill mappings
+        Map<String, String> skillMapping = new HashMap<>();
+        skillMapping.put("4.3.1.13 Fan Blade Leading Edge Profiling", "FBLEP");
+        skillMapping.put("4.3.1.16 Engine Borescope Inspection", "BSI");
+        skillMapping.put("4.3.1.17 Engine Borescope Blending", "BB");
+        skillMapping.put("APU", "APU");
+        skillMapping.put("Avionics", "QTA");
+        skillMapping.put("Engine Borescope Blade Blending", "BB");
+        skillMapping.put("Engine Borescope Inspection", "BSI");
+        skillMapping.put("Engine build up for avionics harness/components", "EBA");
+        skillMapping.put("Engine build up for avionics harness/components and stagger check limited to ATA Chapters listed in APS 4.1 Appendix", "SCA");
+        skillMapping.put("Engine build up including component, accessories", "EBM");
+        skillMapping.put("Engine build up including component, accessories and stagger check limited to ATA Chapters listed in APS 4.1 Appendix", "SCM");
+        skillMapping.put("Engine Test Authorisation", "TES");
+        skillMapping.put("Fan Blade Leading Edge Profiling", "FBLEP");
+        skillMapping.put("Mechanical", "QTM");
+        skillMapping.put("Rigging/Duplicate Inspection", "DI");
 
-        if (employeeSkills == null || employeeSkills.isEmpty()) {
-            return;
-        }
-        
-        for (EmployeeSkill employeeSkill : employeeSkills) {
-            if (employeeSkill.getId().getSkill().contains("AH") || 
-                employeeSkill.getId().getSkill().contains("LAE")) {
+        for (Map.Entry<String, String> entry : skillMapping.entrySet()) {
+            EmployeeSkill employeeSkill = null;
+
+            try {
+                // Check if the skill already exists for the employee
+                employeeSkill = em.createQuery("SELECT e FROM EmployeeSkill e WHERE e.id.employee = :em AND e.id.skill = :sk", EmployeeSkill.class)
+                                  .setParameter("em", e.getStaffNumber())
+                                  .setParameter("sk", entry.getValue())
+                                  .getSingleResult();
                 
-                DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                // Skill exists, so update it
                 employeeSkill.setModifiedBy("TRAX_IFACE");
                 employeeSkill.setModifiedDate(new Date());
                 employeeSkill.setLicense(e.getAuthorizationNumber());
                 
+
                 try {
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
                     employeeSkill.setExpirationDate(format.parse(e.getAuthorizationExpiryDate()));
                     employeeSkill.setExpirationOptional("YES");
                 } catch (ParseException e1) {
                     logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
                 }
                 
-                logger.info("UPDATING SKILL Skill: " + employeeSkill.getId().getSkill() + " Employee: " + employeeSkill.getId().getEmployee());
+                logger.info("UPDATING SKILL: " + entry.getKey() + " for Employee: " + e.getStaffNumber());
+            } catch (NoResultException ex) {
+                // Skill does not exist, so create and insert it
+                employeeSkill = new EmployeeSkill();
+                EmployeeSkillPK pk = new EmployeeSkillPK();
+
+                pk.setEmployee(e.getStaffNumber());
+                pk.setSkill(entry.getValue());
+                pk.setAcType("N/A"); // Use a placeholder value instead of an empty string
+                pk.setAcSeries("N/A"); // Use a placeholder value instead of an empty string
+
+
+                employeeSkill.setId(pk);
+                employeeSkill.setCreatedBy("TRAX_IFACE");
+                employeeSkill.setCreatedDate(new Date());
+                employeeSkill.setModifiedBy("TRAX_IFACE");
+                employeeSkill.setModifiedDate(new Date());
+                employeeSkill.setLicense(e.getAuthorizationNumber());
+
+                try {
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                    employeeSkill.setExpirationDate(format.parse(e.getAuthorizationExpiryDate()));
+                    employeeSkill.setExpirationOptional("YES");
+                } catch (ParseException e1) {
+                    logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
+                }
+
+                logger.info("INSERTING NEW SKILL: " + entry.getKey() + " for Employee: " + e.getStaffNumber());
+            }
+
+            try {
+                // Insert or update the skill in the database
                 insertData(employeeSkill);
+                logger.info("Successfully processed skill: " + entry.getKey() + " for Employee: " + e.getStaffNumber());
+            } catch (Exception ex) {
+                logger.severe("Error processing skill: " + entry.getKey() + " for Employee: " + e.getStaffNumber() + " - " + ex.getMessage());
             }
         }
     }
+
     
     private void setEmployeeControl(EmployeeLicense e) {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
         boolean expire = false;
 
         
-        List<String> issuedAuthorities = em.createQuery("SELECT s.id.systemCode FROM SystemTranCode s WHERE s.id.systemTransaction = :transaction", String.class)
-                    .setParameter("transaction", "EMPLICAUT")
-                    .getResultList();
-                if(e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty())
-                	{
-                	//Collections.singletonList(e.getRecordItemAuthority());
-                	issuedAuthorities.addAll(Collections.singletonList(e.getRecordItemAuthority()));
-                	}
+        Map<String, String> skillMapping = new HashMap<>();
+        skillMapping.put("4.3.1.13 Fan Blade Leading Edge Profiling", "FBLEP");
+        skillMapping.put("4.3.1.16 Engine Borescope Inspection", "BSI");
+        skillMapping.put("4.3.1.17 Engine Borescope Blending", "BB");
+        skillMapping.put("APU", "APU");
+        skillMapping.put("Avionics", "QTA");
+        skillMapping.put("Engine Borescope Blade Blending", "BB");
+        skillMapping.put("Engine Borescope Inspection", "BSI");
+        skillMapping.put("Engine build up for avionics harness/components", "EBA");
+        skillMapping.put("Engine build up for avionics harness/components and stagger check limited to ATA Chapters listed in APS 4.1 Appendix", "SCA");
+        skillMapping.put("Engine build up including component, accessories", "EBM");
+        skillMapping.put("Engine build up including component, accessories and stagger check limited to ATA Chapters listed in APS 4.1 Appendix", "SCM");
+        skillMapping.put("Engine Test Authorisation", "TES");
+        skillMapping.put("Fan Blade Leading Edge Profiling", "FBLEP");
+        skillMapping.put("Mechanical", "QTM");
+        skillMapping.put("Rigging/Duplicate Inspection", "DI");
 
-        
+        List<String> issuedAuthorities = em.createQuery("SELECT s.id.systemCode FROM SystemTranCode s WHERE s.id.systemTransaction = :transaction", String.class)
+                .setParameter("transaction", "EMPLICAUT")
+                .getResultList();
+        if(e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty()) {
+            issuedAuthorities.addAll(Collections.singletonList(e.getRecordItemAuthority()));
+        }
 
         for (String issuedAuthority : issuedAuthorities) {
             EmployeeControl license = null;
-            
-         // Retrieve the maximum CONTROL_ITEM value as a Long
+
             Long maxControlItem = em.createQuery("SELECT COALESCE(MAX(e.id.controlItem), 0) FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr", Long.class)
                     .setParameter("em", e.getStaffNumber())
                     .setParameter("tr", "LICENCE")
                     .getSingleResult();
 
-            // Set controlItemNumber to the next value
             long controlItemNumber = maxControlItem + 1L;
 
             try {
@@ -178,7 +239,6 @@ public class Authorization_Controller_Data {
                 license.setCreatedBy("TRAX_IFACE");
                 license.getId().setEmployee(e.getStaffNumber());
                 license.getId().setEmployeeControl("LICENCE");
-                license.setSkillesd(e.getRecordItemParent());
                 license.setDateIssued(new Date());
                 license.setExpirationOptional("Y");
                 license.getId().setControlItem(controlItemNumber);
@@ -188,11 +248,11 @@ public class Authorization_Controller_Data {
             license.setReference(e.getAuthorizationNumber());
             license.getId().setEmployee(e.getStaffNumber());
             license.setIssuedAuthority(issuedAuthority);
-            license.setLicenceType(e.getAuthorizationNumber());
-            license.setSkillesd(e.getRecordItemParent());
-
+            license.setLicenceType(e.getRecordItemName());
             
-           
+            
+            String skill = skillMapping.getOrDefault(e.getRecordItemParent(), null);
+            license.setSkillesd(skill);
 
             if (Inactive.contains(e.getAuthorizationStatus())) {
                 license.setStatus("INACTIVE");
@@ -219,7 +279,7 @@ public class Authorization_Controller_Data {
             license.setModifiedBy("TRAX_IFACE");
             license.setModifiedDate(new Date());
 
-            logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem() + " AUTH: " + issuedAuthority + " SKILL: " + e.getRecordItemParent() );
+            logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem() + " AUTH: " + issuedAuthority + " SKILL: " + skill );
             insertData(license);
         }
     }
