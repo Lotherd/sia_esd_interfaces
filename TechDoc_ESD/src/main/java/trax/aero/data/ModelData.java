@@ -62,7 +62,8 @@ public class ModelData {
 				Wo wo = em.createQuery("Select w From Wo w where w.id.wo =:work", Wo.class)
 						.setParameter("work",Long.valueOf( req.getWO()))
 						.getSingleResult();
-				
+				logger.info("MARKING WO " +wo.getWo());
+
 				wo.setInterfaceModifiedDate(new Date());
 				insertData(wo);
 				
@@ -114,7 +115,7 @@ public class ModelData {
 					
 					logger.info("Processing WO : " + wo.getWo() + " RFO: " + wo.getRfoNo());
 					I9_I29_Request Inbound = new I9_I29_Request();
-						
+					em.refresh(wo);
 					Inbound.setWO(String.valueOf(wo.getWo()));
 					Inbound.setRFO_NO(wo.getRfoNo());
 					
@@ -135,6 +136,7 @@ public class ModelData {
 					Inbound.setPN(pn);
 					Inbound.setPN_SN(sn);
 					wo.setInterfaceModifiedDate(new Date());
+					logger.info("MARKING WO " +wo.getWo());
 					insertData(wo);
 					list.add(Inbound);	
 					
