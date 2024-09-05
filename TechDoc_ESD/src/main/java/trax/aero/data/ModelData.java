@@ -64,7 +64,7 @@ public class ModelData {
 						.getSingleResult();
 				logger.info("MARKING WO " +wo.getWo());
 
-				wo.setInterfaceModifiedDate(new Date());
+				wo.setInterfaceCreatedDate(new Date());
 				insertData(wo);
 				
 		}
@@ -93,7 +93,7 @@ public class ModelData {
 			try
 			{
 				wos = this.em.createQuery("SELECT p FROM Wo p where "
-						+ "( p.interfaceModifiedDate IS NULL  ) and p.module = :type and   "
+						+ "( p.interfaceCreatedDate IS NULL  ) and p.module = :type and   "
 						+ " p.rfoNo is not null and p.thirdPartyWo = :party and "
 						+ "( p.sourceType = :so or p.sourceType = :sou )")
 						.setParameter("type", "SHOP")
@@ -135,7 +135,7 @@ public class ModelData {
 					}
 					Inbound.setPN(pn);
 					Inbound.setPN_SN(sn);
-					wo.setInterfaceModifiedDate(new Date());
+					wo.setInterfaceCreatedDate(new Date());
 					logger.info("MARKING WO " +wo.getWo());
 					insertData(wo);
 					list.add(Inbound);	
