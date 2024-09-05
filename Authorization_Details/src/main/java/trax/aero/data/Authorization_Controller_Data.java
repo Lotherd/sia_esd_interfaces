@@ -18,13 +18,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 
@@ -63,7 +66,7 @@ public class Authorization_Controller_Data {
     static Logger logger = LogManager.getLogger("AuthDetails");
     
     public Authorization_Controller_Data() {
-        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+        factory = Persistence.createEntityManagerFactory("TraxESD");
         em = factory.createEntityManager();
         
         try {
@@ -121,21 +124,32 @@ public class Authorization_Controller_Data {
         skillMapping.put("Mechanical", "QTM");
         skillMapping.put("Rigging/Duplicate Inspection", "DI");
 
-        for (Map.Entry<String, String> entry : skillMapping.entrySet()) {
+        // Use a Set to keep track of inserted skills to avoid duplicates
+        Set<String> processedSkills = new HashSet<>();
+
+        // Get the assigned skill from the document
+        String assignedSkill = e.getRecordItemParent();  // Assuming this holds the skill name from the document
+        logger.info("Assigned Skill from document: " + assignedSkill);
+
+        // Check if it matches the skill mapping
+        String skillCode = skillMapping.getOrDefault(assignedSkill, null);
+        logger.info("Mapped Skill Code: " + skillCode);
+
+        // Only process the skill if it's found in the mapping and hasn't been processed before
+        if (skillCode != null && !processedSkills.contains(skillCode)) {
             EmployeeSkill employeeSkill = null;
 
             try {
                 // Check if the skill already exists for the employee
                 employeeSkill = em.createQuery("SELECT e FROM EmployeeSkill e WHERE e.id.employee = :em AND e.id.skill = :sk", EmployeeSkill.class)
                                   .setParameter("em", e.getStaffNumber())
-                                  .setParameter("sk", entry.getValue())
+                                  .setParameter("sk", skillCode)
                                   .getSingleResult();
                 
                 // Skill exists, so update it
                 employeeSkill.setModifiedBy("TRAX_IFACE");
                 employeeSkill.setModifiedDate(new Date());
                 employeeSkill.setLicense(e.getAuthorizationNumber());
-                
 
                 try {
                     DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
@@ -145,19 +159,19 @@ public class Authorization_Controller_Data {
                     logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
                 }
                 
-                logger.info("UPDATING SKILL: " + entry.getKey() + " for Employee: " + e.getStaffNumber());
+                logger.info("UPDATING SKILL: " + assignedSkill + " for Employee: " + e.getStaffNumber());
             } catch (NoResultException ex) {
                 // Skill does not exist, so create and insert it
                 employeeSkill = new EmployeeSkill();
                 EmployeeSkillPK pk = new EmployeeSkillPK();
 
                 pk.setEmployee(e.getStaffNumber());
-                pk.setSkill(entry.getValue());
+                pk.setSkill(skillCode);
                 pk.setAcType("N/A"); // Use a placeholder value instead of an empty string
                 pk.setAcSeries("N/A"); // Use a placeholder value instead of an empty string
 
-
                 employeeSkill.setId(pk);
+                employeeSkill.setStatus("ACTIVE");
                 employeeSkill.setCreatedBy("TRAX_IFACE");
                 employeeSkill.setCreatedDate(new Date());
                 employeeSkill.setModifiedBy("TRAX_IFACE");
@@ -172,16 +186,22 @@ public class Authorization_Controller_Data {
                     logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
                 }
 
-                logger.info("INSERTING NEW SKILL: " + entry.getKey() + " for Employee: " + e.getStaffNumber());
+                logger.info("INSERTING NEW SKILL: " + assignedSkill + " for Employee: " + e.getStaffNumber());
             }
 
             try {
                 // Insert or update the skill in the database
+                logger.info("Attempting to insert/update skill: " + skillCode + " for Employee: " + e.getStaffNumber());
                 insertData(employeeSkill);
-                logger.info("Successfully processed skill: " + entry.getKey() + " for Employee: " + e.getStaffNumber());
+                logger.info("Successfully processed skill: " + assignedSkill + " for Employee: " + e.getStaffNumber());
+                
+                // Add the processed skill to the set to avoid duplicating it
+                processedSkills.add(skillCode);
             } catch (Exception ex) {
-                logger.severe("Error processing skill: " + entry.getKey() + " for Employee: " + e.getStaffNumber() + " - " + ex.getMessage());
+                logger.severe("Error processing skill: " + assignedSkill + " for Employee: " + e.getStaffNumber() + " - " + ex.getMessage());
             }
+        } else {
+            logger.info("Skill " + assignedSkill + " not found in mapping or already processed.");
         }
     }
 
@@ -190,7 +210,7 @@ public class Authorization_Controller_Data {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
         boolean expire = false;
 
-        
+        // Skill mapping
         Map<String, String> skillMapping = new HashMap<>();
         skillMapping.put("4.3.1.13 Fan Blade Leading Edge Profiling", "FBLEP");
         skillMapping.put("4.3.1.16 Engine Borescope Inspection", "BSI");
@@ -208,82 +228,114 @@ public class Authorization_Controller_Data {
         skillMapping.put("Mechanical", "QTM");
         skillMapping.put("Rigging/Duplicate Inspection", "DI");
 
-        List<String> issuedAuthorities = em.createQuery("SELECT s.id.systemCode FROM SystemTranCode s WHERE s.id.systemTransaction = :transaction", String.class)
-                .setParameter("transaction", "EMPLICAUT")
-                .getResultList();
-        if(e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty()) {
-            issuedAuthorities.addAll(Collections.singletonList(e.getRecordItemAuthority()));
+        // List to store authorities issued
+        List<String> issuedAuthorities = new ArrayList<>();
+        try {
+            if (e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty()) {
+                String authority = e.getRecordItemAuthority();
+                if (authority.contains("EASA-66")) {
+                    issuedAuthorities.add("EASA");
+                } else if (authority.contains("-")) {
+                    // Perform native SQL query to retrieve authorities
+                    @SuppressWarnings("unchecked")
+                    List<String> queriedAuthorities = em.createNativeQuery(
+                        "SELECT distinct pa.authority FROM pn_master pm, pn_authority_approval pa " +
+                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType")
+                        .setParameter("pnType", e.getRecordItemName())
+                        .getResultList();
+                    
+                    // Remove "EASA" if present
+                    queriedAuthorities.remove("EASA");
+                    issuedAuthorities.addAll(queriedAuthorities);
+                } else {
+                    issuedAuthorities.add(authority);
+                }
+            }
+        } catch (Exception ex) {
+            logger.severe("Error while filtering authorities: " + ex.getMessage());
         }
 
         for (String issuedAuthority : issuedAuthorities) {
             EmployeeControl license = null;
 
-            Long maxControlItem = em.createQuery("SELECT COALESCE(MAX(e.id.controlItem), 0) FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr", Long.class)
-                    .setParameter("em", e.getStaffNumber())
-                    .setParameter("tr", "LICENCE")
-                    .getSingleResult();
-
-            long controlItemNumber = maxControlItem + 1L;
-
             try {
-                license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr AND issued_authority = :auth ", EmployeeControl.class)
+                // Get the maximum control item number for this employee and license type
+                Long maxControlItem = em.createQuery("SELECT COALESCE(MAX(e.id.controlItem), 0) FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr", Long.class)
                         .setParameter("em", e.getStaffNumber())
                         .setParameter("tr", "LICENCE")
-                        .setParameter("auth", issuedAuthority)
                         .getSingleResult();
-            } catch (Exception ex) {
-                license = new EmployeeControl();
-                EmployeeControlPK employeepk = new EmployeeControlPK();
-                license.setId(employeepk);
-                license.setCreatedDate(new Date());
-                license.setCreatedBy("TRAX_IFACE");
+
+                long controlItemNumber = maxControlItem + 1L;
+
+                try {
+                    logger.info("Looking for existing EmployeeControl record for authority: " + issuedAuthority);
+                    license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr AND issuedAuthority = :auth ", EmployeeControl.class)
+                            .setParameter("em", e.getStaffNumber())
+                            .setParameter("tr", "LICENCE")
+                            .setParameter("auth", issuedAuthority)
+                            .getSingleResult();
+                } catch (Exception ex) {
+                    logger.info("No existing record found, creating a new one.");
+                    license = new EmployeeControl();
+                    EmployeeControlPK employeepk = new EmployeeControlPK();
+                    license.setId(employeepk);
+                    license.setCreatedDate(new Date());
+                    license.setCreatedBy("TRAX_IFACE");
+                    license.getId().setEmployee(e.getStaffNumber());
+                    license.getId().setEmployeeControl("LICENCE");
+                    license.setDateIssued(new Date());
+                    license.setExpirationOptional("Y");
+                    license.getId().setControlItem(controlItemNumber);
+                    controlItemNumber++;
+                }
+
+                // Set the details of the EmployeeControl record
+                license.setReference(e.getAuthorizationNumber());
                 license.getId().setEmployee(e.getStaffNumber());
-                license.getId().setEmployeeControl("LICENCE");
-                license.setDateIssued(new Date());
-                license.setExpirationOptional("Y");
-                license.getId().setControlItem(controlItemNumber);
-                controlItemNumber++;
+                license.setIssuedAuthority(issuedAuthority);
+                license.setLicenceType(e.getRecordItemName());
+
+                String skill = skillMapping.getOrDefault(e.getRecordItemParent(), null);
+                license.setSkillesd(skill);
+
+                // Set the status of the license based on authorization status
+                if (Inactive.contains(e.getAuthorizationStatus())) {
+                    license.setStatus("INACTIVE");
+                    expire = true;
+                } else {
+                    license.setStatus("ACTIVE");
+                }
+
+                // Parse and set the expiration date
+                try {
+                    license.setExpireDate(format.parse(e.getAuthorizationExpiryDate()));
+                } catch (ParseException e1) {
+                    logger.severe("Error parsing expiration date for license: " + license.getReference());
+                }
+
+                // Check if the license is expired
+                if (license.getExpireDate().before(new Date())) {
+                    expire = true;
+                }
+
+                // If expired, issue a warning and remove stamp signature
+                if (expire) {
+                    logger.warning("WARNING: Employee License is expired: " + license.getReference() + " Expiry Date: " + license.getExpireDate() + " Status: " + license.getStatus());
+                    removeStampSign(e);
+                }
+
+                // Update modified details
+                license.setModifiedBy("TRAX_IFACE");
+                license.setModifiedDate(new Date());
+
+                logger.info("Before inserting EmployeeControl for authority: " + issuedAuthority);
+                insertData(license);
+                logger.info("After inserting EmployeeControl");
+            } catch (Exception ex) {
+                logger.severe("Unexpected error during creation or insertion of EmployeeControl: " + ex.getMessage());
             }
-
-            license.setReference(e.getAuthorizationNumber());
-            license.getId().setEmployee(e.getStaffNumber());
-            license.setIssuedAuthority(issuedAuthority);
-            license.setLicenceType(e.getRecordItemName());
-            
-            
-            String skill = skillMapping.getOrDefault(e.getRecordItemParent(), null);
-            license.setSkillesd(skill);
-
-            if (Inactive.contains(e.getAuthorizationStatus())) {
-                license.setStatus("INACTIVE");
-                expire = true;
-            } else {
-                license.setStatus("ACTIVE");
-            }
-
-            try {
-                license.setExpireDate(format.parse(e.getAuthorizationExpiryDate()));
-            } catch (ParseException e1) {
-                logger.severe("Error parsing expiration date for license: " + license.getReference());
-            }
-
-            if (license.getExpireDate().before(new Date())) {
-                expire = true;
-            }
-
-            if (expire) {
-                logger.warning("WARNING Employee License is expired: " + license.getReference() + " Expire Date: " + license.getExpireDate() + " Status: " + license.getStatus());
-                removeStampSign(e);
-            }
-
-            license.setModifiedBy("TRAX_IFACE");
-            license.setModifiedDate(new Date());
-
-            logger.info("INSERTING EMPLOYEE CONTROL Reference: " + license.getReference() + " Employee: " + license.getId().getEmployee() + " ITEM: " + license.getId().getControlItem() + " AUTH: " + issuedAuthority + " SKILL: " + skill );
-            insertData(license);
         }
     }
-
     
     private void removeStampSign(EmployeeLicense e) {
         List<BlobTable> blobs = null;
