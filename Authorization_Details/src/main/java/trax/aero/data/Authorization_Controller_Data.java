@@ -30,6 +30,8 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
+import javax.persistence.LockModeType;
+
 
 import trax.aero.controller.Authorization_Details_Controller;
 import trax.aero.exception.CustomizeHandledException;
@@ -204,6 +206,41 @@ public class Authorization_Controller_Data {
             logger.info("Skill " + assignedSkill + " not found in mapping or already processed.");
         }
     }
+    
+    
+    public synchronized void deleteEmployeeControlRecords(String employeeId) {
+        try {
+            if (!em.getTransaction().isActive()) {
+                em.getTransaction().begin();  // Inicia la transacción si no está activa
+            }
+
+            // Verifica cuántos registros existen para el empleado
+            Long count = em.createQuery("SELECT COUNT(e) FROM EmployeeControl e WHERE e.id.employee = :employee", Long.class)
+                           .setParameter("employee", employeeId)
+                           .getSingleResult();
+
+            if (count > 0) {
+                // Realiza la eliminación de los registros
+                int deletedCount = em.createQuery("DELETE FROM EmployeeControl e WHERE e.id.employee = :employee")
+                                     .setParameter("employee", employeeId)
+                                     .executeUpdate();
+
+                em.flush();  // Asegura que los cambios se reflejen en la base de datos
+                em.getTransaction().commit();
+                logger.info("Deleted " + deletedCount + " EmployeeControl records for Employee: " + employeeId);
+            } else {
+                logger.info("No EmployeeControl records found for Employee: " + employeeId + ". Skipping deletion.");
+                em.getTransaction().commit();
+            }
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            logger.severe("Error while deleting EmployeeControl records for Employee: " + employeeId + " - " + e.getMessage());
+        }
+    }
+
 
     
     private void setEmployeeControl(EmployeeLicense e) {
@@ -231,25 +268,26 @@ public class Authorization_Controller_Data {
         // List to store authorities issued
         List<String> issuedAuthorities = new ArrayList<>();
         try {
+        	if(e.getRecordItemAuthority() == null || e.getRecordItemAuthority().isEmpty() ) {
+        		e.setRecordItemAuthority("-");
+        	} 
             if (e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty()) {
                 String authority = e.getRecordItemAuthority();
+                logger.info("AUTHORITY :" + e.getRecordItemAuthority());
                 if (authority.contains("EASA-66")) {
                     issuedAuthorities.add("EASA");
-                } else if (authority.contains("-")) {
+                } else if ( authority.equals("-") ) {
                     // Perform native SQL query to retrieve authorities
                     @SuppressWarnings("unchecked")
                     List<String> queriedAuthorities = em.createNativeQuery(
                         "SELECT distinct pa.authority FROM pn_master pm, pn_authority_approval pa " +
-                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType")
+                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType AND pa.authority <> 'EASA' ")
                         .setParameter("pnType", e.getRecordItemName())
                         .getResultList();
                     
-                    // Remove "EASA" if present
-                    queriedAuthorities.remove("EASA");
+                   
                     issuedAuthorities.addAll(queriedAuthorities);
-                } else {
-                    issuedAuthorities.add(authority);
-                }
+                } 
             }
         } catch (Exception ex) {
             logger.severe("Error while filtering authorities: " + ex.getMessage());
@@ -273,6 +311,7 @@ public class Authorization_Controller_Data {
                             .setParameter("em", e.getStaffNumber())
                             .setParameter("tr", "LICENCE")
                             .setParameter("auth", issuedAuthority)
+                            .setLockMode(LockModeType.PESSIMISTIC_WRITE) 
                             .getSingleResult();
                 } catch (Exception ex) {
                     logger.info("No existing record found, creating a new one.");
@@ -430,16 +469,21 @@ public class Authorization_Controller_Data {
     // Insert generic data into the database
     private <T> void insertData(T data) {
         try {
-            if (!em.getTransaction().isActive())
+            if (!em.getTransaction().isActive()) {
                 em.getTransaction().begin();
-            em.merge(data);
+            }
+            em.merge(data);  // Utiliza merge para insertar o actualizar
+            em.flush();  // Asegura que se aplique el cambio a la base de datos
             em.getTransaction().commit();
         } catch (Exception e) {
-            executed = "insertData encountered an Exception: " + e.getMessage();
-            Authorization_Details_Controller.addError(executed);
-            logger.severe(e.toString());
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();  // Hace rollback en caso de error
+            }
+            logger.severe("Error during insert/update: " + e.getMessage());
         }
     }
+
+
 
     private boolean checkMinValue(EmployeeLicense e) {
         if (e.getStaffNumber() == null || e.getStaffNumber().isEmpty()) {
