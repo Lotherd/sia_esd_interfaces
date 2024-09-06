@@ -115,21 +115,22 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	    String revert = "UPDATE WO SET STATUS = ? WHERE wo = ? ";
 	    String STATUS = "SELECT STATUS FROM WO WHERE WO = ? ";
 	    String sqlPrevStatus  = "SELECT WA1.STATUS " +
-	            "FROM WO_AUDIT WA1 " +
-	            "JOIN ( " +
-	            "    SELECT WA2.WO, MAX(WA2.MODIFIED_DATE) AS PREV_DATE " +
-	            "    FROM WO_AUDIT WA2 " +
-	            "    JOIN ( " +
-	            "        SELECT MAX(MODIFIED_DATE) AS MAX_DATE, WO " +
-	            "        FROM WO_AUDIT " +
-	            "        WHERE WO = ? " +  
-	            "        GROUP BY WO " +
-	            "    ) WA3 ON WA2.WO = WA3.WO " +
-	            "    WHERE WA2.MODIFIED_DATE < WA3.MAX_DATE " +
-	            "    AND WA2.WO = ? " + 
-	            "    GROUP BY WA2.WO, WA3.MAX_DATE " +
-	            ") WA4 ON WA1.WO = WA4.WO AND WA1.MODIFIED_DATE = WA4.PREV_DATE " +
-	            "WHERE WA1.WO = ? ";
+                "FROM WO_AUDIT WA1 " +
+                "WHERE WA1.WO = ? " +
+                "AND WA1.MODIFIED_DATE < ( " +
+                "    SELECT MAX(WA2.MODIFIED_DATE) " +
+                "    FROM WO_AUDIT WA2 " +
+                "    WHERE WA2.WO = ? " +
+                ") " +
+                "AND WA1.STATUS != ( " +
+                "    SELECT WA3.STATUS " +
+                "    FROM WO_AUDIT WA3 " +
+                "    WHERE WA3.WO = ? " +
+                "    ORDER BY WA3.MODIFIED_DATE DESC " +
+                "    FETCH FIRST 1 ROWS ONLY " +
+                ") " +
+                "ORDER BY WA1.MODIFIED_DATE DESC " +
+                "FETCH FIRST 1 ROWS ONLY";
 	    
 	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I15', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'TECO_Handling I_15', sysdate, sysdate FROM dual";

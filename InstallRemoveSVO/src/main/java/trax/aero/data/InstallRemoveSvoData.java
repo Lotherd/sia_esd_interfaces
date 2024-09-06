@@ -187,36 +187,35 @@ public class InstallRemoveSvoData {
 		
 		ArrayList<I19_Request> list = new ArrayList<I19_Request>();
 		
-		String sql= "SELECT \n" + 
-			    "    A3.PN AS PN,\n" + 
-			    "    A3.SN AS SN,\n" + 
-			    "    A3.SN AS SN,\n" + 
-			    "    A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE,\n" + 
-			    "    A3.LOCATION AS LOCATION,\n" + 
-			    "    'TYPE' AS LICENCE_TYPE,\n" + 
-			    "    A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE,\n" + 
-			    "    A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL,\n" + 
-			    "    A3.TRANSACTION_TYPE AS TRANSACTION_TYPE,\n" + 
-			    "    A3.REMOVAL_REASON AS REMOVAL_REASON,\n" + 
-			    "    A3.NOTES AS NOTES,\n" + 
-			    "    A1.CUSTOMER AS CUSTOMER,\n" + 
-			    "    A3.RFO_NO AS RFO_NO,\n" + 
-			    "    A2.LEGACY_BATCH AS LEGACY_BATCH,\n" + 
-			    "    A3.QTY AS QTY,\n" + 
-			    "    A3.WO AS WO,\n" + 
-			    "    A3.TASK_CARD AS TASK_CARD,\n" + 
-			    "    A3.TRANSACTION_NO AS TRANSACTION, A1.RFO_NO\n" + 
-			    "FROM\n" + 
-			    "    PN_INVENTORY_HISTORY A3,\n" + 
-			    "    PN_INVENTORY_DETAIL A2,\n" + 
-			    "    WO A1\n" + 
-			    "WHERE\n" + 
-			    "    A3.SVO_NO IS NULL\n" + 
-			    "    AND A3.WO IS NOT NULL\n" + 
-			    "    AND A3.TASK_CARD IS NOT NULL\n" + 
-			    "    AND A3.TRANSACTION_TYPE LIKE '%A/C%'\n" + 
-			    "    AND A3.BATCH = A2.BATCH\n" + 
-			    "    AND A1.WO = A3.WO AND A1.MODULE = 'SHOP' and A1.RFO_NO IS NOT NULL";
+		String sql= "SELECT DISTINCT " +
+                "A3.PN AS PN, " +
+                "A3.SN AS SN, " +
+                "A3.SN AS SN, " +
+                "A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE, " +
+                "A3.LOCATION AS LOCATION, " +
+                "'TYPE' AS LICENCE_TYPE, " +
+                "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
+                "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
+                "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
+                "A3.REMOVAL_REASON AS REMOVAL_REASON, " +
+                "A3.NOTES AS NOTES, " +
+                "A1.CUSTOMER AS CUSTOMER, " +
+                "A1.RFO_NO AS RFO_NO, " +
+                "A3.LEGACY_BATCH AS LEGACY_BATCH, " +
+                "A3.QTY AS QTY, " +
+                "A3.WO AS WO, " +
+                "A3.TASK_CARD AS TASK_CARD, " +
+                "A3.TRANSACTION_NO AS TRANSACTION, " +
+                "A1.RFO_NO AS RFO_NO " +
+                "FROM PN_INVENTORY_HISTORY A3, WO A1 " +
+                "WHERE A3.SVO_NO IS NULL " +
+                "AND A3.WO IS NOT NULL " +
+                "AND A3.TASK_CARD IS NOT NULL " +
+                "AND (A3.TRANSACTION_TYPE = 'REMOVE' OR A3.TRANSACTION_TYPE = 'INSPECT') " +
+                "AND A3.MADE_AS_CCS IS NOT NULL " +
+                "AND A1.WO = A3.WO " +
+                "AND A1.MODULE = 'SHOP' " +
+                "AND A1.RFO_NO IS NOT NULL";
 
 		
 		
