@@ -108,7 +108,7 @@ public class RunAble implements Runnable {
     private void process() {
         try {
         	
-        	// Crear un Set para almacenar empleados ya procesados
+        	
             Set<String> processedEmployees = new HashSet<>();
             // Setting up variables
             final String process = System.getProperty("AuthorizationD_locFiles");
@@ -151,11 +151,11 @@ public class RunAble implements Runnable {
 
                         String employeeId = employee.getStaffNumber();
 
-                        // Solo ejecuta el delete si el empleado no ha sido procesado antes
+                        
                         if (!processedEmployees.contains(employeeId)) {
-                            // Llamar al método delete una vez por empleado
+                            
                             data.deleteEmployeeControlRecords(employeeId);
-                            processedEmployees.add(employeeId);  // Añadir empleado al set
+                            processedEmployees.add(employeeId);  
                         }
                     }
 

@@ -68,7 +68,7 @@ public class Authorization_Controller_Data {
     static Logger logger = LogManager.getLogger("AuthDetails");
     
     public Authorization_Controller_Data() {
-        factory = Persistence.createEntityManagerFactory("TraxESD");
+        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
         em = factory.createEntityManager();
         
         try {
@@ -211,21 +211,19 @@ public class Authorization_Controller_Data {
     public synchronized void deleteEmployeeControlRecords(String employeeId) {
         try {
             if (!em.getTransaction().isActive()) {
-                em.getTransaction().begin();  // Inicia la transacción si no está activa
+                em.getTransaction().begin();  
             }
 
-            // Verifica cuántos registros existen para el empleado
             Long count = em.createQuery("SELECT COUNT(e) FROM EmployeeControl e WHERE e.id.employee = :employee", Long.class)
                            .setParameter("employee", employeeId)
                            .getSingleResult();
 
             if (count > 0) {
-                // Realiza la eliminación de los registros
                 int deletedCount = em.createQuery("DELETE FROM EmployeeControl e WHERE e.id.employee = :employee")
                                      .setParameter("employee", employeeId)
                                      .executeUpdate();
 
-                em.flush();  // Asegura que los cambios se reflejen en la base de datos
+                em.flush();  
                 em.getTransaction().commit();
                 logger.info("Deleted " + deletedCount + " EmployeeControl records for Employee: " + employeeId);
             } else {
@@ -238,9 +236,10 @@ public class Authorization_Controller_Data {
                 em.getTransaction().rollback();
             }
             logger.severe("Error while deleting EmployeeControl records for Employee: " + employeeId + " - " + e.getMessage());
+        }finally {
+        	em.clear();
         }
-    }
-
+    } 
 
     
     private void setEmployeeControl(EmployeeLicense e) {
@@ -297,21 +296,16 @@ public class Authorization_Controller_Data {
             EmployeeControl license = null;
 
             try {
-                // Get the maximum control item number for this employee and license type
-                Long maxControlItem = em.createQuery("SELECT COALESCE(MAX(e.id.controlItem), 0) FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr", Long.class)
-                        .setParameter("em", e.getStaffNumber())
-                        .setParameter("tr", "LICENCE")
-                        .getSingleResult();
+               
 
-                long controlItemNumber = maxControlItem + 1L;
 
                 try {
                     logger.info("Looking for existing EmployeeControl record for authority: " + issuedAuthority);
                     license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr AND issuedAuthority = :auth ", EmployeeControl.class)
                             .setParameter("em", e.getStaffNumber())
                             .setParameter("tr", "LICENCE")
-                            .setParameter("auth", issuedAuthority)
-                            .setLockMode(LockModeType.PESSIMISTIC_WRITE) 
+                            .setParameter("auth", issuedAuthority)    
+                            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                             .getSingleResult();
                 } catch (Exception ex) {
                     logger.info("No existing record found, creating a new one.");
@@ -324,8 +318,8 @@ public class Authorization_Controller_Data {
                     license.getId().setEmployeeControl("LICENCE");
                     license.setDateIssued(new Date());
                     license.setExpirationOptional("Y");
-                    license.getId().setControlItem(controlItemNumber);
-                    controlItemNumber++;
+                    license.getId().setControlItem(getLine(e.getStaffNumber(), "CONTROL_ITEM", "Employee_Control", "EMPLOYEE"));
+                    
                 }
 
                 // Set the details of the EmployeeControl record
@@ -375,6 +369,53 @@ public class Authorization_Controller_Data {
             }
         }
     }
+    
+    private long getLine(String no, String table_line, String table, String table_no)
+	{		
+		long line = 0;
+		String query = " SELECT  MAX("+table_line+") FROM "+table+" WHERE "+table_no+" = ?";
+		PreparedStatement ps = null;
+
+		try
+		{
+			if(con == null || con.isClosed())
+			{
+				con = DataSourceClient.getConnection();
+				logger.info("The connection was stablished successfully with status: " + String.valueOf(!con.isClosed()));
+			}
+			ps = con.prepareStatement(query);
+			ps.setString(1, no);
+
+			ResultSet rs = ps.executeQuery();		
+			if (rs != null) 
+			{
+				while (rs.next()) 
+				{
+					line = rs.getLong(1);
+				}
+			}
+			rs.close();
+			line++;
+		}
+		catch (Exception e) 
+		{
+			line = 1;
+		}
+		finally 
+		{
+			try 
+			{
+				if(ps != null && !ps.isClosed())
+					ps.close();
+			} 
+			catch (SQLException e) 
+			{ 
+				logger.severe("An error ocurrer trying to close the statement");
+			}
+		}
+
+		return line;
+	}
     
     private void removeStampSign(EmployeeLicense e) {
         List<BlobTable> blobs = null;
@@ -608,45 +649,7 @@ public class Authorization_Controller_Data {
         }
     }
 
-    private long getLine(String no, String table_line, String table, String table_no) {        
-        long line = 0;
-        String query = "SELECT MAX(" + table_line + ") FROM " + table + " WHERE " + table_no + " = ?";
-
-        PreparedStatement ps = null;
-
-        try {
-            if (con == null || con.isClosed()) {
-                con = DataSourceClient.getConnection();
-                logger.info("The connection was established successfully with status: " + String.valueOf(!con.isClosed()));
-            }
-
-            ps = con.prepareStatement(query);
-            ps.setString(1, no);
-
-            ResultSet rs = ps.executeQuery();        
-
-            if (rs != null) {
-                while (rs.next()) {
-                    line = rs.getLong(1);
-                }
-            }
-            rs.close();
-
-            line++;
-        } catch (Exception e) {
-            line = 1;
-        } finally {
-            try {
-                if (ps != null && !ps.isClosed())
-                    ps.close();
-            } catch (SQLException e) {
-                logger.severe("An error occurred trying to close the statement");
-            }
-        }
-        
-        return line;
-    }
-    
+   
     private <T> void insertData( T data, String s) 
 	{
 		try 
