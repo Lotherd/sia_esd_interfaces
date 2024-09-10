@@ -30,6 +30,8 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
+import javax.persistence.LockModeType;
+
 
 import trax.aero.controller.Authorization_Details_Controller;
 import trax.aero.exception.CustomizeHandledException;
@@ -66,7 +68,7 @@ public class Authorization_Controller_Data {
     static Logger logger = LogManager.getLogger("AuthDetails");
     
     public Authorization_Controller_Data() {
-        factory = Persistence.createEntityManagerFactory("TraxESD");
+        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
         em = factory.createEntityManager();
         
         try {
@@ -204,6 +206,40 @@ public class Authorization_Controller_Data {
             logger.info("Skill " + assignedSkill + " not found in mapping or already processed.");
         }
     }
+    
+    
+    public synchronized void deleteEmployeeControlRecords(String employeeId) {
+        try {
+            if (!em.getTransaction().isActive()) {
+                em.getTransaction().begin();  
+            }
+
+            Long count = em.createQuery("SELECT COUNT(e) FROM EmployeeControl e WHERE e.id.employee = :employee", Long.class)
+                           .setParameter("employee", employeeId)
+                           .getSingleResult();
+
+            if (count > 0) {
+                int deletedCount = em.createQuery("DELETE FROM EmployeeControl e WHERE e.id.employee = :employee")
+                                     .setParameter("employee", employeeId)
+                                     .executeUpdate();
+
+                em.flush();  
+                em.getTransaction().commit();
+                logger.info("Deleted " + deletedCount + " EmployeeControl records for Employee: " + employeeId);
+            } else {
+                logger.info("No EmployeeControl records found for Employee: " + employeeId + ". Skipping deletion.");
+                em.getTransaction().commit();
+            }
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            logger.severe("Error while deleting EmployeeControl records for Employee: " + employeeId + " - " + e.getMessage());
+        }finally {
+        	em.clear();
+        }
+    } 
 
     
     private void setEmployeeControl(EmployeeLicense e) {
@@ -231,25 +267,26 @@ public class Authorization_Controller_Data {
         // List to store authorities issued
         List<String> issuedAuthorities = new ArrayList<>();
         try {
+        	if(e.getRecordItemAuthority() == null || e.getRecordItemAuthority().isEmpty() ) {
+        		e.setRecordItemAuthority("-");
+        	} 
             if (e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty()) {
                 String authority = e.getRecordItemAuthority();
+                logger.info("AUTHORITY :" + e.getRecordItemAuthority());
                 if (authority.contains("EASA-66")) {
                     issuedAuthorities.add("EASA");
-                } else if (authority.contains("-")) {
+                } else if ( authority.equals("-") ) {
                     // Perform native SQL query to retrieve authorities
                     @SuppressWarnings("unchecked")
                     List<String> queriedAuthorities = em.createNativeQuery(
                         "SELECT distinct pa.authority FROM pn_master pm, pn_authority_approval pa " +
-                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType")
+                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType AND pa.authority <> 'EASA' ")
                         .setParameter("pnType", e.getRecordItemName())
                         .getResultList();
                     
-                    // Remove "EASA" if present
-                    queriedAuthorities.remove("EASA");
+                   
                     issuedAuthorities.addAll(queriedAuthorities);
-                } else {
-                    issuedAuthorities.add(authority);
-                }
+                } 
             }
         } catch (Exception ex) {
             logger.severe("Error while filtering authorities: " + ex.getMessage());
@@ -259,20 +296,16 @@ public class Authorization_Controller_Data {
             EmployeeControl license = null;
 
             try {
-                // Get the maximum control item number for this employee and license type
-                Long maxControlItem = em.createQuery("SELECT COALESCE(MAX(e.id.controlItem), 0) FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr", Long.class)
-                        .setParameter("em", e.getStaffNumber())
-                        .setParameter("tr", "LICENCE")
-                        .getSingleResult();
+               
 
-                long controlItemNumber = maxControlItem + 1L;
 
                 try {
                     logger.info("Looking for existing EmployeeControl record for authority: " + issuedAuthority);
                     license = em.createQuery("SELECT e FROM EmployeeControl e WHERE e.id.employee = :em AND e.id.employeeControl = :tr AND issuedAuthority = :auth ", EmployeeControl.class)
                             .setParameter("em", e.getStaffNumber())
                             .setParameter("tr", "LICENCE")
-                            .setParameter("auth", issuedAuthority)
+                            .setParameter("auth", issuedAuthority)    
+                            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                             .getSingleResult();
                 } catch (Exception ex) {
                     logger.info("No existing record found, creating a new one.");
@@ -285,8 +318,8 @@ public class Authorization_Controller_Data {
                     license.getId().setEmployeeControl("LICENCE");
                     license.setDateIssued(new Date());
                     license.setExpirationOptional("Y");
-                    license.getId().setControlItem(controlItemNumber);
-                    controlItemNumber++;
+                    license.getId().setControlItem(getLine(e.getStaffNumber(), "CONTROL_ITEM", "Employee_Control", "EMPLOYEE"));
+                    
                 }
 
                 // Set the details of the EmployeeControl record
@@ -336,6 +369,53 @@ public class Authorization_Controller_Data {
             }
         }
     }
+    
+    private long getLine(String no, String table_line, String table, String table_no)
+	{		
+		long line = 0;
+		String query = " SELECT  MAX("+table_line+") FROM "+table+" WHERE "+table_no+" = ?";
+		PreparedStatement ps = null;
+
+		try
+		{
+			if(con == null || con.isClosed())
+			{
+				con = DataSourceClient.getConnection();
+				logger.info("The connection was stablished successfully with status: " + String.valueOf(!con.isClosed()));
+			}
+			ps = con.prepareStatement(query);
+			ps.setString(1, no);
+
+			ResultSet rs = ps.executeQuery();		
+			if (rs != null) 
+			{
+				while (rs.next()) 
+				{
+					line = rs.getLong(1);
+				}
+			}
+			rs.close();
+			line++;
+		}
+		catch (Exception e) 
+		{
+			line = 1;
+		}
+		finally 
+		{
+			try 
+			{
+				if(ps != null && !ps.isClosed())
+					ps.close();
+			} 
+			catch (SQLException e) 
+			{ 
+				logger.severe("An error ocurrer trying to close the statement");
+			}
+		}
+
+		return line;
+	}
     
     private void removeStampSign(EmployeeLicense e) {
         List<BlobTable> blobs = null;
@@ -430,16 +510,21 @@ public class Authorization_Controller_Data {
     // Insert generic data into the database
     private <T> void insertData(T data) {
         try {
-            if (!em.getTransaction().isActive())
+            if (!em.getTransaction().isActive()) {
                 em.getTransaction().begin();
-            em.merge(data);
+            }
+            em.merge(data);  // Utiliza merge para insertar o actualizar
+            em.flush();  // Asegura que se aplique el cambio a la base de datos
             em.getTransaction().commit();
         } catch (Exception e) {
-            executed = "insertData encountered an Exception: " + e.getMessage();
-            Authorization_Details_Controller.addError(executed);
-            logger.severe(e.toString());
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();  // Hace rollback en caso de error
+            }
+            logger.severe("Error during insert/update: " + e.getMessage());
         }
     }
+
+
 
     private boolean checkMinValue(EmployeeLicense e) {
         if (e.getStaffNumber() == null || e.getStaffNumber().isEmpty()) {
@@ -564,45 +649,7 @@ public class Authorization_Controller_Data {
         }
     }
 
-    private long getLine(String no, String table_line, String table, String table_no) {        
-        long line = 0;
-        String query = "SELECT MAX(" + table_line + ") FROM " + table + " WHERE " + table_no + " = ?";
-
-        PreparedStatement ps = null;
-
-        try {
-            if (con == null || con.isClosed()) {
-                con = DataSourceClient.getConnection();
-                logger.info("The connection was established successfully with status: " + String.valueOf(!con.isClosed()));
-            }
-
-            ps = con.prepareStatement(query);
-            ps.setString(1, no);
-
-            ResultSet rs = ps.executeQuery();        
-
-            if (rs != null) {
-                while (rs.next()) {
-                    line = rs.getLong(1);
-                }
-            }
-            rs.close();
-
-            line++;
-        } catch (Exception e) {
-            line = 1;
-        } finally {
-            try {
-                if (ps != null && !ps.isClosed())
-                    ps.close();
-            } catch (SQLException e) {
-                logger.severe("An error occurred trying to close the statement");
-            }
-        }
-        
-        return line;
-    }
-    
+   
     private <T> void insertData( T data, String s) 
 	{
 		try 

@@ -143,7 +143,7 @@ public class InstallRemoveSvoData {
 		exceuted = "OK";
 		
 		String sqlDate =
-		"UPDATE PN_INVENTORY_HISTORY SET PN_INVENTORY_HISTORY.SVO_NO = ? WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
+		"UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y', PN_INVENTORY_HISTORY.SVO_NO = ? WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
 		
 		PreparedStatement pstmt2 = null; 
 
@@ -187,45 +187,64 @@ public class InstallRemoveSvoData {
 		
 		ArrayList<I19_Request> list = new ArrayList<I19_Request>();
 		
-		String sql= "SELECT DISTINCT " +
-                "A3.PN AS PN, " +
-                "A3.SN AS SN, " +
-                "A3.SN AS SN, " +
-                "A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE, " +
-                "A3.LOCATION AS LOCATION, " +
-                "'TYPE' AS LICENCE_TYPE, " +
-                "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
-                "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
-                "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
-                "A3.REMOVAL_REASON AS REMOVAL_REASON, " +
-                "A3.NOTES AS NOTES, " +
-                "A1.CUSTOMER AS CUSTOMER, " +
-                "A1.RFO_NO AS RFO_NO, " +
-                "A3.LEGACY_BATCH AS LEGACY_BATCH, " +
-                "A3.QTY AS QTY, " +
-                "A3.WO AS WO, " +
-                "A3.TASK_CARD AS TASK_CARD, " +
-                "A3.TRANSACTION_NO AS TRANSACTION, " +
-                "A1.RFO_NO AS RFO_NO " +
-                "FROM PN_INVENTORY_HISTORY A3, WO A1 " +
-                "WHERE A3.SVO_NO IS NULL " +
-                "AND A3.WO IS NOT NULL " +
-                "AND A3.TASK_CARD IS NOT NULL " +
-                "AND (A3.TRANSACTION_TYPE = 'REMOVE' OR A3.TRANSACTION_TYPE = 'INSPECT') " +
-                "AND A3.MADE_AS_CCS IS NOT NULL " +
-                "AND A1.WO = A3.WO " +
-                "AND A1.MODULE = 'SHOP' " +
-                "AND A1.RFO_NO IS NOT NULL";
+		String sql= "SELECT DISTINCT A3.PN AS PN, " +
+	            "A3.SN AS SN, " +
+				"A4.PN_SN AS ESN, " +
+	            "A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE, " +
+	            "A1.LOCATION AS LOCATION, " +
+	            "'TYPE' AS LICENCE_TYPE, " +
+	            "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
+	            "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
+	            "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
+	            "A3.REASON_CATEGORY AS REMOVAL_REASON, " +
+	            "A3.NOTES AS NOTES, " +
+	            "A1.CUSTOMER AS CUSTOMER, " +
+	            "A1.RFO_NO AS RFO_NO, " +
+	            "A3.LEGACY_BATCH AS LEGACY_BATCH, " +
+	            "A3.QTY AS QTY, " +
+	            "A3.WO AS WO, " +
+	            "A3.TASK_CARD AS TASK_CARD, " +
+	            "A3.TRANSACTION_NO AS TRANSACTION " +
+	            "FROM PN_INVENTORY_HISTORY A3 " +
+	            "JOIN WO A1 ON A1.WO = A3.WO " +
+	            "JOIN WO_SHOP_DETAIL A4 ON A4.WO = A1.WO " +
+	            "LEFT JOIN PN_MASTER PM ON A3.PN = PM.PN " +
+	            "WHERE A3.SVO_NO IS NULL " +
+	            "AND A3.WO IS NOT NULL " +
+	            "AND A3.TASK_CARD IS NOT NULL " +
+	            "AND (A3.TRANSACTION_TYPE = 'REMOVE' OR A3.TRANSACTION_TYPE = 'INSPECT') " +
+	            "AND A3.MADE_AS_CCS IS NOT NULL " +
+	            "AND A1.MODULE = 'SHOP' " +
+	            "AND A1.RFO_NO IS NOT NULL " +
+	            "AND ( " +
+	            "   (PM.CATEGORY IN ('B', 'C', 'D') " +
+	            "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
+	            "                   WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
+	            "                   AND Z.PN = A3.PN) " +
+	            "    AND A3.INTERFACE_TRANSFER_FLAG = 'S') " +
+	            "   OR " +
+	            "   (PM.CATEGORY IN ('B', 'C', 'D') " +
+	            "    AND EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
+	            "               WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
+	            "               AND Z.PN = A3.PN) " +
+	            "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL) " +
+	            "   OR " +
+	            "   (PM.CATEGORY = 'A' " +
+	            "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL) " +
+	            ")";
 
-		
+		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
 		
 				
 		PreparedStatement pstmt1 = null;
 		ResultSet rs1 = null;
+		 PreparedStatement pstmt2 = null;
+		 ResultSet rs2 = null;
 
 		try 
 		{
 			pstmt1 = con.prepareStatement(sql);
+			pstmt2 = con.prepareStatement(sqlMark);
 			
 			rs1 = pstmt1.executeQuery();
 
@@ -280,25 +299,53 @@ public class InstallRemoveSvoData {
 					}
 					
 					if(rs1.getString(7) != null && !rs1.getString(7).isEmpty()) {
-						Inbound.setRemoveAsServiceable(rs1.getString(7));
+					    String status = rs1.getString(7);
+					    
+					    if (status.equalsIgnoreCase("SERVICEABLE")) {
+					        Inbound.setRemoveAsServiceable("X");
+					    } else if (status.equalsIgnoreCase("UNSERVICEABLE")) {
+					        // Do nothing (implicitly send nothing)
+					        Inbound.setRemoveAsServiceable("");
+					    } else {
+					        // Handle other cases if necessary, or leave as it is
+					        Inbound.setRemoveAsServiceable(status);
+					    }
+					} else {
+					    Inbound.setRemoveAsServiceable("");
 					}
-					else {
-						Inbound.setRemoveAsServiceable("");
-					}
+
 					
 					if(rs1.getString(8) != null && !rs1.getString(8).isEmpty()) {
-						Inbound.setInternalExternal(rs1.getString(8));
+					    String internalExternal = rs1.getString(8);
+					    
+					    if (internalExternal.equalsIgnoreCase("Internal")) {
+					        Inbound.setInternalExternal("I");
+					    } else if (internalExternal.equalsIgnoreCase("External")) {
+					        Inbound.setInternalExternal("E");
+					    } else {
+					        // Handle other cases if necessary, or leave as it is
+					        Inbound.setInternalExternal(internalExternal);
+					    }
+					} else {
+					    Inbound.setInternalExternal("");
 					}
-					else {
-						Inbound.setInternalExternal("");
-					}
+
 					
 					if(rs1.getString(9) != null && !rs1.getString(9).isEmpty()) {
-						Inbound.setTransactionType(rs1.getString(9));
+					    String transactionType = rs1.getString(9);
+					    
+					    if (transactionType.equalsIgnoreCase("REMOVAL")) {
+					        Inbound.setTransactionType("R");
+					    } else if (transactionType.equalsIgnoreCase("INSTALL")) {
+					        Inbound.setTransactionType("I");
+					    } else {
+					        // Handle other cases if necessary, or leave as it is
+					        Inbound.setTransactionType(transactionType);
+					    }
+					} else {
+					    Inbound.setTransactionType("");
 					}
-					else {
-						Inbound.setTransactionType("");
-					}
+
 					
 					if(rs1.getString(10) != null && !rs1.getString(10).isEmpty()) {
 						Inbound.setRemovalReason(rs1.getString(10));
@@ -366,6 +413,11 @@ public class InstallRemoveSvoData {
 					}
 										
 					list.add(Inbound);	
+					
+					pstmt2.setString(1, Inbound.getWo());
+					pstmt2.setString(2, Inbound.getTc());
+					pstmt2.setString(3, Inbound.getPn());
+					pstmt2.executeQuery();
 					
 				}
 			}

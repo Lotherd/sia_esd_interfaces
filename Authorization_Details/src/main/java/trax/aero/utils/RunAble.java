@@ -9,7 +9,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
@@ -105,6 +107,9 @@ public class RunAble implements Runnable {
 
     private void process() {
         try {
+        	
+        	
+            Set<String> processedEmployees = new HashSet<>();
             // Setting up variables
             final String process = System.getProperty("AuthorizationD_locFiles");
             inputFolder = new File(process);
@@ -133,6 +138,26 @@ public class RunAble implements Runnable {
                     List<String[]> allData = csvReader.readAll();
                     csvReader.close();
                     filereader.close();
+                    
+                    for (String[] row : allData) {
+                        employee = new EmployeeLicense();
+                        employee.setStaffNumber(row[1]);
+                        employee.setAuthorizationNumber(row[2]);
+                        employee.setOrganizationCustomerText(row[3]);
+                        employee.setRecordItemName(row[4]);
+                        employee.setRecordItemParent(row[5]);
+                        employee.setRecordItemAuthority(row[6]);
+                        employee.setAuthorizationExpiryDate(row[7]);
+
+                        String employeeId = employee.getStaffNumber();
+
+                        
+                        if (!processedEmployees.contains(employeeId)) {
+                            
+                            data.deleteEmployeeControlRecords(employeeId);
+                            processedEmployees.add(employeeId);  
+                        }
+                    }
 
                     for (String[] row : allData) {
                         employee = new EmployeeLicense();
