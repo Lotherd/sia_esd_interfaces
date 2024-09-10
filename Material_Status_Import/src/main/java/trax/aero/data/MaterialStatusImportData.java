@@ -284,7 +284,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		}
 	}
 	
-	private WoTaskCard getWoTaskCard(MaterialStatusImportMaster input) {
+	private WoTaskCard getWoTaskCard(MaterialStatusImportMaster input) throws Exception {
 		
 
 		WoTaskCard woTaskCard = null;
@@ -322,7 +322,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					logger.info("Found WoTaskCard 3");
 				
 				}catch(Exception exc) {
-					exc.printStackTrace();
+					logger.info("WO TASK FOUND " +input.getRFO_NO());
+					throw new Exception("WO TASK FOUND " +input.getRFO_NO() );
 				}
 			}
 		}
