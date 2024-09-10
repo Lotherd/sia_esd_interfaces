@@ -117,7 +117,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			partNumber_Tool = partNumber_Tool.concat(":UPLOAD");
 		}
 		input.setPN(partNumber_Tool);
-		
+		input.setRFO_NO(input.getRFO_NO().replaceFirst("^0+(?!$)", ""));
 		//check if object has min values
 		if(input != null  && checkMinValue(input)) 
 		{
