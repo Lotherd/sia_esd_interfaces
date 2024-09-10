@@ -322,8 +322,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					logger.info("Found WoTaskCard 3");
 				
 				}catch(Exception exc) {
-					logger.info("WO TASK FOUND " +input.getRFO_NO());
-					throw new Exception("WO TASK FOUND " +input.getRFO_NO() );
+					logger.info("WO TASK NOT FOUND RFO: " +input.getRFO_NO());
+					throw new Exception("WO TASK NOT FOUND RFO: " +input.getRFO_NO() );
 				}
 			}
 		}
@@ -1377,7 +1377,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					}
 					catch (Exception e) 
 			        {
-			            logger.severe(e.toString());
+						
 					}
 				}
 			}
