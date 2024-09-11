@@ -30,6 +30,8 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import javax.persistence.LockModeType;
 
 
@@ -68,7 +70,7 @@ public class Authorization_Controller_Data {
     static Logger logger = LogManager.getLogger("AuthDetails");
     
     public Authorization_Controller_Data() {
-        factory = Persistence.createEntityManagerFactory("TraxESD");
+        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
         em = factory.createEntityManager();
         
         try {
@@ -108,7 +110,7 @@ public class Authorization_Controller_Data {
     }
     
     private void setEmployeeSkillLicense(EmployeeLicense e) {
-        // Define skill mappings
+        /*// Define skill mappings
         Map<String, String> skillMapping = new HashMap<>();
         skillMapping.put("4.3.1.13 Fan Blade Leading Edge Profiling", "FBLEP");
         skillMapping.put("4.3.1.16 Engine Borescope Inspection", "BSI");
@@ -124,18 +126,43 @@ public class Authorization_Controller_Data {
         skillMapping.put("Engine Test Authorisation", "TES");
         skillMapping.put("Fan Blade Leading Edge Profiling", "FBLEP");
         skillMapping.put("Mechanical", "QTM");
-        skillMapping.put("Rigging/Duplicate Inspection", "DI");
+        skillMapping.put("Rigging/Duplicate Inspection", "DI");*/
 
-        // Use a Set to keep track of inserted skills to avoid duplicates
+    	// Use a Set to keep track of inserted skills to avoid duplicates
         Set<String> processedSkills = new HashSet<>();
 
-        // Get the assigned skill from the document
-        String assignedSkill = e.getRecordItemParent();  // Assuming this holds the skill name from the document
-        logger.info("Assigned Skill from document: " + assignedSkill);
+        // Get the assigned skill from the document and trim any leading/trailing spaces
+        String assignedSkill = e.getRecordItemParent().trim();
+        logger.info("Assigned Skill from document: '" + assignedSkill + "' with length: " + assignedSkill.length());
 
-        // Check if it matches the skill mapping
-        String skillCode = skillMapping.getOrDefault(assignedSkill, null);
-        logger.info("Mapped Skill Code: " + skillCode);
+        // Query the ESD_SKILL_MAPPING table to get the corresponding skill code (case-insensitive, trimmed, and space-handled)
+        String skillCode = null;
+        try {
+            // Log the incoming assigned skill for debugging
+            logger.info("Assigned Skill Name (before processing): " + assignedSkill);
+
+            // Modified query to match what worked in SQL test (handling spaces and case-insensitive)
+            Query query = em.createNativeQuery(
+                "SELECT SKILL FROM ESD_SKILL_MAPPING WHERE REPLACE(LOWER(TRIM(skill_name)), ' ', '') = REPLACE(LOWER(TRIM(:skillName)), ' ', '')");
+
+            query.setParameter("skillName", assignedSkill);
+
+            @SuppressWarnings("unchecked")
+            List<String> result = query.getResultList();  // Casting result to List<String>
+
+            // Log the result for debugging purposes
+            logger.info("RESULT Skill Code: " + result);  // This will print the result list to logs
+
+            if (!result.isEmpty()) {
+                skillCode = result.get(0);  // Get the first result since we're expecting a single match
+                logger.info("Mapped Skill Code: " + skillCode);
+            } else {
+                logger.warning("No skill found for skill name: '" + assignedSkill + "'");
+            }
+        } catch (Exception ex) {
+            logger.severe("Exception occurred while fetching skill code for skill name: '" + assignedSkill + "'");
+            ex.printStackTrace();  // Print the full exception stack trace
+        }
 
         // Only process the skill if it's found in the mapping and hasn't been processed before
         if (skillCode != null && !processedSkills.contains(skillCode)) {
@@ -203,7 +230,7 @@ public class Authorization_Controller_Data {
                 logger.severe("Error processing skill: " + assignedSkill + " for Employee: " + e.getStaffNumber() + " - " + ex.getMessage());
             }
         } else {
-            logger.info("Skill " + assignedSkill + " not found in mapping or already processed.");
+            logger.info("Skill '" + assignedSkill + "' not found in mapping or already processed.");
         }
     }
     
@@ -246,7 +273,7 @@ public class Authorization_Controller_Data {
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
         boolean expire = false;
 
-        // Skill mapping
+       /* // Skill mapping
         Map<String, String> skillMapping = new HashMap<>();
         skillMapping.put("4.3.1.13 Fan Blade Leading Edge Profiling", "FBLEP");
         skillMapping.put("4.3.1.6 Engine Borescope Inspection", "BSI");
@@ -262,7 +289,7 @@ public class Authorization_Controller_Data {
         skillMapping.put("Engine Test Authorisation", "TES");
         skillMapping.put("Fan Blade Leading Edge Profiling", "FBLEP");
         skillMapping.put("Mechanical", "QTM");
-        skillMapping.put("Rigging/Duplicate Inspection", "DI");
+        skillMapping.put("Rigging/Duplicate Inspection", "DI");*/
 
         // List to store authorities issued
         List<String> issuedAuthorities = new ArrayList<>();
@@ -283,7 +310,7 @@ public class Authorization_Controller_Data {
                     List<String> queriedTechControls = em.createNativeQuery(
                         "SELECT distinct tech_control " +
                         "FROM pn_authority_esd " +
-                        "WHERE pn_type = :pnType")
+                        "WHERE pn_type = :pnType and authority = 'EASA' and tech_control <> 'MODULE' ")
                         .setParameter("pnType", e.getRecordItemName())
                         .getResultList();
                     
@@ -298,7 +325,7 @@ public class Authorization_Controller_Data {
                         "SELECT distinct pa.authority, pe.tech_control " +
                         "FROM pn_master pm, pn_authority_approval pa, pn_authority_esd pe " +
                         "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType " +
-                        "AND pa.authority <> 'EASA' AND pe.pn_type = pm.pn_type")
+                        "AND pa.authority <> 'EASA' AND pe.pn_type = pm.pn_type AND pe.tech_control <> 'MODULE' ")
                         .setParameter("pnType", e.getRecordItemName())
                         .getResultList();
 
@@ -358,7 +385,17 @@ public class Authorization_Controller_Data {
                 license.setEngine(techControl);
                 license.setLicenceType(e.getRecordItemName());
 
-                String skill = skillMapping.getOrDefault(e.getRecordItemParent(), null);
+                String skill = null;
+                try {
+                    skill = (String) em.createNativeQuery(
+                    		"SELECT SKILL \r\n"
+                                    + "FROM ESD_SKILL_MAPPING \r\n"
+                                    + "WHERE LOWER(skill_name) = LOWER(:skillName)")
+                        .setParameter("skillName", e.getRecordItemParent())
+                        .getSingleResult();
+                } catch (Exception ex) {
+                    logger.warning("No skill found for the skill name: " + e.getRecordItemParent());
+                }
                 license.setSkillesd(skill);
 
                 // Set the status of the license based on authorization status
