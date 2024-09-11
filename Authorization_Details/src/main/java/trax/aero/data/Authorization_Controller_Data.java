@@ -68,7 +68,7 @@ public class Authorization_Controller_Data {
     static Logger logger = LogManager.getLogger("AuthDetails");
     
     public Authorization_Controller_Data() {
-        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+        factory = Persistence.createEntityManagerFactory("TraxESD");
         em = factory.createEntityManager();
         
         try {
@@ -249,8 +249,8 @@ public class Authorization_Controller_Data {
         // Skill mapping
         Map<String, String> skillMapping = new HashMap<>();
         skillMapping.put("4.3.1.13 Fan Blade Leading Edge Profiling", "FBLEP");
-        skillMapping.put("4.3.1.16 Engine Borescope Inspection", "BSI");
-        skillMapping.put("4.3.1.17 Engine Borescope Blending", "BB");
+        skillMapping.put("4.3.1.6 Engine Borescope Inspection", "BSI");
+        skillMapping.put("4.3.1.7 Engine Borescope Blending", "BB");
         skillMapping.put("APU", "APU");
         skillMapping.put("Avionics", "QTA");
         skillMapping.put("Engine Borescope Blade Blending", "BB");
@@ -266,27 +266,55 @@ public class Authorization_Controller_Data {
 
         // List to store authorities issued
         List<String> issuedAuthorities = new ArrayList<>();
+        String techControl = "";
         try {
-        	if(e.getRecordItemAuthority() == null || e.getRecordItemAuthority().isEmpty() ) {
-        		e.setRecordItemAuthority("-");
-        	} 
+            if (e.getRecordItemAuthority() == null || e.getRecordItemAuthority().isEmpty()) {
+                e.setRecordItemAuthority("-");
+            } 
             if (e.getRecordItemAuthority() != null && !e.getRecordItemAuthority().isEmpty()) {
                 String authority = e.getRecordItemAuthority();
                 logger.info("AUTHORITY :" + e.getRecordItemAuthority());
+                
                 if (authority.contains("EASA-66")) {
                     issuedAuthorities.add("EASA");
-                } else if ( authority.equals("-") ) {
-                    // Perform native SQL query to retrieve authorities
+                    
+                  
                     @SuppressWarnings("unchecked")
-                    List<String> queriedAuthorities = em.createNativeQuery(
-                        "SELECT distinct pa.authority FROM pn_master pm, pn_authority_approval pa " +
-                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType AND pa.authority <> 'EASA' ")
+                    List<String> queriedTechControls = em.createNativeQuery(
+                        "SELECT distinct tech_control " +
+                        "FROM pn_authority_esd " +
+                        "WHERE pn_type = :pnType")
                         .setParameter("pnType", e.getRecordItemName())
                         .getResultList();
                     
-                   
-                    issuedAuthorities.addAll(queriedAuthorities);
-                } 
+                    
+                    if (!queriedTechControls.isEmpty()) {
+                        techControl = queriedTechControls.get(0); 
+                    }
+                } else if (authority.equals("-")) {
+                    
+                    @SuppressWarnings("unchecked")
+                    List<Object[]> queriedResults = em.createNativeQuery(
+                        "SELECT distinct pa.authority, pe.tech_control " +
+                        "FROM pn_master pm, pn_authority_approval pa, pn_authority_esd pe " +
+                        "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType " +
+                        "AND pa.authority <> 'EASA' AND pe.pn_type = pm.pn_type")
+                        .setParameter("pnType", e.getRecordItemName())
+                        .getResultList();
+
+                    
+                    for (Object[] result : queriedResults) {
+                        String queriedAuthority = (String) result[0]; 
+                        String queriedTechControl = (String) result[1]; 
+
+                        issuedAuthorities.add(queriedAuthority);
+
+                        
+                        if (techControl.isEmpty()) {
+                            techControl = queriedTechControl; 
+                        }
+                    }
+                }
             }
         } catch (Exception ex) {
             logger.severe("Error while filtering authorities: " + ex.getMessage());
@@ -319,6 +347,7 @@ public class Authorization_Controller_Data {
                     license.setDateIssued(new Date());
                     license.setExpirationOptional("Y");
                     license.getId().setControlItem(getLine(e.getStaffNumber(), "CONTROL_ITEM", "Employee_Control", "EMPLOYEE"));
+                    license.setEngine(techControl);
                     
                 }
 
@@ -326,6 +355,7 @@ public class Authorization_Controller_Data {
                 license.setReference(e.getAuthorizationNumber());
                 license.getId().setEmployee(e.getStaffNumber());
                 license.setIssuedAuthority(issuedAuthority);
+                license.setEngine(techControl);
                 license.setLicenceType(e.getRecordItemName());
 
                 String skill = skillMapping.getOrDefault(e.getRecordItemParent(), null);

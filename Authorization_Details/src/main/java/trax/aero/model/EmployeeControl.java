@@ -62,6 +62,9 @@ public class EmployeeControl implements Serializable {
 	
 	@Column(name="SKILL_ESD")
 	private String skillesd;
+	
+	@Column(name="ENGINE")
+	private String engine;
 
 	public EmployeeControl() {
 	}
@@ -200,6 +203,14 @@ public class EmployeeControl implements Serializable {
 
 	public void setSkillesd(String skillesd) {
 		this.skillesd = skillesd;
+	}
+
+	public String getEngine() {
+		return engine;
+	}
+
+	public void setEngine(String engine) {
+		this.engine = engine;
 	}
 	
 	

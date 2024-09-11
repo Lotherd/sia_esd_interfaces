@@ -27,7 +27,7 @@ public class Authorization_Details_Controller {
 	static String toEmail = System.getProperty("AuthorizationD_toEmail");
 	
 	public Authorization_Details_Controller() {
-		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+		factory = Persistence.createEntityManagerFactory("TraxESD");
 		em = factory.createEntityManager();
 	}
 	
