@@ -193,7 +193,7 @@ public class CreationBatch_Data {
                 "JOIN SYSTEM_TRAN_CODE S ON W.SOURCE_TYPE = S.SYSTEM_CODE " +
                 "WHERE W.RFO_NO IS NOT NULL " +
                 "AND PM.CATEGORY IN ('B', 'C', 'D') " +
-                "AND (H.TRANSACTION_TYPE = 'REMOVE' OR H.TRANSACTION_TYPE = 'INSPECT') " +
+                "AND (H.TRANSACTION_TYPE = 'N/L/A REMOVED' OR H.TRANSACTION_TYPE = 'N/L/A INSPECTED') AND H.STATUS = 'CLOSED' " +
                 "AND H.STATE_OF_PART = 'UNSERVICEABLE' " +
                 "AND S.SYSTEM_TRANSACTION = 'SOURCETYPE' " +
                 "AND S.PARTY = '1P' " +
