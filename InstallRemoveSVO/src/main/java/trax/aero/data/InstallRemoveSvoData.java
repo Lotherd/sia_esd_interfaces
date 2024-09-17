@@ -212,7 +212,7 @@ public class InstallRemoveSvoData {
 	            "WHERE A3.SVO_NO IS NULL " +
 	            "AND A3.WO IS NOT NULL " +
 	            "AND A3.TASK_CARD IS NOT NULL " +
-	            "AND (A3.TRANSACTION_TYPE = 'REMOVE' OR A3.TRANSACTION_TYPE = 'INSPECT') " +
+	            "AND (A3.TRANSACTION_TYPE LIKE 'N/L/A%' ) " +
 	            "AND A3.MADE_AS_CCS IS NOT NULL " +
 	            "AND A1.MODULE = 'SHOP' " +
 	            "AND A1.RFO_NO IS NOT NULL " +
