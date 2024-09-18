@@ -170,12 +170,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 				picklistDistributionDIS.setModifiedBy("TRAX_IFACE");
 				picklistDistributionDIS.setModifiedDate(new Date());
-				
+								
 				//LOCATION TRANSFER
+				BigDecimal qtySum = new BigDecimal(0);
 				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "ISSUED");
 				for( Transfer_order to: input.getTransfer_order()) {
 					setCustTo(picklistDistributionDIS,to);
 					setCustTo(picklistDistributionREQ,to);
+					qtySum.add(to.getTRANSFER_ORDER_QUANTITY());
 				}
 				pnInventoryDetail.setLegacyBatch(input.getTransfer_order().get(0).getLEGACY_BATCH());
 
@@ -185,7 +187,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				picklistDistributionREQ.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
-				
+				picklistDistributionREQ.setQtyPicked(qtySum);
+				picklistDistributionDIS.setQtyPicked(qtySum);
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
 				insertData(pnInventoryDetail);
