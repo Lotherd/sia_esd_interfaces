@@ -152,7 +152,9 @@ public class InstallRemoveSvoData {
 			
 				pstmt2 = con.prepareStatement(sqlDate);
 				
-				pstmt2.setString(1, request.getTransaction());
+				pstmt2.setString(1, request.getEsdSvo());
+				
+				pstmt2.setString(2, request.getTransaction());
 				
 				pstmt2.executeQuery();
 				
