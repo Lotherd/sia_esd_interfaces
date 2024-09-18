@@ -3,15 +3,18 @@ package trax.aero.utils;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import javax.ejb.EJB;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import trax.aero.controller.InstallRemoveSVOController;
 import trax.aero.data.InstallRemoveSvoData;
+import trax.aero.interfaces.IInstallRemoveSvoData;
 import trax.aero.logger.LogManager;
 import trax.aero.pojo.I19_Request;
 import trax.aero.pojo.I19_Response;
@@ -22,15 +25,17 @@ import trax.aero.pojo.I19_Response;
 public class Run implements Runnable {
 	
 	//Variables
-	InstallRemoveSvoData data = null;
+	@EJB IInstallRemoveSvoData data;
 	//final String ID = System.getProperty("JobConfirmation_ID");
 	//final String Password = System.getProperty("JobConfirmation_Password");
 	final String url = System.getProperty("InstallRemoveSVO_URL");
 	final int MAX_ATTEMPTS = 3;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 	
-	public Run() {
-		data = new InstallRemoveSvoData();
+
+	
+	public Run(IInstallRemoveSvoData  data) {
+		this.data = data;
 	}
 	
 	private void process() {
@@ -40,7 +45,7 @@ public class Run implements Runnable {
 			String exceuted = "OK";
 			try 
 			{
-								
+				data.openCon();			
 				// loop
 				ArrayRequest = data.getTransactions();
 				boolean success = false;
@@ -90,7 +95,9 @@ public class Run implements Runnable {
 							    marshaller.marshal(input,sw);
 							    logger.info("Input: " + sw.toString());
 							    if(input.getExceptionId() != null && !input.getExceptionDetail().isEmpty() && input.getExceptionId().equalsIgnoreCase("53")) {
+							    	data.openCon();
 							    	exceuted = data.markTransaction(input);
+							    	//data.printCCS(input);
 								}else {
 																		
 									logger.severe("Received Response with Exception: " + input.getExceptionDetail() +",Transaction: "+input.getTransaction() + ", Exception ID: " +input.getExceptionId());
@@ -133,6 +140,17 @@ public class Run implements Runnable {
 				}else{
 					InstallRemoveSVOController.sendEmailRequest(ArrayRequest);
 				}
+			}finally {
+				try 
+				{
+					if(data.getCon() != null && !data.getCon().isClosed())
+						data.getCon().close();
+				} 
+				catch (SQLException e) 
+				{ 
+					e.printStackTrace();
+				}
+	    	   logger.info("finishing");
 			}
 	}
 	

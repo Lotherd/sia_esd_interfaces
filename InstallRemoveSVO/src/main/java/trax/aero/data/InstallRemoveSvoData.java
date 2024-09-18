@@ -16,17 +16,28 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+
+import org.apache.commons.lang3.RandomStringUtils;
 
 import trax.aero.controller.InstallRemoveSVOController;
 import trax.aero.exception.CustomizeHandledException;
+import trax.aero.interfaces.IInstallRemoveSvoData;
 import trax.aero.logger.LogManager;
+import trax.aero.model.BlobTable;
+import trax.aero.model.BlobTablePK;
 import trax.aero.model.InterfaceLockMaster;
+import trax.aero.model.PnInventoryHistory;
 import trax.aero.pojo.I19_Request;
 import trax.aero.pojo.I19_Response;
 import trax.aero.utils.DataSourceClient;
+import trax.aero.utils.PrintPoster;
+import trax.application_standard_structure.st_pn;
 
 
 /*
@@ -63,75 +74,32 @@ WHERE
  
  */
 
-
-public class InstallRemoveSvoData {
-	EntityManagerFactory factory;
-	EntityManager em;
+@Stateless(name="InstallRemoveSvoData" , mappedName="InstallRemoveSvoData")
+public class InstallRemoveSvoData implements IInstallRemoveSvoData {
+	
+	
 	String exceuted;
 	private Connection con;
 	
 	//public InterfaceLockMaster lock;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 
+	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
 	
-	public InstallRemoveSvoData(String mark)
-	{
-		try 
-		{
-			if(this.con == null || this.con.isClosed())
-			{
-				this.con = DataSourceClient.getConnection();
-				logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
-			}			
-		} 
-		catch (SQLException e) 
-		{
-			logger.info("An error occured getting the status of the connection");
-			InstallRemoveSVOController.addError(e.toString());
-			
-		}
-		catch (CustomizeHandledException e1) {
-			
-			InstallRemoveSVOController.addError(e1.toString());
-			
-		} catch (Exception e) {
-			
-			InstallRemoveSVOController.addError(e.toString());
-			
-		}
-			
-	}
 	
 	
 	public InstallRemoveSvoData()
 	{
-		try 
-		{
-			if(this.con == null || this.con.isClosed())
-			{
-				this.con = DataSourceClient.getConnection();
-				logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
-			}			
-		} 
-		catch (SQLException e) 
-		{
-			logger.info("An error occured getting the status of the connection");
-			InstallRemoveSVOController.addError(e.toString());
 			
-		}
-		catch (CustomizeHandledException e1) {
-			
-			InstallRemoveSVOController.addError(e1.toString());
-			
-		} catch (Exception e) {
-			
-			InstallRemoveSVOController.addError(e.toString());
-			
-		}
-		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
-		em = factory.createEntityManager();		
 	}
 	
+	public void openCon() throws SQLException, Exception{
+		if(this.con == null || this.con.isClosed())
+		{
+			this.con = DataSourceClient.getConnection();
+			logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
+		}
+	}
 	public Connection getCon() {
 		return con;
 	}
@@ -149,7 +117,7 @@ public class InstallRemoveSvoData {
 
 		try 
 		{
-			
+				openCon();
 				pstmt2 = con.prepareStatement(sqlDate);
 				
 				pstmt2.setString(1, request.getEsdSvo());
@@ -245,6 +213,7 @@ public class InstallRemoveSvoData {
 
 		try 
 		{
+			openCon();
 			pstmt1 = con.prepareStatement(sql);
 			pstmt2 = con.prepareStatement(sqlMark);
 			
@@ -441,6 +410,21 @@ public class InstallRemoveSvoData {
 		return list;
 	}
 	
+	
+	
+	private <T> void insertData( T data) 
+	{
+		try 
+		{	
+			em.merge(data);
+			em.flush();
+		}catch (Exception e)
+		{
+			logger.severe(e.toString());
+		}
+	}
+	
+	
 	public boolean lockAvailable(String notificationType)
 	{
 		
@@ -471,53 +455,291 @@ public class InstallRemoveSvoData {
 		
 	}
 	
-	private <T> void insertData( T data) 
-	{
-		try 
-		{	
-			if(!em.getTransaction().isActive())
-				em.getTransaction().begin();
-				em.merge(data);
-			em.getTransaction().commit();
-		}catch (Exception e)
-		{
-			logger.severe(e.toString());
-		}
-	}
-	
 	
 	public void lockTable(String notificationType)
 	{
-		em.getTransaction().begin();
 		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-				.setParameter("type", notificationType)
-				.getSingleResult();
+				.setParameter("type", notificationType).getSingleResult();
 		lock.setLocked(new BigDecimal(1));
+		//logger.info("lock " + lock.getLocked());
+		
 		lock.setLockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
 		InetAddress address = null;
 		try {
 			address = InetAddress.getLocalHost();
 		} catch (UnknownHostException e) {
+			
 			logger.info(e.getMessage());
+			//e.printStackTrace();
 		}
 		lock.setCurrentServer(address.getHostName());
-		em.merge(lock);
-		em.getTransaction().commit();
+		//em.lock(lock, LockModeType.NONE);
+		insertData(lock);
 	}
 	
 	public void unlockTable(String notificationType)
 	{
-		em.getTransaction().begin();
+		
 		InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-				.setParameter("type", notificationType)
-				.getSingleResult();
+				.setParameter("type", notificationType).getSingleResult();
 		lock.setLocked(new BigDecimal(0));
+		//logger.info("lock " + lock.getLocked());
+		
 		lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
-	
-		em.merge(lock);
-		em.getTransaction().commit();
+		//em.lock(lock, LockModeType.NONE);
+		insertData(lock);
 	}
 
+	public String print(String wo,String task_card , byte[] bs, String formNo, String formLine) throws Exception {
+		//setting up variables
+		exceuted = "OK";
+		
+		try 
+		{			
+			if(this.con == null || this.con.isClosed())
+			{
+				this.con = DataSourceClient.getConnection();
+				logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
+			}
+			setAttachmentLink(bs,wo, task_card);
+			
+		}
+		catch (Exception e) 
+        {
+			exceuted = e.toString();
+			logger.severe(exceuted);
+		}
+		return exceuted;
+		
+		
+	}
+	
+	private void setAttachmentLink( byte[] input,String woo, String path) {
+		boolean existBlob = false;
+		BlobTable blob = null;
+		
+		
+	    String random = RandomStringUtils.random(19, false, true);
+
+		PnInventoryHistory pih =  getPnInventoryHistory(woo);
+		
+		String fileName = random + ".pdf";
+	    if(pih == null) {
+	    	return;
+	    }
+		
+		
+			try 
+			{
+				blob = em.createQuery("SELECT b FROM BlobTable b where b.id.blobNo = :bl and b.blobDescription = :des", BlobTable.class)
+						.setParameter("bl", pih.getBlobNo().longValue())
+						.setParameter("des",fileName )
+						.getSingleResult();
+				existBlob = true;
+			}
+			catch(Exception e)
+			{
+				
+				BlobTablePK pk = new BlobTablePK();
+				blob = new BlobTable();
+				blob.setCreatedDate(new Date());
+				blob.setCreatedBy("TRAX_IFACE");
+				blob.setId(pk);
+				
+				blob.setPrintFlag("YES");
+				
+				blob.getId().setBlobLine(getLine(pih.getBlobNo(),"BLOB_LINE","BLOB_TABLE","BLOB_NO" ));
+			}
+			
+			
+			blob.setDocType(fileName.substring(0, 3));
+			
+				
+			
+			
+			blob.setModifiedBy("TRAX_IFACE");
+			blob.setModifiedDate(new Date());
+			blob.setBlobItem(input);
+			blob.setBlobDescription(fileName);
+			blob.setCustomDescription(fileName);
+			
+			
+			
+			if(!existBlob && pih.getBlobNo() == null) {
+				try {
+					blob.getId().setBlobNo(((getTransactionNo("BLOB").longValue())));
+					pih.setBlobNo(new BigDecimal(blob.getId().getBlobNo()));
+				} catch (Exception e1) {
+					
+				}
+			}else if(pih.getBlobNo() != null){
+				blob.getId().setBlobNo(pih.getBlobNo().longValue());
+			}
+			
+			logger.info("INSERTING pih: " + pih + " " );
+			insertData(pih);
+			
+			logger.info("INSERTING blob: " + blob.getId().getBlobNo() + " Line: " + blob.getId().getBlobLine());
+			insertData(blob);
+			
+			return;
+	}
+	
+	
+	private long getLine(BigDecimal no, String table_line, String table, String table_no)
+	{		
+		long line = 0;
+		String sql = " SELECT  MAX("+table_line+") FROM "+table+" WHERE "+table_no+" = ?";
+		try
+		{
+			logger.info(no.toString());
+			Query query = em.createNativeQuery(sql);
+			query.setParameter(1, no);  
+		
+			BigDecimal dec = (BigDecimal) query.getSingleResult(); 
+			line = dec.longValue();
+			line++;
+		}
+		catch (Exception e) 
+		{
+			line = 1;
+		}
+		
+		return line;
+	}
+	private BigDecimal getTransactionNo(String code)
+	{		
+		try
+		{
+			BigDecimal acctBal = (BigDecimal) em.createNativeQuery("SELECT pkg_application_function.config_number ( ? ) "
+					+ " FROM DUAL ").setParameter(1, code).getSingleResult();
+						
+			return acctBal;			
+		}
+		catch (Exception e) 
+		{
+			logger.severe("An unexpected error occurred getting the sequence. " + "\nmessage: " + e.toString());
+		}
+		
+		return null;
+		
+	}
+	
+	
+	private PnInventoryHistory getPnInventoryHistory(String formNo) {
+		PnInventoryHistory wo = null;
+		
+		try {
+			wo = em.createQuery("SELECT w FROM PnInventoryHistory w WHERE w.id.transactionNo = :formNo ", PnInventoryHistory.class)
+						.setParameter("formNo", new BigDecimal(formNo).longValue())
+						.getSingleResult();
+				
+				return wo;
+		}catch(Exception e){
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	@Override
+	public void printCCS(I19_Response input) {
+		logger.info("Setting ");
+		
+		logger.info("Calling Print server");
+		PrintPoster poster = new PrintPoster();
+		st_pn ms_pn = new st_pn();
+		ms_pn.l_batch = getBatch(input);
+
+		ms_pn.s_calling_window = "w_pn_identification_tag_print";
+
+		
+		ms_pn.s_employee = "ADM";
+		
+		ms_pn.s_message ="SERVICETAG";
+	
+		poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_print"
+				, "pn identification tag print"
+				, "ADM", getSeqNo(), ms_pn);
+		
+	}
+
+	private Integer getBatch(I19_Response response) {
+		System.out.println("Finding next seq");
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+		try
+		{
+			String sql = ("select batch from PN_INVENTORY_HISTORY  " + 
+					"where TRANSACTION_NO = ?");
+			
+			pstmt1 = con.prepareStatement(sql);
+			pstmt1.setString(1, response.getTransaction());
+			rs1 = pstmt1.executeQuery();
+
+			if (rs1 != null) 
+			{
+				while (rs1.next()) 
+				{
+					if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
+						return Integer.parseInt(rs1.getString(1));
+					}else {
+						return 0;
+					}
+				}
+			}	
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			return 0;
+		}finally {
+			try {
+				if(pstmt1 != null && !pstmt1.isClosed())
+					pstmt1.close();
+				if(rs1 != null && !rs1.isClosed())
+					rs1.close();
+			}catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
+		return 0;
+	}
+
+	private BigDecimal getSeqNo() 
+	{		
+		System.out.println("Finding next seq");
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+		try
+		{
+			String sql = ("select SEQ_W_PRINT_JOBS.NextVal FROM DUAL");	
+			pstmt1 = con.prepareStatement(sql);
+			rs1 = pstmt1.executeQuery();
+
+			if (rs1 != null) 
+			{
+				rs1.next(); 
+				return new BigDecimal(rs1.getString(1));
+			}
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			return null;
+		}finally {
+			try {
+		
+			if(pstmt1 != null && !pstmt1.isClosed())
+				pstmt1.close();
+			if(rs1 != null && !rs1.isClosed())
+				rs1.close();
+			}catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
+		return null;
+		
+	}
 
 
 }

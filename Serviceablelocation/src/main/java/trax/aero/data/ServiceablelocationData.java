@@ -1,17 +1,12 @@
 package trax.aero.data;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.sql.Types;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -19,15 +14,22 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import javax.persistence.LockModeType;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+
+import org.apache.commons.lang3.RandomStringUtils;
 
 import trax.aero.controller.ServiceablelocationController;
-import trax.aero.exception.CustomizeHandledException;
+import trax.aero.interfaces.IServiceablelocationData;
 import trax.aero.logger.LogManager;
+import trax.aero.model.BlobTable;
+import trax.aero.model.BlobTablePK;
 import trax.aero.model.InterfaceAudit;
 import trax.aero.model.InterfaceLockMaster;
+import trax.aero.model.Wo;
 import trax.aero.pojo.MT_TRAX_RCV_I28_4134_RES;
 import trax.aero.pojo.MT_TRAX_SND_I28_4134_REQ;
 import trax.aero.utils.DataSourceClient;
@@ -53,71 +55,32 @@ SELECT w.refurbishment_order FROM WO w where w.INTERFACE_SAP_TRANSFER_DATE IS NU
 */
 
 
-
-public class ServiceablelocationData {
+@Stateless(name="ServiceablelocationData" , mappedName="ServiceablelocationData")
+public class ServiceablelocationData implements IServiceablelocationData {
 
 		Logger logger = LogManager.getLogger("Serviceablelocation_I94");
-		EntityManagerFactory factory;
-		EntityManager em;
+		
+		@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
+		
 		String exceuted;
 		private Connection con;
-		
+		public InterfaceLockMaster lock;
+
 		final String MaxRecord = System.getProperty("Serviceablelocation_MaxRecord");
 		//public InterfaceLockMaster lock;
 		
-		public ServiceablelocationData(String mark)
+		public ServiceablelocationData()
 		{
-			try 
-			{
-				if(this.con == null || this.con.isClosed())
-				{
-					this.con = DataSourceClient.getConnection();
-					logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
-				}			
-			} 
-			catch (SQLException e) 
-			{
-				logger.severe("An error occured getting the status of the connection");
-				ServiceablelocationController.addError(e.toString());
-				
-			}
-			catch (CustomizeHandledException e1) {
-				ServiceablelocationController.addError(e1.toString());
-				logger.severe(e1.toString());
-			} catch (Exception e) {
-				ServiceablelocationController.addError(e.toString());
-				logger.severe(e.toString());
-			}
 			
 		}
 		
-		public ServiceablelocationData()
-		{
-			try 
+		public void openCon() throws SQLException, Exception{
+			if(this.con == null || this.con.isClosed())
 			{
-				if(this.con == null || this.con.isClosed())
-				{
-					this.con = DataSourceClient.getConnection();
-					logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
-				}			
-			} 
-			catch (SQLException e) 
-			{
-				logger.severe("An error occured getting the status of the connection");
-				ServiceablelocationController.addError(e.toString());
-				
+				this.con = DataSourceClient.getConnection();
+				logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
 			}
-			catch (CustomizeHandledException e1) {
-				ServiceablelocationController.addError(e1.toString());
-				logger.severe(e1.toString());
-			} catch (Exception e) {
-				ServiceablelocationController.addError(e.toString());
-				logger.severe(e.toString());
-			}
-			factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
-			em = factory.createEntityManager();
 		}
-		
 		public Connection getCon() {
 			return con;
 		}
@@ -267,14 +230,14 @@ public class ServiceablelocationData {
 					st_pn ms_pn = new st_pn();
 					ms_pn.l_batch = getBatch(response);
 
-					ms_pn.s_calling_window = "w_pn_identification_tag_re_print";
+					ms_pn.s_calling_window = "w_pn_identification_tag_print";
 
 					
 					ms_pn.s_employee = "ADM";
 					
 					ms_pn.s_message ="SERVICETAG";
 				
-					poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_re_print"
+					poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_print"
 							, "pn identification tag print"
 							, "ADM", getSeqNo(), ms_pn);
 					
@@ -407,10 +370,8 @@ public class ServiceablelocationData {
 		{
 			try 
 			{	
-				if(!em.getTransaction().isActive())
-					em.getTransaction().begin();
-					em.merge(data);
-				em.getTransaction().commit();
+				em.merge(data);
+				em.flush();
 			}catch (Exception e)
 			{
 				logger.severe(e.toString());
@@ -450,7 +411,6 @@ public class ServiceablelocationData {
 		
 		public void lockTable(String notificationType)
 		{
-			em.getTransaction().begin();
 			InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
 					.setParameter("type", notificationType).getSingleResult();
 			lock.setLocked(new BigDecimal(1));
@@ -467,13 +427,11 @@ public class ServiceablelocationData {
 			}
 			lock.setCurrentServer(address.getHostName());
 			//em.lock(lock, LockModeType.NONE);
-			em.merge(lock);
-			em.getTransaction().commit();
+			insertData(lock);
 		}
 		
 		public void unlockTable(String notificationType)
 		{
-			em.getTransaction().begin();
 			
 			InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
 					.setParameter("type", notificationType).getSingleResult();
@@ -482,8 +440,7 @@ public class ServiceablelocationData {
 			
 			lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()) );
 			//em.lock(lock, LockModeType.NONE);
-			em.merge(lock);
-			em.getTransaction().commit();
+			insertData(lock);
 		}
 		
 		public void logError(String error) {
@@ -522,6 +479,158 @@ public class ServiceablelocationData {
 				throw e;
 			}
 			
+		}
+		
+		
+		public String print(String wo,String task_card , byte[] bs, String formNo, String formLine) throws Exception {
+			//setting up variables
+			exceuted = "OK";
+			
+			try 
+			{			
+				if(this.con == null || this.con.isClosed())
+				{
+					this.con = DataSourceClient.getConnection();
+					logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
+				}
+				setAttachmentLink(bs,wo, task_card);
+				
+			}
+			catch (Exception e) 
+	        {
+				exceuted = e.toString();
+				logger.severe(exceuted);
+			}
+			return exceuted;
+			
+			
+		}
+		
+		private void setAttachmentLink( byte[] input,String woo, String path) {
+			boolean existBlob = false;
+			BlobTable blob = null;
+			
+			
+		    String random = RandomStringUtils.random(19, false, true);
+
+			Wo wo =  getWo(woo);
+			
+			String fileName = random + ".pdf";
+		    if(wo == null) {
+		    	return;
+		    }
+			
+			
+				try 
+				{
+					blob = em.createQuery("SELECT b FROM BlobTable b where b.id.blobNo = :bl and b.blobDescription = :des", BlobTable.class)
+							.setParameter("bl", wo.getBlobNo().longValue())
+							.setParameter("des",fileName )
+							.getSingleResult();
+					existBlob = true;
+				}
+				catch(Exception e)
+				{
+					
+					BlobTablePK pk = new BlobTablePK();
+					blob = new BlobTable();
+					blob.setCreatedDate(new Date());
+					blob.setCreatedBy("TRAX_IFACE");
+					blob.setId(pk);
+					
+					blob.setPrintFlag("YES");
+					
+					blob.getId().setBlobLine(getLine(wo.getBlobNo(),"BLOB_LINE","BLOB_TABLE","BLOB_NO" ));
+				}
+				
+				
+				blob.setDocType(fileName.substring(0, 3));
+				
+					
+				
+				
+				blob.setModifiedBy("TRAX_IFACE");
+				blob.setModifiedDate(new Date());
+				blob.setBlobItem(input);
+				blob.setBlobDescription(fileName);
+				blob.setCustomDescription(fileName);
+				
+				
+				
+				if(!existBlob && wo.getBlobNo() == null) {
+					try {
+						blob.getId().setBlobNo(((getTransactionNo("BLOB").longValue())));
+						wo.setBlobNo(new BigDecimal(blob.getId().getBlobNo()));
+					} catch (Exception e1) {
+						
+					}
+				}else if(wo.getBlobNo() != null){
+					blob.getId().setBlobNo(wo.getBlobNo().longValue());
+				}
+				
+				logger.info("INSERTING WO: " + wo + " " );
+				insertData(wo);
+				
+				logger.info("INSERTING blob: " + blob.getId().getBlobNo() + " Line: " + blob.getId().getBlobLine());
+				insertData(blob);
+				
+				return;
+		}
+		
+		
+		private long getLine(BigDecimal no, String table_line, String table, String table_no)
+		{		
+			long line = 0;
+			String sql = " SELECT  MAX("+table_line+") FROM "+table+" WHERE "+table_no+" = ?";
+			try
+			{
+				logger.info(no.toString());
+				Query query = em.createNativeQuery(sql);
+				query.setParameter(1, no);  
+			
+				BigDecimal dec = (BigDecimal) query.getSingleResult(); 
+				line = dec.longValue();
+				line++;
+			}
+			catch (Exception e) 
+			{
+				line = 1;
+			}
+			
+			return line;
+		}
+		private BigDecimal getTransactionNo(String code)
+		{		
+			try
+			{
+				BigDecimal acctBal = (BigDecimal) em.createNativeQuery("SELECT pkg_application_function.config_number ( ? ) "
+						+ " FROM DUAL ").setParameter(1, code).getSingleResult();
+							
+				return acctBal;			
+			}
+			catch (Exception e) 
+			{
+				logger.severe("An unexpected error occurred getting the sequence. " + "\nmessage: " + e.toString());
+			}
+			
+			return null;
+			
+		}
+		
+		
+		private Wo getWo(String formNo) {
+			Wo wo = null;
+			
+			try {
+				wo = em.createQuery("SELECT w FROM WoTaskCard w WHERE w.formNo = :formNo ", Wo.class)
+							.setParameter("formNo", new BigDecimal(formNo))
+							.getSingleResult();
+					
+					return wo;
+			}catch(Exception e){
+				e.printStackTrace();
+				return null;
+			}
 		}
 		
 }
