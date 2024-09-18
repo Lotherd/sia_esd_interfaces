@@ -270,10 +270,10 @@ public class InstallRemoveSvoData {
 					}
 					
 					if(rs1.getString(3) != null && !rs1.getString(3).isEmpty()) {
-						Inbound.setPnSn(rs1.getString(3));
+						Inbound.setEsnNo(rs1.getString(3));
 					}
 					else {
-						Inbound.setPnSn("");
+						Inbound.setEsnNo("");
 					}
 					
 					if(rs1.getDate(4) != null) {
