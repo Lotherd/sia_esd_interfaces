@@ -334,9 +334,9 @@ public class InstallRemoveSvoData {
 					if(rs1.getString(9) != null && !rs1.getString(9).isEmpty()) {
 					    String transactionType = rs1.getString(9);
 					    
-					    if (transactionType.equalsIgnoreCase("REMOVAL")) {
+					    if (transactionType.contains("REMOV")) {
 					        Inbound.setTransactionType("R");
-					    } else if (transactionType.equalsIgnoreCase("INSTALL")) {
+					    } else if (transactionType.contains("INSTAL")) {
 					        Inbound.setTransactionType("I");
 					    } else {
 					        // Handle other cases if necessary, or leave as it is
