@@ -1,7 +1,9 @@
 package trax.aero.start;
+import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
+import trax.aero.interfaces.IInstallRemoveSvoData;
 import trax.aero.logger.LogManager;
 import trax.aero.utils.Run;
 
@@ -24,10 +26,13 @@ public class Start
 	Run timer = null;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 	
+	@EJB IInstallRemoveSvoData data;
+
+	
 	@PostConstruct
 	public void start()
 	{
-		timer = new Run();
+		timer = new Run(data);
 		
 		if (scheduledServ == null) {
 			int scheduledPoolSize = 1;

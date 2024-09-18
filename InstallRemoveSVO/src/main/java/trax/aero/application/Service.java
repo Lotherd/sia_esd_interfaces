@@ -4,6 +4,7 @@ import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import javax.ejb.EJB;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -14,10 +15,15 @@ import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import org.apache.commons.io.IOUtils;
+import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
+
 import trax.aero.controller.InstallRemoveSVOController;
 import trax.aero.data.InstallRemoveSvoData;
+import trax.aero.interfaces.IInstallRemoveSvoData;
 import trax.aero.logger.LogManager;
 import trax.aero.pojo.I19_Response;
+import trax.aero.pojo.MultipartBody;
 
 
 
@@ -28,6 +34,8 @@ public class Service {
 	
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 	
+	@EJB IInstallRemoveSvoData data;
+	
 	@POST
 	@Path("/markTransaction")
 	@Consumes(MediaType.APPLICATION_XML + ";charset=utf-8")
@@ -35,9 +43,7 @@ public class Service {
 	public Response markTransaction(I19_Response input)
 	{
 		String exceuted = "OK";
-		
-		InstallRemoveSvoData data = new InstallRemoveSvoData("mark");
-		
+				
 		try 
         {    
 			
@@ -56,7 +62,9 @@ public class Service {
 				InstallRemoveSVOController.addError("Received Response with Exception: " + input.getExceptionDetail() +", Order Number: "+input.getTransaction() + ", Exception ID: " +input.getExceptionId());
 				exceuted = "Issue found";
 			}else {
+		    	data.openCon();
 				exceuted = data.markTransaction(input);
+				//data.printCCS(input);
 			}
         	if(!exceuted.equalsIgnoreCase("OK")) {
         		exceuted = "Issue found";
@@ -93,5 +101,53 @@ public class Service {
 		logger.info("Healthy");
     	return Response.ok("Healthy",MediaType.APPLICATION_JSON).build();
     }
+	
+	@POST
+	@Path("/printFile")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	public Response  CarryForwardPrint(
+			@MultipartForm MultipartBody body)
+	{
+		String fianl = "{\n\"status\": \"OK\", \n\"statusCode\": \"200\"\n}";
+		String exceuted = "OK";
+		try 
+        {   
+			
+	           	logger.info("Input: " + body.json.toString());
+	          
+	           	
+	        	exceuted = data.print(body.json.getWo(), body.json.getTask_card(), IOUtils.toByteArray(body.file),
+	        			body.json.getForm_No(), body.json.getForm_Line());
+	        	
+	        
+        	
+        	
+        	if(exceuted == null || !exceuted.equalsIgnoreCase("OK")) {
+        		exceuted = "Issue found";
+        		throw new Exception("Issue found");
+        	}else {
+        		exceuted = fianl;
+        	}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+       finally 
+       {   
+    	   try 
+			{
+				if(data.getCon() != null && !data.getCon().isClosed())
+					data.getCon().close();
+			} 
+			catch (SQLException e) 
+			{ 
+				exceuted = e.toString();
+			}
+    	   logger.info("finishing");
+       }
+        
+	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
+	}
 	
 }
