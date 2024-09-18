@@ -76,6 +76,12 @@ public class EmployeeSkill implements Serializable {
 
 	@Column(name="TOTAL_HOURS")
 	private BigDecimal totalHours;
+	
+	@Column(name="PN_TYPE")
+	private String pntype;
+	
+	@Column(name="ENGINE")
+	private String engine;
 
 	public EmployeeSkill() {
 	}
@@ -255,5 +261,22 @@ public class EmployeeSkill implements Serializable {
 	public void setTotalHours(BigDecimal totalHours) {
 		this.totalHours = totalHours;
 	}
+
+	public String getPntype() {
+		return pntype;
+	}
+
+	public void setPntype(String pntype) {
+		this.pntype = pntype;
+	}
+
+	public String getEngine() {
+		return engine;
+	}
+
+	public void setEngine(String engine) {
+		this.engine = engine;
+	}
+	
 
 }
