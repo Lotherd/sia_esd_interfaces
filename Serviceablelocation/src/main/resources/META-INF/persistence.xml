@@ -6,6 +6,8 @@
 		transaction-type="JTA">
 		<jta-data-source>TraxStandaloneDS</jta-data-source>
 		<class>trax.aero.model.InterfaceLockMaster</class>
+		<class>trax.aero.model.BlobTable</class>
+		<class>trax.aero.model.BlobTablePK</class>
 		 <class>trax.aero.model.InterfaceAudit</class>
 		 <class>trax.aero.model.Wo</class>
 		<shared-cache-mode>NONE</shared-cache-mode>
