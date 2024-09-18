@@ -166,68 +166,101 @@ public class Authorization_Controller_Data {
 
         // Only process the skill if it's found in the mapping and hasn't been processed before
         if (skillCode != null && !processedSkills.contains(skillCode)) {
-            EmployeeSkill employeeSkill = null;
-
+            String techControl = null;
             try {
-                // Check if the skill already exists for the employee
-                employeeSkill = em.createQuery("SELECT e FROM EmployeeSkill e WHERE e.id.employee = :em AND e.id.skill = :sk", EmployeeSkill.class)
-                                  .setParameter("em", e.getStaffNumber())
-                                  .setParameter("sk", skillCode)
-                                  .getSingleResult();
-                
-                // Skill exists, so update it
-                employeeSkill.setModifiedBy("TRAX_IFACE");
-                employeeSkill.setModifiedDate(new Date());
-                employeeSkill.setLicense(e.getAuthorizationNumber());
+                // Execute your new SQL query to retrieve tech_control
+                Query techControlQuery = em.createNativeQuery(
+                    "SELECT DISTINCT pe.tech_control " +
+                    "FROM pn_master pm, pn_authority_approval pa, pn_authority_esd pe " +
+                    "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType " +
+                    "AND pe.pn_type = pm.pn_type AND pe.tech_control <> 'MODULE'");
+                techControlQuery.setParameter("pnType", e.getRecordItemName());
 
-                try {
-                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-                    employeeSkill.setExpirationDate(format.parse(e.getAuthorizationExpiryDate()));
-                    employeeSkill.setExpirationOptional("YES");
-                } catch (ParseException e1) {
-                    logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
+                @SuppressWarnings("unchecked")
+                List<String> techControlResult = techControlQuery.getResultList();
+
+                if (!techControlResult.isEmpty()) {
+                    techControl = techControlResult.get(0);  // Assuming you only need the first result
+                    logger.info("Tech Control retrieved: " + techControl);
+                } else {
+                    logger.warning("No tech_control found for pn_type: '" + e.getRecordItemName() + "'");
                 }
-                
-                logger.info("UPDATING SKILL: " + assignedSkill + " for Employee: " + e.getStaffNumber());
-            } catch (NoResultException ex) {
-                // Skill does not exist, so create and insert it
-                employeeSkill = new EmployeeSkill();
-                EmployeeSkillPK pk = new EmployeeSkillPK();
-
-                pk.setEmployee(e.getStaffNumber());
-                pk.setSkill(skillCode);
-                pk.setAcType("N/A"); // Use a placeholder value instead of an empty string
-                pk.setAcSeries("N/A"); // Use a placeholder value instead of an empty string
-
-                employeeSkill.setId(pk);
-                employeeSkill.setStatus("ACTIVE");
-                employeeSkill.setCreatedBy("TRAX_IFACE");
-                employeeSkill.setCreatedDate(new Date());
-                employeeSkill.setModifiedBy("TRAX_IFACE");
-                employeeSkill.setModifiedDate(new Date());
-                employeeSkill.setLicense(e.getAuthorizationNumber());
-
-                try {
-                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-                    employeeSkill.setExpirationDate(format.parse(e.getAuthorizationExpiryDate()));
-                    employeeSkill.setExpirationOptional("YES");
-                } catch (ParseException e1) {
-                    logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
-                }
-
-                logger.info("INSERTING NEW SKILL: " + assignedSkill + " for Employee: " + e.getStaffNumber());
+            } catch (Exception ex) {
+                logger.severe("Exception occurred while fetching tech_control for pn_type: '" + e.getRecordItemName() + "'");
+                ex.printStackTrace();
             }
 
-            try {
-                // Insert or update the skill in the database
-                logger.info("Attempting to insert/update skill: " + skillCode + " for Employee: " + e.getStaffNumber());
-                insertData(employeeSkill);
-                logger.info("Successfully processed skill: " + assignedSkill + " for Employee: " + e.getStaffNumber());
-                
-                // Add the processed skill to the set to avoid duplicating it
-                processedSkills.add(skillCode);
-            } catch (Exception ex) {
-                logger.severe("Error processing skill: " + assignedSkill + " for Employee: " + e.getStaffNumber() + " - " + ex.getMessage());
+            // Here we handle multiple `e.getRecordItemName()` for the same skill
+            // Assuming e.getRecordItemName() returns names separated by commas or some delimiter, we can split them
+            String[] recordItemNames = e.getRecordItemName().split(",");  // Splitting by comma or other delimiter
+            for (String recordItemName : recordItemNames) {
+                recordItemName = recordItemName.trim();  // Make sure to trim any extra spaces
+
+                EmployeeSkill employeeSkill = null;
+                try {
+                    // Check if the skill already exists for the employee with the given record item name
+                    employeeSkill = em.createQuery("SELECT e FROM EmployeeSkill e WHERE e.id.employee = :em AND e.id.skill = :sk AND e.id.acType = :acType", EmployeeSkill.class)
+                                      .setParameter("em", e.getStaffNumber())
+                                      .setParameter("sk", skillCode)
+                                      .setParameter("acType", recordItemName)
+                                      .getSingleResult();
+                    
+                    // Skill exists, so update it
+                    employeeSkill.setModifiedBy("TRAX_IFACE");
+                    employeeSkill.setModifiedDate(new Date());
+                    employeeSkill.setLicense(e.getAuthorizationNumber());
+
+                    try {
+                        DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                        employeeSkill.setExpirationDate(format.parse(e.getAuthorizationExpiryDate()));
+                        employeeSkill.setExpirationOptional("YES");
+                    } catch (ParseException e1) {
+                        logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
+                    }
+                    
+                    logger.info("UPDATING SKILL: " + assignedSkill + " for Employee: " + e.getStaffNumber());
+                } catch (NoResultException ex) {
+                    // Skill does not exist, so create and insert it
+                    employeeSkill = new EmployeeSkill();
+                    EmployeeSkillPK pk = new EmployeeSkillPK();
+
+                    pk.setEmployee(e.getStaffNumber());
+                    pk.setSkill(skillCode);
+                    pk.setAcType(recordItemName != null ? recordItemName : "N/A"); // Use a placeholder value instead of an empty string
+                    pk.setAcSeries(techControl != null ? techControl : "N/A"); // Use techControl if found, otherwise "N/A"
+
+                    employeeSkill.setId(pk);
+                    employeeSkill.setStatus("ACTIVE");
+                    employeeSkill.setCreatedBy("TRAX_IFACE");
+                    employeeSkill.setCreatedDate(new Date());
+                    employeeSkill.setModifiedBy("TRAX_IFACE");
+                    employeeSkill.setModifiedDate(new Date());
+                    employeeSkill.setLicense(e.getAuthorizationNumber());
+                    employeeSkill.setPntype(recordItemName != null ? recordItemName : "N/A");
+                    employeeSkill.setEngine(techControl != null ? techControl : "N/A");
+
+                    try {
+                        DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                        employeeSkill.setExpirationDate(format.parse(e.getAuthorizationExpiryDate()));
+                        employeeSkill.setExpirationOptional("YES");
+                    } catch (ParseException e1) {
+                        logger.severe("Error parsing expiration date for employee: " + e.getStaffNumber());
+                    }
+
+                    logger.info("INSERTING NEW SKILL: " + assignedSkill + " for Employee: " + e.getStaffNumber());
+                }
+
+                try {
+                    // Insert or update the skill in the database
+                    logger.info("Attempting to insert/update skill: " + skillCode + " for Employee: " + e.getStaffNumber());
+                    insertData(employeeSkill);
+                    logger.info("Successfully processed skill: " + assignedSkill + " for Employee: " + e.getStaffNumber());
+                    
+                    // Add the processed skill to the set to avoid duplicating it
+                    processedSkills.add(skillCode);
+                } catch (Exception ex) {
+                    logger.severe("Error processing skill: " + assignedSkill + " for Employee: " + e.getStaffNumber() + " - " + ex.getMessage());
+                }
             }
         } else {
             logger.info("Skill '" + assignedSkill + "' not found in mapping or already processed.");
