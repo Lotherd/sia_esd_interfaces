@@ -1,12 +1,17 @@
 package trax.aero.data;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -26,6 +31,8 @@ import trax.aero.model.InterfaceLockMaster;
 import trax.aero.pojo.MT_TRAX_RCV_I28_4134_RES;
 import trax.aero.pojo.MT_TRAX_SND_I28_4134_REQ;
 import trax.aero.utils.DataSourceClient;
+import trax.aero.utils.PrintPoster;
+import trax.application_standard_structure.st_pn;
 
 
 /*
@@ -128,7 +135,7 @@ public class ServiceablelocationData {
 			
 			String sql = 
 			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by  from wo w, wo_shop_detail wsd \r\n" + 
-			"where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is not null\r\n" + 
+			"where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null\r\n" + 
 			"and w.status = 'POSTCOMPLT'";
 
 			if((MaxRecord != null && !MaxRecord.isEmpty())) {
@@ -250,6 +257,108 @@ public class ServiceablelocationData {
 			}
 			
 		}
+		
+		public void printLabel(MT_TRAX_RCV_I28_4134_RES response) {
+			
+					logger.info("Setting ");
+						
+					logger.info("Calling Print server");
+					PrintPoster poster = new PrintPoster();
+					st_pn ms_pn = new st_pn();
+					ms_pn.l_batch = getBatch(response);
+
+					ms_pn.s_calling_window = "w_pn_identification_tag_re_print";
+
+					
+					ms_pn.s_employee = "ADM";
+					
+					ms_pn.s_message ="SERVICETAG";
+				
+					poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_re_print"
+							, "pn identification tag print"
+							, "ADM", getSeqNo(), ms_pn);
+					
+		}
+		
+		private Integer getBatch(MT_TRAX_RCV_I28_4134_RES response) {
+			System.out.println("Finding next seq");
+			PreparedStatement pstmt1 = null;
+			ResultSet rs1 = null;
+			try
+			{
+				String sql = ("select wsd.batch from wo w, wo_shop_detail wsd " + 
+						"where w.rfo_no is not null  and w.wo = wsd.wo " + 
+						"and w.rfo_no = ?");
+				
+				pstmt1 = con.prepareStatement(sql);
+				pstmt1.setString(1, response.getRfo());
+				rs1 = pstmt1.executeQuery();
+
+				if (rs1 != null) 
+				{
+					while (rs1.next()) 
+					{
+						if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
+							return Integer.parseInt(rs1.getString(1));
+						}else {
+							return 0;
+						}
+					}
+				}	
+			}
+			catch (Exception e) 
+			{
+				e.printStackTrace();
+				return 0;
+			}finally {
+				try {
+					if(pstmt1 != null && !pstmt1.isClosed())
+						pstmt1.close();
+					if(rs1 != null && !rs1.isClosed())
+						rs1.close();
+				}catch (Exception e) {
+					// TODO: handle exception
+				}
+			}
+			return 0;
+		}
+
+		private BigDecimal getSeqNo() 
+		{		
+			System.out.println("Finding next seq");
+			PreparedStatement pstmt1 = null;
+			ResultSet rs1 = null;
+			try
+			{
+				String sql = ("select SEQ_W_PRINT_JOBS.NextVal FROM DUAL");	
+				pstmt1 = con.prepareStatement(sql);
+				rs1 = pstmt1.executeQuery();
+
+				if (rs1 != null) 
+				{
+					rs1.next(); 
+					return new BigDecimal(rs1.getString(1));
+				}
+			}
+			catch (Exception e) 
+			{
+				e.printStackTrace();
+				return null;
+			}finally {
+				try {
+			
+				if(pstmt1 != null && !pstmt1.isClosed())
+					pstmt1.close();
+				if(rs1 != null && !rs1.isClosed())
+					rs1.close();
+				}catch (Exception e) {
+					// TODO: handle exception
+				}
+			}
+			return null;
+			
+		}
+		
 		
 		
 		public void setInspLot(MT_TRAX_RCV_I28_4134_RES response) throws Exception
