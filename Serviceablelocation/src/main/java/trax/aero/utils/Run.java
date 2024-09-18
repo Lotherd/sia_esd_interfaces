@@ -1,6 +1,7 @@
 package trax.aero.utils;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Logger;
@@ -11,6 +12,7 @@ import javax.xml.bind.Unmarshaller;
 
 import trax.aero.controller.ServiceablelocationController;
 import trax.aero.data.ServiceablelocationData;
+import trax.aero.interfaces.IServiceablelocationData;
 import trax.aero.logger.LogManager;
 import trax.aero.pojo.MT_TRAX_RCV_I28_4134_RES;
 import trax.aero.pojo.MT_TRAX_SND_I28_4134_REQ;
@@ -21,15 +23,15 @@ import trax.aero.pojo.MT_TRAX_SND_I28_4134_REQ;
 public class Run implements Runnable {
 	
 	//Variables
-	ServiceablelocationData data = null;
+	IServiceablelocationData data = null;
 	//final String ID = System.getProperty("JobConfirmation_ID");
 	//final String Password = System.getProperty("JobConfirmation_Password");
 	final String url = System.getProperty("Serviceablelocation_URL");
 	final int MAX_ATTEMPTS = 3;
 	Logger logger = LogManager.getLogger("Serviceablelocation_I28");
 	
-	public Run() {
-		data = new ServiceablelocationData();
+	public Run(IServiceablelocationData data) {
+		this.data = data;
 	}
 	
 	private void process() {
@@ -38,7 +40,7 @@ public class Run implements Runnable {
 		String exceuted = "OK";
 		try 
 		{
-							
+			data.openCon();
 			// loop
 			requests = data.getRequests();
 			boolean success = false;
@@ -138,6 +140,17 @@ public class Run implements Runnable {
 		catch(Throwable e)
 		{
 			logger.severe(e.toString());				
+		}finally {
+			try 
+			{
+				if(data.getCon() != null && !data.getCon().isClosed())
+					data.getCon().close();
+			} 
+			catch (SQLException e) 
+			{ 
+				e.printStackTrace();
+			}
+    	   logger.info("finishing");
 		}
 	}
 	

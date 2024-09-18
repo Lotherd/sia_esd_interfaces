@@ -1,7 +1,9 @@
 package trax.aero.start;
+import javax.ejb.EJB;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
+import trax.aero.interfaces.IServiceablelocationData;
 import trax.aero.logger.LogManager;
 import trax.aero.utils.Run;
 
@@ -25,10 +27,12 @@ public class Start
 	private ScheduledExecutorService scheduledServ;
 	Run timer = null;
 
+	@EJB IServiceablelocationData data;
+	
 	@PostConstruct
 	public void start()
 	{
-		timer = new Run();
+		timer = new Run(data);
 		
 		if (scheduledServ == null) {
 			int scheduledPoolSize = 1;
