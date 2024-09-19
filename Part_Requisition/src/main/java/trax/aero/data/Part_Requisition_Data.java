@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -97,6 +99,8 @@ public class Part_Requisition_Data {
 	    }
 	}
 	
+	private static Map<String, Integer> attemptCounts = new HashMap<>();
+	
 	public String markTransaction(INT13_TRAX request) {
 		executed = "OK";
 		
@@ -107,10 +111,17 @@ public class Part_Requisition_Data {
 		//String sqlUpdateREQH = "UPDATE REQUISITION_HEADER RH SET RH.STATUS = 'CLOSED' WHERE RH.REQUISITION IN (SELECT RD.REQUISITION FROM REQUISITION_DETAIL RD WHERE RD.PR_NO IS NOT NULL AND RD.PR_ITEM IS NOT NULL GROUP BY RD.REQUISITION HAVING COUNT(*) = COUNT(CASE WHEN RD.STATUS = 'CLOSED' THEN 1 END))";
 		String sqlCheckWOStatus = "SELECT W.STATUS FROM WO W, REQUISITION_HEADER R WHERE R.REQUISITION = ? and W.WO = R.WO";
 		//String sqlUpdateReqStatus = "UPDATE REQUISITION_HEADER SET STATUS = 'CLOSED' WHERE REQUISITION = ?";
+		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I13', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Part_Requistion I_13', sysdate, sysdate FROM dual";
+	    String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ? ";
+	    String sqlunMark = "UPDATE REQUISITION_DETAIL SET INTERFACE_TRANSFERRED_DATE_ESD = NULL WHERE REQUISITION = ? AND REQUISITION_LINE =?";
 		
 		try(PreparedStatement pstmt1 = con.prepareStatement(sqlDate);
 			PreparedStatement pstmt2 = con.prepareStatement(sqlDate2);
 			PreparedStatement pstmt3 = con.prepareStatement(sqlPR);
+			PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
+		    PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
+		    PreparedStatement ps1 = con.prepareStatement(sqlunMark);
 			//PreparedStatement pstmt4 = con.prepareStatement(sqlUpdateREQD);
 		   // PreparedStatement pstmt5 = con.prepareStatement(sqlUpdateREQH);
 			PreparedStatement pstmt6 = con.prepareStatement(sqlCheckWOStatus)
@@ -148,10 +159,64 @@ public class Part_Requisition_Data {
 						pstmt7.executeUpdate();
 					}*/
 					
-					if (request.getExceptionId() != null && !request.getExceptionId().equalsIgnoreCase("53")) {
+					String errorCode = request.getExceptionId();
+					if (errorCode != null && !errorCode.equalsIgnoreCase("53") &&
+		            	    (request.getExceptionDetail().toLowerCase().contains("is locked by".toLowerCase()) ||
+		            	     request.getExceptionDetail().toLowerCase().contains("already being processed".toLowerCase()))) {
 						executed = "Request PR number: " + c.getPRnumber() + ", Error Code: " + c.getPRitem() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 						Part_Requisition_Controller.addError(executed);
-					}
+						
+						psDeleteError.setString(1, c.getRequisition());
+						psDeleteError.setString(2, request.getRFO());
+		                psDeleteError.executeUpdate();
+		                
+		                psInsertError.setString(1, c.getRequisition());
+		                psInsertError.setString(2, request.getRFO());
+		                psInsertError.setString(3, errorCode);
+		                psInsertError.setString(4, request.getExceptionDetail());
+		                psInsertError.executeUpdate();
+						
+		                String key = request.getRFO() + "-" + c.getRequisition();
+	                    int attempt = attemptCounts.getOrDefault(key, 0);
+						
+	                    if (attempt < 3) {
+		                    attempt++;
+		                    attemptCounts.put(key, attempt);
+
+		                    try {
+		                    	Thread.sleep(300000); 
+		                        logger.info("REQUISTION: " + c.getRequisition() + " REQUISITION_LINE: " + c.getRequisitionLine());
+		                        ps1.setString(1, c.getRequisition());
+		                        ps1.setString(2, c.getRequisitionLine());
+		                        ps1.executeUpdate();
+
+		                        if (attempt > 3) {
+		                            executed = "Failed after 3 attempts: Error Code: " + errorCode + ", Remarks: " + request.getExceptionDetail();
+		                            Part_Requisition_Controller.addError(executed);
+		                            logger.severe(executed);
+		                        }
+		                    } catch (InterruptedException ie) {
+		                        Thread.currentThread().interrupt();
+		                        executed = "Thread was interrupted: " + ie.toString();
+		                        Part_Requisition_Controller.addError(executed);
+		                        logger.severe(executed);
+		                        return executed;
+		                    } catch (SQLException e) {
+		                        executed = e.toString();
+		                        Part_Requisition_Controller.addError(executed);
+		                        logger.severe(executed);
+		                        return executed;
+		                    }
+		                } else {
+		                    executed = "Failed after 3 attempts: Error Code: " + errorCode + ", Remarks: " + request.getExceptionDetail();
+		                    Part_Requisition_Controller.addError(executed);
+		                    logger.severe(executed);
+		                }
+		            } else {
+		            	psDeleteError.setString(1, c.getRequisition());
+						psDeleteError.setString(2, request.getRFO());
+		                psDeleteError.executeUpdate();
+		            }
 					
 				}
 			}
