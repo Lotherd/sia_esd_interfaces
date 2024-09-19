@@ -162,7 +162,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "A4.PN_SN AS ESN, " +
                 "A3.CREATED_DATE AS REMOVE_INSTALLED_DATE, " +
                 "A1.LOCATION AS LOCATION, " +
-                "'TYPE' AS LICENCE_TYPE, " +
+                "(select distinct ec.licence_type from employee_control ec, pn_master pm where ec.employee = A1.Created_by AND pm.pn = A3.PN AND ec.licence_type = pm.pn_type)  AS LICENCE_TYPE, " +
                 "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
                 "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
                 "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
