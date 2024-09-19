@@ -158,50 +158,55 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		ArrayList<I19_Request> list = new ArrayList<I19_Request>();
 		
 		String sql= "SELECT DISTINCT A3.PN AS PN, " +
-	            "A3.SN AS SN, " +
-				"A4.PN_SN AS ESN, " +
-	            "A3.REMOVE_INSTALLED_DATE AS REMOVE_INSTALLED_DATE, " +
-	            "A1.LOCATION AS LOCATION, " +
-	            "'TYPE' AS LICENCE_TYPE, " +
-	            "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
-	            "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
-	            "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
-	            "A3.REASON_CATEGORY AS REMOVAL_REASON, " +
-	            "A3.NOTES AS NOTES, " +
-	            "A1.CUSTOMER AS CUSTOMER, " +
-	            "A1.RFO_NO AS RFO_NO, " +
-	            "A3.LEGACY_BATCH AS LEGACY_BATCH, " +
-	            "A3.QTY AS QTY, " +
-	            "A3.WO AS WO, " +
-	            "A3.TASK_CARD AS TASK_CARD, " +
-	            "A3.TRANSACTION_NO AS TRANSACTION " +
-	            "FROM PN_INVENTORY_HISTORY A3 " +
-	            "JOIN WO A1 ON A1.WO = A3.WO " +
-	            "JOIN WO_SHOP_DETAIL A4 ON A4.WO = A1.WO " +
-	            "LEFT JOIN PN_MASTER PM ON A3.PN = PM.PN " +
-	            "WHERE A3.SVO_NO IS NULL " +
-	            "AND A3.WO IS NOT NULL " +
-	            "AND A3.TASK_CARD IS NOT NULL " +
-	            "AND (A3.TRANSACTION_TYPE LIKE 'N/L/A%' ) " +
-	            "AND A3.MADE_AS_CCS IS NOT NULL " +
-	            "AND A1.MODULE = 'SHOP' " +
-	            "AND A1.RFO_NO IS NOT NULL " +
-	            "AND ( " +
-	            "   (PM.CATEGORY IN ('B', 'C', 'D') " +
-	            "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
-	            "                   WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
-	            "                   AND Z.PN = A3.PN) " +
-	            "    AND A3.INTERFACE_TRANSFER_FLAG = 'S') " +
-	            "   OR " +
-	            "   (PM.CATEGORY IN ('B', 'C', 'D') " +
-	            "    AND EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
-	            "               WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
-	            "               AND Z.PN = A3.PN) " +
-	            "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL) " +
-	            "   OR " +
-	            "   (PM.CATEGORY = 'A' " +
-	            "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL) " +
-	            ")";
+                "A3.SN AS SN, " +
+                "A4.PN_SN AS ESN, " +
+                "A3.CREATED_DATE AS REMOVE_INSTALLED_DATE, " +
+                "A1.LOCATION AS LOCATION, " +
+                "'TYPE' AS LICENCE_TYPE, " +
+                "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
+                "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
+                "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
+                "A3.REASON_CATEGORY AS REMOVAL_REASON, " +
+                "A3.NOTES AS NOTES, " +
+                "A1.CUSTOMER AS CUSTOMER, " +
+                "A1.RFO_NO AS RFO_NO, " +
+                "A3.LEGACY_BATCH AS LEGACY_BATCH, " +
+                "CASE " +
+                "    WHEN A3.STATE_OF_PART = 'SERVICEABLE' THEN A5.qty_available " +
+                "    WHEN A3.STATE_OF_PART = 'UNSERVICEABLE' THEN A5.QTY_US " +
+                "    ELSE NULL " +
+                "END AS QTY, " +
+                "A3.WO AS WO, " +
+                "A3.TASK_CARD AS TASK_CARD, " +
+                "A3.TRANSACTION_NO AS TRANSACTION " +
+                "FROM PN_INVENTORY_HISTORY A3 " +
+                "JOIN PN_INVENTORY_DETAIL A5 ON A5.BATCH = A3.BATCH " +
+                "JOIN WO A1 ON A1.WO = A3.WO " +
+                "JOIN WO_SHOP_DETAIL A4 ON A4.WO = A1.WO " +
+                "LEFT JOIN PN_MASTER PM ON A3.PN = PM.PN " +
+                "WHERE A3.SVO_NO IS NULL " +
+                "AND A3.WO IS NOT NULL " +
+                "AND A3.TASK_CARD IS NOT NULL " +
+                "AND (A3.TRANSACTION_TYPE LIKE 'N/L/A%' ) " +
+                "AND A3.MADE_AS_CCS IS NOT NULL " +
+                "AND A1.MODULE = 'SHOP' " +
+                "AND A1.RFO_NO IS NOT NULL " +
+                "AND ( " +
+                "   (PM.CATEGORY IN ('B', 'C', 'D') " +
+                "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
+                "                   WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
+                "                   AND Z.PN = A3.PN) " +
+                "    AND A3.INTERFACE_TRANSFER_FLAG = 'S') " +
+                "   OR " +
+                "   (PM.CATEGORY IN ('B', 'C', 'D') " +
+                "    AND EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
+                "               WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
+                "               AND Z.PN = A3.PN) " +
+                "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL) " +
+                "   OR " +
+                "   (PM.CATEGORY = 'A' " +
+                "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL)" +
+                ")";
 
 		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
 		
