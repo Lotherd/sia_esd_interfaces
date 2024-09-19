@@ -220,10 +220,15 @@ public class CreationU_RFO_Data {
                 "h.legacy_batch, " +
                 "h.transaction_no, " +
                 "h.svo_no, " +
-                "h.qty " +
+                "CASE " +
+                "    WHEN H.STATE_OF_PART = 'SERVICEABLE' THEN hd.qty_available " +
+                "    WHEN H.STATE_OF_PART = 'UNSERVICEABLE' THEN hd.QTY_US " +
+                "    ELSE NULL " +
+                "END AS QTY " +
                 "FROM wo w " +
                 "JOIN wo_task_card wt ON wt.wo = w.wo " +
                 "JOIN pn_inventory_history h ON wt.wo = h.wo " +
+                "JOIN PN_INVENTORY_DETAIL hd ON hd.BATCH = h.BATCH " +
                 "AND wt.task_card = h.task_card " +
                 "JOIN pn_master pm ON h.pn = pm.pn " +
                 "JOIN system_tran_code s ON w.source_type = s.system_code " +
