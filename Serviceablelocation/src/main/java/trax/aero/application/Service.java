@@ -59,7 +59,7 @@ public class Service {
 			if(response.getExceptionId().equalsIgnoreCase("53")) {
 				data.markTransaction(response);
 				data.setInspLot(response);
-				//data.printLabel(response);
+				data.printLabel(response);
 			}else {
 				data.markTransaction(response);
 				data.setComplete(response);

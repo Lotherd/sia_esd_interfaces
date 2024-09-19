@@ -88,7 +88,7 @@ public class Run implements Runnable {
 						    if(input.getExceptionId().equalsIgnoreCase("53")) {
 								data.markTransaction(input);
 								data.setInspLot(input);
-								//data.printLabel(input);
+								data.printLabel(input);
 							}else {
 								data.markTransaction(input);
 								data.setComplete(input);
