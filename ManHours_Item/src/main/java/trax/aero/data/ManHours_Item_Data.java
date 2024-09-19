@@ -221,7 +221,7 @@ public class ManHours_Item_Data {
 	    	    "        wt.task_card_category, " +
 	    	    "        wt.task_card_description, " +
 	    	    "        wt.non_routine, " +
-	    	    "        wa.hours, " +
+	    	    "        (select sum(billed_hours)from wo_actuals where wo = w.wo and task_card = wt.task_card) as hours, " +
 	    	    "        wa.wo_actual_transaction, " +
 	    	    "        RANK() OVER ( " +
 	    	    "            PARTITION BY wt.task_card " +

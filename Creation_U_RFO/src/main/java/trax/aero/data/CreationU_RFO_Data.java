@@ -94,71 +94,100 @@ public class CreationU_RFO_Data {
 	}
 	
 	public String markTransaction(INT22_TRAX request) {
-		executed = "OK";
-		
-		String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'Y' WHERE TRANSACTION_NO = ?, WO = ?, TASK_CARD = ? ";
-		
-		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL WHERE TRANSACTION_NO = ?, WO = ?, TASK_CARD = ? ";
-		
-		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I22', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'CreationU_RFO I_22', sysdate, sysdate FROM dual";
-		
-		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
-		
-		try( PreparedStatement pstmt2 = con.prepareStatement(update);
-				 PreparedStatement pstmt3 = con.prepareStatement(errorunmark);
-				 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
-		         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)){
-			
-			if(request != null) {
-				if (request.getErrorCode().equalsIgnoreCase("53")) {
-					
-					request.setPrintStatus("S");
-					
-					pstmt2.setString(1, request.getTransaction());
-					pstmt2.setString(2, request.getTraxWoNumber());
-					pstmt2.setString(3, request.getTcNumber());
-					pstmt2.executeQuery();
-					
-					psDeleteError.setString(1, request.getTraxWoNumber());
-                    psDeleteError.setString(2, request.getSapSvo());
-                    psDeleteError.executeUpdate();
-					
-				}
-				
-				if (!request.getErrorCode().equalsIgnoreCase("53")){
-					request.setPrintStatus("E");
-					
-					executed = "Request WO: " + request.getTraxWoNumber() + ", Error Code: " + request.getErrorCode() + ", Remarks: " + request.getRemarks()+ ", SVO: " + request.getSapSvo();
-					CreationU_RFO_Controller.addError(executed);
-					
-					psInsertError.setString(1, request.getTraxWoNumber());
-                    psInsertError.setString(2, request.getSapSvo());
-                    psInsertError.setString(3, request.getErrorCode());
-                    psInsertError.setString(4, request.getRemarks());
-                    psInsertError.executeUpdate();
-                    
-                    pstmt3.setString(1, request.getTransaction());
-                    pstmt3.setString(2, request.getTraxWoNumber());
-                    pstmt3.setString(3, request.getTcNumber());
-                    pstmt3.executeQuery();
-					
-				}else {
-					psDeleteError.setString(1, request.getTraxWoNumber());
-                    psDeleteError.setString(2, request.getSapSvo());
-                    psDeleteError.executeUpdate();
-				}
-				
-			}
-			
-		}
-		
-		catch (SQLException e) {
+	    executed = "OK";
+
+	    String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE , SVO_NO = ?, RFO_NO = ?, INTERFACE_TRANSFER_FLAG = 'Y' WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ?";
+	    
+	    String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ? ";
+	    
+	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+	                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I22', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'CreationU_RFO I_22', sysdate, sysdate FROM dual";
+	    
+	    String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
+
+	    try (PreparedStatement pstmt2 = con.prepareStatement(update);
+	         PreparedStatement pstmt3 = con.prepareStatement(errorunmark);
+	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
+	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)) {
+
+	        if (request != null) {
+	            String errorCode = request.getErrorCode();
+	            String traxWoNumber = request.getTraxWoNumber();
+	            String sapSvo = request.getSapSvo();
+	            String transaction = request.getTransaction();
+	            String tcNumber = request.getTcNumber();
+	            String remarks = request.getRemarks();
+
+	            // Log the request object to inspect its state
+	            logger.info("Request Object: " + request.toString());
+
+	            if (errorCode != null && errorCode.equalsIgnoreCase("53")) {
+	                request.setPrintStatus("S");
+
+	                // Check if all necessary values are non-null before proceeding
+	                if (transaction != null && sapSvo != null && traxWoNumber != null && tcNumber != null) {
+	                    pstmt2.setString(3, transaction);
+	                    pstmt2.setString(1, sapSvo);
+	                    pstmt2.setString(2, request.getSapRepairRfo());
+	                    pstmt2.setString(4, traxWoNumber);
+	                    pstmt2.setString(5, tcNumber);
+	                    pstmt2.executeQuery();
+	                    
+	                    // Log success of the update
+	                    logger.info("Successfully executed update for WO: " + traxWoNumber);
+
+	                    psDeleteError.setString(1, traxWoNumber);
+	                    psDeleteError.setString(2, sapSvo);
+	                    psDeleteError.executeUpdate();
+
+	                    // Log deletion of previous errors
+	                    logger.info("Deleted previous errors for WO: " + traxWoNumber);
+	                }
+	            } else if (errorCode != null) {
+	                request.setPrintStatus("E");
+
+	                if (traxWoNumber != null && sapSvo != null && errorCode != null && remarks != null) {
+	                    executed = "Request WO: " + traxWoNumber + ", Error Code: " + errorCode + ", Remarks: " + remarks + ", SVO: " + sapSvo;
+	                    CreationU_RFO_Controller.addError(executed);
+	                    
+	                    psInsertError.setString(1, traxWoNumber);
+	                    psInsertError.setString(2, sapSvo);
+	                    psInsertError.setString(3, errorCode);
+	                    psInsertError.setString(4, remarks);
+	                    psInsertError.executeUpdate();
+
+	                    // Log the insertion of the error into the audit table
+	                    logger.info("Inserted error for WO: " + traxWoNumber + ", Error Code: " + errorCode);
+	                }
+
+	                if (transaction != null && traxWoNumber != null && tcNumber != null) {
+	                    pstmt3.setString(1, transaction);
+	                    pstmt3.setString(2, traxWoNumber);
+	                    pstmt3.setString(3, tcNumber);
+	                    pstmt3.executeQuery();
+
+	                    // Log the execution of the error unmarking
+	                    logger.info("Executed error unmark for WO: " + traxWoNumber);
+	                }
+	            } else {
+	                if (traxWoNumber != null && sapSvo != null) {
+	                    psDeleteError.setString(1, traxWoNumber);
+	                    psDeleteError.setString(2, sapSvo);
+	                    psDeleteError.executeUpdate();
+
+	                    // Log the deletion of the error
+	                    logger.info("Deleted error for WO: " + traxWoNumber);
+	                }
+	            }
+	        }
+
+	    } catch (SQLException e) {
 	        executed = e.toString();
 	        CreationU_RFO_Controller.addError(e.toString());
-	        logger.severe(e.toString());
+	        logger.severe("SQL Exception: " + e.toString());
 	    }
-		return executed;
+
+	    return executed;
 	}
 	
 	
