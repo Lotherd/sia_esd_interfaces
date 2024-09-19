@@ -1,6 +1,7 @@
 package trax.aero.data;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
@@ -101,19 +102,198 @@ public class Unit_Price_RFO_Data {
 	public String markTransaction(INT27_TRAX request) {
 	    executed = "OK";
 	    
-	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL AND GET_PRICE = NULL WHERE WO = ? ";
+	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL AND GET_PRICE = NULL WHERE WO = ? and task_card_pn = ? ";
 	    
-	    String updateprice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL AND GET_PRICE = NULL WHERE WO = ? ";
+	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
+	    
+	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ? where wo = ? and task_card_pn = ? ";
+	    
+	    String setpriceSGD = "update wo_actuals set unit_sell_currency = ?, qty = ? where wo = ? and task_card_pn = ? ";
+	    
+	    String exchamgerate = " select distinct exchange_rate from currency_exchange_history where currency = ? ";
+	    
+	    String checkoldprice = "select distinct unit_sell_b from wo_actuals where wo = ? and task_card_pn = ? ";
+	    
+	    String oldprice = "update wo_actuals set unit_sell_b = ? where wo = ? and task_card_pn = ? ";
+	    
+	    String variance = "update wo_actuals set variance_price = ? where wo = ? and task_card_pn = ? ";
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(pridedone);
-		         PreparedStatement ps1 = con.prepareStatement(updateprice)){
+		         PreparedStatement ps1 = con.prepareStatement(getcurrency);
+	    		PreparedStatement usd = con.prepareStatement(setpriceUSD);
+	    		PreparedStatement sgd = con.prepareStatement(setpriceSGD);
+	    		PreparedStatement ex = con.prepareStatement(exchamgerate);
+	    		PreparedStatement chold = con.prepareStatement(checkoldprice);
+	    		PreparedStatement old = con.prepareStatement(oldprice);
+	    		PreparedStatement var = con.prepareStatement(variance)){
 	    	for(Operation_TRAX o : request.getOperation()) {
 	    		if(request.getWO() != null && !request.getWO().isEmpty()) {
+	    			
+	    			 // Set the WO parameter in the query
+	    			ps1.setString(1, request.getWO());
+	    			ResultSet rs = ps1.executeQuery();
+	    			
+	    			 // Get the currency from the ResultSet
+	    			String Currency = rs.getString(1);
+	    			
+	    			// Get the TotalPrice and QTY from Operation_TRAX
+	    			String TotalPrice = o.getSell_Total_Price();
+	    			String QTY = o.getQty();
+	    			String UnitPrice = "";
+	    			
+	    			try {
+	    				// Convert the values to BigDecimal for greater precision
+	                    BigDecimal totalPriceDecimal = new BigDecimal(TotalPrice);
+	                    BigDecimal qtyDecimal = new BigDecimal(QTY);
+
+	                 // Calculate the UnitPrice and round to 2 decimal places
+	                    BigDecimal unitPriceDecimal = totalPriceDecimal.divide(qtyDecimal, 4, RoundingMode.HALF_UP);
+	                    unitPriceDecimal = unitPriceDecimal.setScale(2, RoundingMode.HALF_UP);
+
+	                 // Convert the result to String
+	                    UnitPrice = unitPriceDecimal.toString();
+	                } catch (NumberFormatException e) {
+	                    executed = "Error al convertir los valores de precio/cantidad a número: " + e.getMessage();
+	                    Unit_Price_RFO_Controller.addError(executed);
+	                    logger.severe(executed);
+	                } catch (ArithmeticException e) {
+	                    executed = "Error en la operación aritmética: " + e.getMessage();
+	                    Unit_Price_RFO_Controller.addError(e.toString());
+	                    logger.severe(e.toString());
+	                }
+	    			
+	    			// Get the currency from the operation
+	    			String operationCurrency = o.getCurrency();
+	                
+	    			// Compare the two currencies after calculating UnitPrice
+	                if (Currency != null && Currency.equals(operationCurrency)) {
+	                    // The currencies are equal
+	                    System.out.println("The currencies match: " + Currency);
+	                    if (Currency.equals("USD")) {
+	                    	usd.setString(1, UnitPrice);
+	                    	usd.setString(2, QTY);
+	                        usd.setString(3, request.getWO());
+	                        usd.setString(4, o.getMaterial());  
+	                        usd.executeUpdate();
+	                        System.out.println("Updated with USD prices.");
+	                    }else if (Currency.equals("SGD")) {
+	                        sgd.setString(1, UnitPrice);
+	                        sgd.setString(2, QTY);
+	                        sgd.setString(3, request.getWO());
+	                        sgd.setString(4, o.getMaterial());  
+	                        sgd.executeUpdate();
+	                        System.out.println("Updated with SGD prices.");
+	                    }
+	                    
+	                } else {
+	                    // The currencies do not match, handle the conversion using exchange rates
+	                    BigDecimal exchangeRateDecimal = BigDecimal.ZERO;
+	                    
+	                    if (Currency.equals("USD") && operationCurrency.equals("SGD")) {
+	                        // Set exchange query for SGD
+	                        ex.setString(1, operationCurrency);
+	                        ResultSet exRs = ex.executeQuery();
+	                        
+	                        if (exRs.next()) {
+	                            exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                        }
+	                        
+	                        // Convert unit price to SGD: UnitPrice * exchange rate
+	                        BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
+	                        UnitPrice = unitPriceConverted.toString();
+	                        
+	                        // Update with SGD
+	                        sgd.setString(1, UnitPrice);
+	                        sgd.setString(2, QTY);
+	                        sgd.setString(3, request.getWO());
+	                        sgd.setString(4, o.getMaterial());  
+	                        sgd.executeUpdate();
+	                        System.out.println("Converted and updated with SGD prices.");
+	                        
+	                    } else if (Currency.equals("SGD") && operationCurrency.equals("USD")) {
+	                        // Set exchange query for USD
+	                        ex.setString(1, Currency);
+	                        ResultSet exRs = ex.executeQuery();
+	                        
+	                        if (exRs.next()) {
+	                            exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                        }
+	                        
+	                        // Convert unit price to USD: UnitPrice / exchange rate
+	                        BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+	                        UnitPrice = unitPriceConverted.toString();
+	                        
+	                        // Update with USD
+	                        usd.setString(1, UnitPrice);
+	                        usd.setString(2, QTY);
+	                        usd.setString(3, request.getWO());
+	                        usd.setString(4, o.getMaterial());  
+	                        usd.executeUpdate();
+	                        System.out.println("Converted and updated with USD prices.");
+	                    } else {
+	                        System.out.println("The currencies do not match and cannot be converted.");
+	                    }
+	                }
+	               
+	             // Check the old price
+	                chold.setString(1, request.getWO());
+	                chold.setString(2, o.getMaterial()); 
+	                ResultSet rs1 = chold.executeQuery();
+	                
+	                String oldPrice = rs1.getString(1);
+
+	                if (oldPrice == null || oldPrice.equals("0")) {
+	                    // Old price is 0 or null, update variance to 0
+	                    var.setString(1, "0");
+	                    var.setString(2, request.getWO());
+	                    var.setString(3, o.getMaterial());
+	                    var.executeUpdate();
+	                    System.out.println("Variance set to 0.");
+	                    
+	                    // Update old price with the new UnitPrice
+	                    old.setString(1, UnitPrice);
+	                    old.setString(2, request.getWO());
+	                    old.setString(3, o.getMaterial());
+	                    old.executeUpdate();
+	                    System.out.println("Old price updated.");
+	                    
+	                } else {
+	                    // Calculate variance as the difference between oldPrice and UnitPrice
+	                    BigDecimal oldPriceDecimal = new BigDecimal(oldPrice);
+	                    BigDecimal unitPriceDecimal = new BigDecimal(UnitPrice);
+	                    BigDecimal varianceDecimal = unitPriceDecimal.subtract(oldPriceDecimal).setScale(2, RoundingMode.HALF_UP);
+	                    
+	                    // Update variance
+	                    var.setString(1, varianceDecimal.toString());
+	                    var.setString(2, request.getWO());
+	                    var.setString(3, o.getMaterial());
+	                    var.executeUpdate();
+	                    System.out.println("Variance updated with value: " + varianceDecimal.toString());
+	                    
+	                    // Update old price with the new UnitPrice
+	                    old.setString(1, UnitPrice);
+	                    old.setString(2, request.getWO());
+	                    old.setString(3, o.getMaterial());
+	                    old.executeUpdate();
+	                    System.out.println("Old price updated.");
+	                }
+	                
 	                pstmt1.setString(1, request.getWO());
+	                pstmt1.setString(2, o.getMaterial());
 	                pstmt1.executeUpdate();
+	                
+	                if (request.getError_code() != null && !request.getError_code().equalsIgnoreCase("53")) {
+	                	executed = "WO: " + request.getWO() + ", PN: " + o.getMaterial() + ", Error Code: " + request.getError_code() + ", Remarks: " + request.getRemarks();
+	                	
+	                	Unit_Price_RFO_Controller.addError(executed);
+	                	
+	                	pstmt1.setString(1, request.getWO());
+		                pstmt1.setString(2, o.getMaterial());
+		                pstmt1.executeUpdate();
+	                	
+	                }
 	            }
-	    		
-	    	}
+	        }
 	    }catch (SQLException e) {
 	        executed = e.toString();
 	        Unit_Price_RFO_Controller.addError(executed);
