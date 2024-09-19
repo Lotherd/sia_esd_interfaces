@@ -26,7 +26,7 @@ public interface IServiceablelocationData {
 
 	public void markTransaction(MT_TRAX_RCV_I28_4134_RES response) throws Exception;
 
-
+	public void setComplete(MT_TRAX_RCV_I28_4134_RES response) throws Exception;
 
 	public void setInspLot(MT_TRAX_RCV_I28_4134_RES response) throws Exception;
 

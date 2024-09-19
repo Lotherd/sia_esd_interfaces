@@ -55,14 +55,14 @@ public class Service {
 			marshaller.marshal(response, sw);
 			
 			logger.info("Input: " + sw.toString());
-			
+			data.openCon();
 			if(response.getExceptionId().equalsIgnoreCase("53")) {
-				data.openCon();
 				data.markTransaction(response);
 				data.setInspLot(response);
 				//data.printLabel(response);
 			}else {
-				
+				data.markTransaction(response);
+				data.setComplete(response);
 				exceuted = ("RFO: " +  response.getRfo()
 				+ ", Date: " + new Date().toString()  + ", SHOP WO: " +response.getWo()    );
 				

@@ -91,6 +91,7 @@ public class Run implements Runnable {
 								//data.printLabel(input);
 							}else {
 								data.markTransaction(input);
+								data.setComplete(input);
 								exceuted = (  "RFO: " + input.getRfo() 
 								+ ", Date: " + new Date().toString()  + ", SHOP WO: " +input.getWo() );
 								
