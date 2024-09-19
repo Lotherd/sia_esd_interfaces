@@ -58,7 +58,7 @@ SELECT w.refurbishment_order FROM WO w where w.INTERFACE_SAP_TRANSFER_DATE IS NU
 @Stateless(name="ServiceablelocationData" , mappedName="ServiceablelocationData")
 public class ServiceablelocationData implements IServiceablelocationData {
 
-		Logger logger = LogManager.getLogger("Serviceablelocation_I94");
+		Logger logger = LogManager.getLogger("Serviceablelocation_I28");
 		
 		@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
 		
@@ -364,6 +364,33 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		}
 
 		
+		public void setComplete(MT_TRAX_RCV_I28_4134_RES response) throws Exception
+		{
+					
+			String sqlDate ="UPDATE WO w1 SET w1.STATUS =  'COMPLETED'  WHERE w1.rfo_no = ? AND w1.MODULE = 'SHOP' and EXISTS (  SELECT 1 FROM WO w2 WHERE w2.wo = w1.wo  and status = 'POSTCOMPLT') ";
+			
+			PreparedStatement pstmt2 = null; 
+			pstmt2 = con.prepareStatement(sqlDate);
+			try 
+			{	
+				logger.info("Seting COMPLETED RFO: " + response.getRfo());
+				pstmt2.setString(1, response.getRfo());
+				pstmt2.executeQuery();
+			}
+			catch (Exception e) 
+	        {
+				ServiceablelocationController.addError(e.toString());
+				logger.severe(e.toString());
+	            exceuted = e.toString();
+	            throw new Exception("Issue found");
+			}finally {
+				
+				if(pstmt2 != null && !pstmt2.isClosed())
+					pstmt2.close();
+				
+			}
+			
+		}
 		
 		
 		private <T> void insertData( T data) 
@@ -457,9 +484,9 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			ia.setModifiedDate(new Date());
 			ia.setExceptionId(new BigDecimal(-2000));
 			ia.setExceptionByTrax("Y");
-			ia.setExceptionDetail("Material Demand interface ran into an error");
+			ia.setExceptionDetail("Serviceable location interface ran into an error");
 			ia.setExceptionStackTrace(error);
-			ia.setExceptionClassTrax("MaterialDemand_I10");	
+			ia.setExceptionClassTrax("Serviceablelocation_I28");	
 			
 			insertData(ia);
 		}
@@ -622,8 +649,8 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			Wo wo = null;
 			
 			try {
-				wo = em.createQuery("SELECT w FROM WoTaskCard w WHERE w.formNo = :formNo ", Wo.class)
-							.setParameter("formNo", new BigDecimal(formNo))
+				wo = em.createQuery("SELECT w FROM Wo w WHERE w.wo = :formNo ", Wo.class)
+							.setParameter("formNo", new BigDecimal(formNo).longValue())
 							.getSingleResult();
 					
 					return wo;
