@@ -180,48 +180,42 @@ public class CreationU_RFO_Data {
 		ArrayList<INT22_SND> list = new ArrayList<INT22_SND>();
 		
 		String sqlPN = "SELECT " +
-		        "    w.location, " +
-		        "    h.wo, " +
-		        "    h.task_card, " +
-		        "    w.rfo_no, " +
-		        "    w.customer, " +
-		        "    wt.pn, " +
-		        "    wt.pn_sn, " +
-		        "    h.created_by, " +
-		        "    h.legacy_batch, " +
-		        "    h.transaction_no, " +
-		        "    h.svo_no, " +
-		        "    h.qty " +
-		        "FROM " +
-		        "    wo w " +
-		        "    JOIN wo_task_card wt ON wt.wo = w.wo " +
-		        "    JOIN pn_inventory_history h ON wt.wo = h.wo " +
-		        "                                   AND wt.task_card = h.task_card " +
-		        "                                   AND wt.pn = h.pn " +
-		        "    JOIN pn_master pm ON wt.pn = pm.pn " +
-		        "    JOIN system_tran_code s ON w.source_type = s.system_code " +
-		        "WHERE " +
-		        "    (pm.category = 'A') " +  // Case A: Only category A
-		        "    OR " +
-		        "    (pm.category IN ('B', 'C', 'D') " +  // Case B & D (Not in ZEPARTSER)
-		        "    AND NOT EXISTS ( " +
-		        "        SELECT 1 " +
-		        "        FROM zepartser_master z " +
-		        "        WHERE z.customer = w.customer " +
-		        "          AND z.pn = wt.pn " +
-		        "    )) " +
-		        "    OR " +
-		        "    (pm.category IN ('B', 'C', 'D') " +  // Case B & D (In ZEPARTSER)
-		        "    AND EXISTS ( " +
-		        "        SELECT 1 " +
-		        "        FROM zepartser_master z " +
-		        "        WHERE z.customer = w.customer " +
-		        "          AND z.pn = wt.pn " +
-		        "    )) " +
-		        "    AND s.system_transaction = 'SOURCETYPE' " +
-		        "    AND s.party = '1P' " +
-		        "    AND h.interface_transfer_flag IS NULL " +
-		        "    AND h.made_as_ccs IS NOT NULL";
+                "w.location, " +
+                "h.wo, " +
+                "h.task_card, " +
+                "w.rfo_no, " +
+                "w.customer, " +
+                "h.pn, " +
+                "h.sn, " +
+                "h.created_by, " +
+                "h.legacy_batch, " +
+                "h.transaction_no, " +
+                "h.svo_no, " +
+                "h.qty " +
+                "FROM wo w " +
+                "JOIN wo_task_card wt ON wt.wo = w.wo " +
+                "JOIN pn_inventory_history h ON wt.wo = h.wo " +
+                "AND wt.task_card = h.task_card " +
+                "JOIN pn_master pm ON h.pn = pm.pn " +
+                "JOIN system_tran_code s ON w.source_type = s.system_code " +
+                "WHERE h.interface_transfer_flag = 'X' " +
+                "AND (pm.category = 'A' " +
+                "OR (pm.category IN ('B', 'D') " +
+                "AND NOT EXISTS ( " +
+                "SELECT 1 FROM zepartser_master z " +
+                "WHERE z.customer = w.customer " +
+                "AND z.pn = wt.pn)) " +
+                "OR (pm.category IN ('B', 'D') " +
+                "AND EXISTS ( " +
+                "SELECT 1 FROM zepartser_master z " +
+                "WHERE z.customer = w.customer " +
+                "AND z.pn = wt.pn))) " +
+                "AND s.system_transaction = 'SOURCETYPE' " +
+                "AND s.party = '1P' " +
+                "AND (h.TRANSACTION_TYPE = 'N/L/A REMOVED' OR h.TRANSACTION_TYPE = 'N/L/A INSPECTED') " +
+                "AND h.STATUS = 'CLOSED' " +
+                "AND h.STATE_OF_PART = 'UNSERVICEABLE' " +
+                "AND h.made_as_ccs IS NOT NULL";
 		
 		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
 		
@@ -283,8 +277,8 @@ public class CreationU_RFO_Data {
 		    			  req.setSvoNo("");
 		    		  }
 		    		  
-		    		  if(rs1.getString(8) != null) {
-		    			  req.setRelationCode(rs1.getString(8));
+		    		  if(rs1.getString(5) != null) {
+		    			  req.setRelationCode(rs1.getString(5));
 		    		  } else {
 		    			  req.setRelationCode("");
 		    		  }

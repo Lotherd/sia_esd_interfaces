@@ -111,7 +111,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		exceuted = "OK";
 		
 		String sqlDate =
-		"UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y', PN_INVENTORY_HISTORY.SVO_NO = ? WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
+		"UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'X', PN_INVENTORY_HISTORY.SVO_NO = ? WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
 		
 		PreparedStatement pstmt2 = null; 
 
@@ -151,7 +151,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		//setting up variables
 		Date Date;
 		String currentDate;
-		Format formatter = new SimpleDateFormat("dd-MM-yyyy");
+		Format formatter = new SimpleDateFormat("yyyyMMdd");
 
 		
 		
@@ -160,7 +160,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		String sql= "SELECT DISTINCT A3.PN AS PN, " +
                 "A3.SN AS SN, " +
                 "A4.PN_SN AS ESN, " +
-                "TO_CHAR(A3.CREATED_DATE, 'YYYYMMDD') AS REMOVE_INSTALLED_DATE, " +
+                "A3.CREATED_DATE AS REMOVE_INSTALLED_DATE, " +
                 "A1.LOCATION AS LOCATION, " +
                 "'TYPE' AS LICENCE_TYPE, " +
                 "A3.REMOVE_AS_SERVICEABLE AS REMOVE_AS_SERVICEABLE, " +
