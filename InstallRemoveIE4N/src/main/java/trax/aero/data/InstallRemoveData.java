@@ -258,7 +258,7 @@ public class InstallRemoveData {
 						"APTH.TRANSACTION_TYPE,\r\n" +
 						"APTH.SVO_NO,\r\n"+
 						"(SELECT PID.FUNCTIONAL_LOCATION FROM PN_INVENTORY_DETAIL PID WHERE APTH.PN = PID.PN AND APTH.SN = PID.SN AND APTH.BATCH =  PID.BATCH ) as fun_loc,"+
-						"APTH.IE4N_FORCE_INSTALL\r\n"+
+						"APTH.IE4N_FORCE_INSTALL , APTH.STATE_OF_PART\r\n"+
 						"FROM\r\n" + 
 						"PN_INVENTORY_HISTORY APTH\r\n" + 
 						"WHERE \r\n" + 
@@ -343,9 +343,11 @@ public class InstallRemoveData {
 							}
 							
 							//REMOVE_AS_SERVICEABLE
-							if(rs1.getString(8) == null || rs1.getString(8).isEmpty() || rs1.getString(8).equalsIgnoreCase("NO")) {
+							if((rs1.getString(8) == null || rs1.getString(8).isEmpty() || rs1.getString(8).equalsIgnoreCase("NO"))
+							|| (rs1.getString(16) == null || rs1.getString(16).isEmpty() || rs1.getString(8).equalsIgnoreCase("UNSERVICEABLE"))) {
 								out.setUnserviceable_Serviceable_Indicator("");
-							}else if(rs1.getString(8).equalsIgnoreCase("YES")) {
+							}else if(rs1.getString(8).equalsIgnoreCase("YES") ||
+									rs1.getString(16).equalsIgnoreCase("SERVICEABLE")) {
 								out.setUnserviceable_Serviceable_Indicator("X");
 							}
 							
@@ -378,14 +380,17 @@ public class InstallRemoveData {
 							
 							
 							if(rs1.getString(12) != null && !rs1.getString(12).isEmpty() && 
-									( rs1.getString(12).equalsIgnoreCase("INSTALL") 
-									|| rs1.getString(12).equalsIgnoreCase("INT/INST") )) {
+									( rs1.getString(12).contains("INSTAL") 
+									|| rs1.getString(12).contains("INT/INST") )) {
 								
 								out.setInstall_Dismantle_Indicator("I");
 							}else if( rs1.getString(12) != null && !rs1.getString(12).isEmpty() 
-									&& rs1.getString(12).equalsIgnoreCase("REMOVE")) {
+									&& rs1.getString(12).contains("REMOV")) {
 								out.setInstall_Dismantle_Indicator("D");
-							}
+							}else if( rs1.getString(12) != null && !rs1.getString(12).isEmpty() 
+									&& rs1.getString(12).contains("INSPECT")) {
+								out.setInstall_Dismantle_Indicator("D");
+							}	
 							
 							if(rs1.getString(15) != null && !rs1.getString(15).isEmpty() && rs1.getString(15).equalsIgnoreCase("Y") ) {
 								out.setForce_Installation_Dismantling_Indicator("X");

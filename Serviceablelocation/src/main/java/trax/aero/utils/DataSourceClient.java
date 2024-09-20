@@ -14,7 +14,7 @@ import trax.aero.logger.LogManager;
 
 public class DataSourceClient 
 {  	
-	static Logger logger = LogManager.getLogger("DowngradeLoop_I94");
+	static Logger logger = LogManager.getLogger("Serviceablelocation_I28");
 
 	public static Connection getConnection() throws Exception  
 	{
