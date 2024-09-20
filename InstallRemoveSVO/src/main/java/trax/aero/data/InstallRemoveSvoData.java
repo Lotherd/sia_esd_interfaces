@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Logger;
 
@@ -35,6 +36,13 @@ import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.PnInventoryHistory;
 import trax.aero.pojo.I19_Request;
 import trax.aero.pojo.I19_Response;
+import trax.aero.pojo.Root;
+import trax.aero.pojo.RowOrder;
+import trax.aero.pojo.RowOther;
+import trax.aero.pojo.RowSel;
+import trax.aero.pojo.dw_inventory_detail_history_order_print;
+import trax.aero.pojo.dw_inventory_detail_history_other_print;
+import trax.aero.pojo.dw_inventory_detail_history_print_sel;
 import trax.aero.utils.DataSourceClient;
 import trax.aero.utils.PrintPoster;
 import trax.application_standard_structure.st_pn;
@@ -651,21 +659,81 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		logger.info("Setting ");
 		
 		logger.info("Calling Print server");
+		
+		Calendar cal = Calendar.getInstance();
+
+		cal.set(Calendar.DAY_OF_YEAR, 1);
+		Date yearStartDate = cal.getTime();
+
+		cal.set(Calendar.DAY_OF_YEAR, cal.getActualMaximum(Calendar.DAY_OF_YEAR));
+		Date yearEndDate = cal.getTime();
+		Format formatter = new SimpleDateFormat("MM/dd/yyyy");
+
 		PrintPoster poster = new PrintPoster();
-		st_pn ms_pn = new st_pn();
-		ms_pn.l_batch = getBatch(input);
-
-		ms_pn.s_calling_window = "w_pn_identification_tag_print";
-
 		
-		ms_pn.s_employee = "ADM";
+		Root r = new Root();
+		r.setDw_inventory_detail_history_order_print(new dw_inventory_detail_history_order_print());
+		r.getDw_inventory_detail_history_order_print().setRow(new RowOrder());
+
+		r.setDw_inventory_detail_history_other_print(new dw_inventory_detail_history_other_print());
+		r.getDw_inventory_detail_history_other_print().setRow(new RowOther());
+
+		r.setDw_inventory_detail_history_print_sel(new dw_inventory_detail_history_print_sel());
+		r.getDw_inventory_detail_history_print_sel().setRow(new RowSel());
 		
-		ms_pn.s_message ="SERVICETAG";
+		r.getDw_inventory_detail_history_print_sel().getRow().setBatch(getBatch(input).toString());
+		r.getDw_inventory_detail_history_print_sel().getRow().setWo(input.getWo());
+
+		r.getDw_inventory_detail_history_order_print().getRow().setTransaction_type(getTransactionType(input));
+		
+		r.getDw_inventory_detail_history_other_print().getRow().setDate(formatter.format(yearStartDate));
+		r.getDw_inventory_detail_history_other_print().getRow().setIssue("NO");
+		r.getDw_inventory_detail_history_other_print().getRow().setDate_to(formatter.format(yearEndDate));
+		
+		poster.sendPrintJob("oux_inventory_detail_history_print_sel", r);
+		
+	}
 	
-		poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_print"
-				, "pn identification tag print"
-				, "ADM", getSeqNo(), ms_pn);
-		
+	private String getTransactionType(I19_Response response) {
+		System.out.println("Transaction type");
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+		try
+		{
+			String sql = ("select transaction_type from PN_INVENTORY_HISTORY  " + 
+					"where TRANSACTION_NO = ?");
+			
+			pstmt1 = con.prepareStatement(sql);
+			pstmt1.setString(1, response.getTransaction());
+			rs1 = pstmt1.executeQuery();
+
+			if (rs1 != null) 
+			{
+				while (rs1.next()) 
+				{
+					if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
+						return (rs1.getString(1));
+					}else {
+						return "";
+					}
+				}
+			}	
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			return "";
+		}finally {
+			try {
+				if(pstmt1 != null && !pstmt1.isClosed())
+					pstmt1.close();
+				if(rs1 != null && !rs1.isClosed())
+					rs1.close();
+			}catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
+		return "";
 	}
 
 	private Integer getBatch(I19_Response response) {
