@@ -310,7 +310,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					if(rs1.getString(9) != null && !rs1.getString(9).isEmpty()) {
 					    String transactionType = rs1.getString(9);
 					    
-					    if (transactionType.contains("REMOV")) {
+					    if (transactionType.contains("REMOV") || transactionType.contains("INSPECT")) {
 					        Inbound.setTransactionType("R");
 					    } else if (transactionType.contains("INSTAL")) {
 					        Inbound.setTransactionType("I");
