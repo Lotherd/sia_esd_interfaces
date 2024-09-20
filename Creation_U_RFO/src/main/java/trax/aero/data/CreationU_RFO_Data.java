@@ -96,9 +96,9 @@ public class CreationU_RFO_Data {
 	public String markTransaction(INT22_TRAX request) {
 	    executed = "OK";
 
-	    String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE , SVO_NO = ?, RFO_NO = ?, INTERFACE_TRANSFER_FLAG = 'Y' WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ?";
+	    String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE , SVO_NO = ?, RFO_NO = ?, INTERFACE_TRANSFER_FLAG = 'Y', Z_PRINTSTATUS = ? WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ?";
 	    
-	    String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ? ";
+	    String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, interface_transfer_flag = 'X' WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ? ";
 	    
 	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I22', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'CreationU_RFO I_22', sysdate, sysdate FROM dual";
@@ -122,15 +122,15 @@ public class CreationU_RFO_Data {
 	            logger.info("Request Object: " + request.toString());
 
 	            if (errorCode != null && errorCode.equalsIgnoreCase("53")) {
-	                request.setPrintStatus("S");
 
 	                // Check if all necessary values are non-null before proceeding
 	                if (transaction != null && sapSvo != null && traxWoNumber != null && tcNumber != null) {
-	                    pstmt2.setString(3, transaction);
+	                    pstmt2.setString(4, transaction);
 	                    pstmt2.setString(1, sapSvo);
 	                    pstmt2.setString(2, request.getSapRepairRfo());
-	                    pstmt2.setString(4, traxWoNumber);
-	                    pstmt2.setString(5, tcNumber);
+	                    pstmt3.setString(3,  request.getPrintStatus());
+	                    pstmt2.setString(5, traxWoNumber);
+	                    pstmt2.setString(6, tcNumber);
 	                    pstmt2.executeQuery();
 	                    
 	                    // Log success of the update
@@ -144,14 +144,13 @@ public class CreationU_RFO_Data {
 	                    logger.info("Deleted previous errors for WO: " + traxWoNumber);
 	                }
 	            } else if (errorCode != null) {
-	                request.setPrintStatus("E");
 
 	                if (traxWoNumber != null && sapSvo != null && errorCode != null && remarks != null) {
 	                    executed = "Request WO: " + traxWoNumber + ", Error Code: " + errorCode + ", Remarks: " + remarks + ", SVO: " + sapSvo;
 	                    CreationU_RFO_Controller.addError(executed);
 	                    
 	                    psInsertError.setString(1, traxWoNumber);
-	                    psInsertError.setString(2, sapSvo);
+	                    psInsertError.setString(2, request.getTcNumber());
 	                    psInsertError.setString(3, errorCode);
 	                    psInsertError.setString(4, remarks);
 	                    psInsertError.executeUpdate();
@@ -231,7 +230,6 @@ public class CreationU_RFO_Data {
                 "JOIN PN_INVENTORY_DETAIL hd ON hd.BATCH = h.BATCH " +
                 "AND wt.task_card = h.task_card " +
                 "JOIN pn_master pm ON h.pn = pm.pn " +
-                "JOIN system_tran_code s ON w.source_type = s.system_code " +
                 "WHERE h.interface_transfer_flag = 'X' " +
                 "AND (pm.category = 'A' " +
                 "OR (pm.category IN ('B', 'D') " +
@@ -244,8 +242,6 @@ public class CreationU_RFO_Data {
                 "SELECT 1 FROM zepartser_master z " +
                 "WHERE z.customer = w.customer " +
                 "AND z.pn = wt.pn))) " +
-                "AND s.system_transaction = 'SOURCETYPE' " +
-                "AND s.party = '1P' " +
                 "AND (h.TRANSACTION_TYPE = 'N/L/A REMOVED' OR h.TRANSACTION_TYPE = 'N/L/A INSPECTED') " +
                 "AND h.STATUS = 'CLOSED' " +
                 "AND h.STATE_OF_PART = 'UNSERVICEABLE' " +
