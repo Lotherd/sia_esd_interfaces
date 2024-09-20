@@ -150,7 +150,7 @@ public class Run implements Runnable {
 				{ 
 					e.printStackTrace();
 				}
-	    	   logger.info("finishing");
+	    	   //logger.info("finishing");
 			}
 	}
 	
