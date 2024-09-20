@@ -2,8 +2,11 @@ package trax.aero.pojo;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 @XmlRootElement(name = "root")
+@XmlType(propOrder={"dw_inventory_detail_history_print_sel", "dw_inventory_detail_history_order_print"
+		, "dw_inventory_detail_history_other_print"})
 public class Root {
 
 	private dw_inventory_detail_history_print_sel dw_inventory_detail_history_print_sel;

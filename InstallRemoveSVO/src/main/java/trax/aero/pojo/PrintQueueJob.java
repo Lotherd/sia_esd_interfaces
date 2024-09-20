@@ -1,3 +1,5 @@
+//  Created by Trax USA Corporation.
+//  Copyright © 2014 Trax  USA. All rights reserved.
 package trax.aero.pojo;
 
 import java.io.Serializable;
@@ -21,6 +23,7 @@ public class PrintQueueJob implements Serializable {
 	private String isWPP;
 	private String printFilter;
 	private boolean uploadPdf;
+	private int priority; //9 is the highest priority.
 
 	public PrintQueueJob() {
 
@@ -53,8 +56,6 @@ public class PrintQueueJob implements Serializable {
 	public void setObjectParameters(byte[] objectParameters) {
 		this.objectParameters = objectParameters;
 	}
-
-	
 
 	public byte[] getPrintParameters() {
 		return printParameters;
@@ -119,7 +120,7 @@ public class PrintQueueJob implements Serializable {
 	public void setEmailTo(String emailTo) {
 		this.emailTo = emailTo;
 	}
-
+	
 	public String getNotPrint() {
 		return notPrint;
 	}
@@ -130,10 +131,12 @@ public class PrintQueueJob implements Serializable {
 
 	public String getIsWPP() {
 		return isWPP;
+		
 	}
 
 	public void setIsWPP(String isWPP) {
 		this.isWPP = isWPP;
+		
 	}
 
 	public boolean isUploadPdf() {
@@ -152,6 +155,13 @@ public class PrintQueueJob implements Serializable {
 		this.printFilter = printFilter;
 	}
 
-	
-	
+	public int getPriority() {
+		return priority;
+	}
+
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
+
+
 }

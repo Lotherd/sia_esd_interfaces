@@ -674,15 +674,46 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		Root r = new Root();
 		r.setDw_inventory_detail_history_order_print(new dw_inventory_detail_history_order_print());
 		r.getDw_inventory_detail_history_order_print().setRow(new RowOrder());
-
+		r.getDw_inventory_detail_history_order_print().getRow().setAwb("");
+		r.getDw_inventory_detail_history_order_print().getRow().setBin("");
+		r.getDw_inventory_detail_history_order_print().getRow().setCondition("");
+		r.getDw_inventory_detail_history_order_print().getRow().setCustom_status("");
+		r.getDw_inventory_detail_history_order_print().getRow().setGoods_rcvd_batch("");
+		r.getDw_inventory_detail_history_order_print().getRow().setOrder_number("");
+		r.getDw_inventory_detail_history_order_print().getRow().setOrder_type("");
+		r.getDw_inventory_detail_history_order_print().getRow().setReference("");
+		r.getDw_inventory_detail_history_order_print().getRow().setTag_no("");
+		r.getDw_inventory_detail_history_order_print().getRow().setTransaction_type("");
+		
 		r.setDw_inventory_detail_history_other_print(new dw_inventory_detail_history_other_print());
 		r.getDw_inventory_detail_history_other_print().setRow(new RowOther());
-
+		r.getDw_inventory_detail_history_other_print().getRow().setAc("");
+		r.getDw_inventory_detail_history_other_print().getRow().setAccounting_document("");
+		r.getDw_inventory_detail_history_other_print().getRow().setAccounting_document_dt_from("");
+		r.getDw_inventory_detail_history_other_print().getRow().setAccounting_document_dt_to("");
+		r.getDw_inventory_detail_history_other_print().getRow().setCreated_by("");
+		r.getDw_inventory_detail_history_other_print().getRow().setCustom_duty_document("");
+		r.getDw_inventory_detail_history_other_print().getRow().setDate("");
+		r.getDw_inventory_detail_history_other_print().getRow().setDate_to("");
+		r.getDw_inventory_detail_history_other_print().getRow().setIssue("");
+		
 		r.setDw_inventory_detail_history_print_sel(new dw_inventory_detail_history_print_sel());
 		r.getDw_inventory_detail_history_print_sel().setRow(new RowSel());
+		r.getDw_inventory_detail_history_print_sel().getRow().setAc_series("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setAc_type("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setBatch("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setInventory_type("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setLocation("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setOwner("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setPn("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setPn_category("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setPn_sub_category("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setSn("");
+		r.getDw_inventory_detail_history_print_sel().getRow().setWo("");
 		
-		r.getDw_inventory_detail_history_print_sel().getRow().setBatch(getBatch(input).toString());
-		r.getDw_inventory_detail_history_print_sel().getRow().setWo(input.getWo());
+		
+		r.getDw_inventory_detail_history_print_sel().getRow().setBatch(getBatch(input));
+		//r.getDw_inventory_detail_history_print_sel().getRow().setWo(input.getWo());
 
 		r.getDw_inventory_detail_history_order_print().getRow().setTransaction_type(getTransactionType(input));
 		
@@ -736,7 +767,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		return "";
 	}
 
-	private Integer getBatch(I19_Response response) {
+	private String getBatch(I19_Response response) {
 		System.out.println("Finding next seq");
 		PreparedStatement pstmt1 = null;
 		ResultSet rs1 = null;
@@ -754,9 +785,10 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 				while (rs1.next()) 
 				{
 					if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
-						return Integer.parseInt(rs1.getString(1));
+						
+						return (rs1.getString(1));
 					}else {
-						return 0;
+						return "";
 					}
 				}
 			}	
@@ -764,7 +796,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		catch (Exception e) 
 		{
 			e.printStackTrace();
-			return 0;
+			return "";
 		}finally {
 			try {
 				if(pstmt1 != null && !pstmt1.isClosed())
@@ -775,7 +807,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 				// TODO: handle exception
 			}
 		}
-		return 0;
+		return "";
 	}
 
 	private BigDecimal getSeqNo() 

@@ -40,6 +40,7 @@ public class PrintPoster {
 			 System.out.println("xml: "+xml);
 
 			PrintQueueJob propJob = new PrintQueueJob();
+			propJob.setDatasourceJNDI("java:/emroDS");
 			propJob.setPrintWindow(printWindow);
 			propJob.setPrintTitle(s_wo_print);
 			propJob.setPrintParameters(xml.getBytes());
@@ -47,7 +48,7 @@ public class PrintPoster {
 			propJob.setComparisonOperator("=");
 			addJobToJMSQueue(propJob, "N");
 
-			 System.out.println("Print Job " +  dw.getDw_inventory_detail_history_print_sel().getRow().getWo() + " Has been successfuly sent to the print queue");
+			 System.out.println("Print Job " +  dw.getDw_inventory_detail_history_print_sel().getRow().getBatch() + " Has been successfuly sent to the print queue");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -66,11 +67,17 @@ public class PrintPoster {
 		Client client = null;
 
 		try {
-
+			String jsonString="";
+			
+				Gson gson = new Gson();				
+				jsonString = gson.toJson(propJob);
+//				System.out.println(gson.toJson(jsonString));
+							
+			
 			client = ClientBuilder.newClient();
 			System.out.println("Calling Print web service : " + "'" + url + "'");
 
-			client.target(url).request().post(Entity.entity(propJob, MediaType.APPLICATION_JSON));
+			client.target(url).request().post(Entity.entity(jsonString, MediaType.APPLICATION_JSON));
 
 			System.out.println("After Print web service ");
 
