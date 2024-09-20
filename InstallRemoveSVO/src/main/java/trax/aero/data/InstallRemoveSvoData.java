@@ -32,6 +32,7 @@ import trax.aero.interfaces.IInstallRemoveSvoData;
 import trax.aero.logger.LogManager;
 import trax.aero.model.BlobTable;
 import trax.aero.model.BlobTablePK;
+import trax.aero.model.InterfaceAudit;
 import trax.aero.model.InterfaceLockMaster;
 import trax.aero.model.PnInventoryHistory;
 import trax.aero.pojo.I19_Request;
@@ -423,7 +424,80 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		return list;
 	}
 	
+	public void logError(String error) {
+		
+		InterfaceAudit ia = null;
+		ia = new InterfaceAudit();
+		ia.setTransaction(getSeqNoInterfaceAudit().longValue());
+		ia.setTransactionType("ERROR");
+		ia.setTransactionObject("I19");
+		ia.setTransactionDate(new Date());
+		ia.setCreatedBy("TRAX_IFACE");
+		ia.setModifiedBy("TRAX_IFACE");
+		ia.setCreatedDate(new Date());
+		ia.setModifiedDate(new Date());
+		ia.setExceptionId(new BigDecimal(-2000));
+		ia.setExceptionByTrax("Y");
+		ia.setExceptionDetail("Interface error encountered in Install Remove SVO");
+		ia.setExceptionStackTrace(error);
+		ia.setExceptionClassTrax("InstallRemoveSVO_I19");	
+		
+		insertData(ia);
+	}
 	
+	
+	public void setFailed(I19_Response response) throws Exception
+	{
+		/*
+		  CC Should be unchecked , Status of this transaction should go to pending
+		 */
+		
+		
+		//setting up variables
+		exceuted = "OK";
+		
+		String sqlDate ="UPDATE pn_inventory_history SET MADE_AS_CCS = NULL, STATUS = 'PENDING'  WHERE transaction_no = ? ";
+		
+		PreparedStatement pstmt2 = null; 
+		pstmt2 = con.prepareStatement(sqlDate);
+		try 
+		{	
+			logger.info("Marking Transaction: " + response.getTransaction());
+			pstmt2.setString(1, response.getTransaction());
+			
+			pstmt2.executeQuery();
+		}
+		catch (Exception e) 
+        {
+			
+			logger.severe(e.toString());
+            exceuted = e.toString();
+            throw new Exception("Issue found");
+		}finally {
+			
+			if(pstmt2 != null && !pstmt2.isClosed())
+				pstmt2.close();
+			
+		}
+		
+	}
+	
+	private BigDecimal getSeqNoInterfaceAudit()
+	{		
+		logger.info("Finding next seq");
+		try
+		{
+			BigDecimal transaction = (BigDecimal)this.em.createNativeQuery("select seq_interface_audit.NextVal "
+					+ "FROM DUAL").getSingleResult();		
+			return transaction;			
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			throw e;
+		}
+		
+	}
 	
 	private <T> void insertData( T data) 
 	{

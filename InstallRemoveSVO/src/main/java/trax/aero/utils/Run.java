@@ -99,8 +99,10 @@ public class Run implements Runnable {
 							    	exceuted = data.markTransaction(input);
 							    	//data.printCCS(input);
 								}else {
-																		
+									data.setFailed(input);									
 									logger.severe("Received Response with Exception: " + input.getExceptionDetail() +",Transaction: "+input.getTransaction() + ", Exception ID: " +input.getExceptionId());
+									data.logError("Received Response with Exception: " + input.getExceptionDetail() 
+									+",Transaction: "+input.getTransaction() + ", Exception ID: " +input.getExceptionId());
 									InstallRemoveSVOController.addError("Received Response with Exception: " + input.getExceptionDetail() +", Order Number: "+input.getTransaction() + ", Exception ID: " +input.getExceptionId());
 									exceuted = data.markTransaction(input);
 									exceuted = "Issue found";
@@ -114,6 +116,7 @@ public class Run implements Runnable {
 							{
 								InstallRemoveSVOController.addError(e.toString());
 								InstallRemoveSVOController.sendEmailResponse(input);
+								
 							}
 					       finally 
 					       {   

@@ -8,6 +8,7 @@
 		<class>trax.aero.model.InterfaceLockMaster</class>
 		<class>trax.aero.model.PnInventoryHistory</class>
 		<class>trax.aero.model.PnInventoryHistoryPK</class>
+		 <class>trax.aero.model.InterfaceAudit</class>
 		<shared-cache-mode>NONE</shared-cache-mode>
 		<properties>
 			<property name="hibernate.dialect"
