@@ -787,7 +787,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		
 		
 		r.getDw_inventory_detail_history_print_sel().getRow().setBatch(getBatch(input));
-		//r.getDw_inventory_detail_history_print_sel().getRow().setWo(input.getWo());
+		r.getDw_inventory_detail_history_print_sel().getRow().setWo(input.getWo());
 
 		r.getDw_inventory_detail_history_order_print().getRow().setTransaction_type(getTransactionType(input));
 		
