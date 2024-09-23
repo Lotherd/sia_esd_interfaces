@@ -64,7 +64,7 @@ public class Service {
 			}else {
 		    	data.openCon();
 				exceuted = data.markTransaction(input);
-				//data.printCCS(input);
+				data.printCCS(input);
 			}
         	if(!exceuted.equalsIgnoreCase("OK")) {
         		exceuted = "Issue found";

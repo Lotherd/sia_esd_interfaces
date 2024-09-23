@@ -42,6 +42,7 @@ public class PrintPoster {
 			PrintQueueJob propJob = new PrintQueueJob();
 			propJob.setDatasourceJNDI("java:/emroDS");
 			propJob.setPrintWindow(printWindow);
+			propJob.setSelectedPrint("All History Detail");
 			propJob.setPrintTitle(s_wo_print);
 			propJob.setPrintParameters(xml.getBytes());
 			propJob.setUser("ADM");
@@ -71,7 +72,7 @@ public class PrintPoster {
 			
 				Gson gson = new Gson();				
 				jsonString = gson.toJson(propJob);
-//				System.out.println(gson.toJson(jsonString));
+				//System.out.println(gson.toJson(jsonString));
 							
 			
 			client = ClientBuilder.newClient();

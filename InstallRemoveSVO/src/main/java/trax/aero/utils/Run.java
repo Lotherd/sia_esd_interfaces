@@ -97,7 +97,7 @@ public class Run implements Runnable {
 							    if(input.getExceptionId() != null && !input.getExceptionDetail().isEmpty() && input.getExceptionId().equalsIgnoreCase("53")) {
 							    	data.openCon();
 							    	exceuted = data.markTransaction(input);
-							    	//data.printCCS(input);
+							    	data.printCCS(input);
 								}else {
 									data.setFailed(input);									
 									logger.severe("Received Response with Exception: " + input.getExceptionDetail() +",Transaction: "+input.getTransaction() + ", Exception ID: " +input.getExceptionId());
