@@ -174,7 +174,7 @@ public class Authorization_Controller_Data {
                     "FROM pn_master pm, pn_authority_approval pa, pn_authority_esd pe " +
                     "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType " +
                     "AND pe.pn_type = pm.pn_type AND pe.tech_control <> 'MODULE'");
-                techControlQuery.setParameter("pnType", e.getRecordItemName());
+                techControlQuery.setParameter("pnType", e.getRecordItemName().toUpperCase());
 
                 @SuppressWarnings("unchecked")
                 List<String> techControlResult = techControlQuery.getResultList();
@@ -183,16 +183,16 @@ public class Authorization_Controller_Data {
                     techControl = techControlResult.get(0);  // Assuming you only need the first result
                     logger.info("Tech Control retrieved: " + techControl);
                 } else {
-                    logger.warning("No tech_control found for pn_type: '" + e.getRecordItemName() + "'");
+                    logger.warning("No tech_control found for pn_type: '" + e.getRecordItemName().toUpperCase() + "'");
                 }
             } catch (Exception ex) {
-                logger.severe("Exception occurred while fetching tech_control for pn_type: '" + e.getRecordItemName() + "'");
+                logger.severe("Exception occurred while fetching tech_control for pn_type: '" + e.getRecordItemName().toUpperCase() + "'");
                 ex.printStackTrace();
             }
 
-            // Here we handle multiple `e.getRecordItemName()` for the same skill
-            // Assuming e.getRecordItemName() returns names separated by commas or some delimiter, we can split them
-            String[] recordItemNames = e.getRecordItemName().split(",");  // Splitting by comma or other delimiter
+            // Here we handle multiple `e.getRecordItemName().toUpperCase()` for the same skill
+            // Assuming e.getRecordItemName().toUpperCase() returns names separated by commas or some delimiter, we can split them
+            String[] recordItemNames = e.getRecordItemName().toUpperCase().split(",");  // Splitting by comma or other delimiter
             for (String recordItemName : recordItemNames) {
                 recordItemName = recordItemName.trim();  // Make sure to trim any extra spaces
 
@@ -264,6 +264,56 @@ public class Authorization_Controller_Data {
             }
         } else {
             logger.info("Skill '" + assignedSkill + "' not found in mapping or already processed.");
+        }
+    }
+    
+    public void insertSkillsToSkillMaster() {
+        EntityTransaction transaction = null;
+        try {
+            // Start the transaction
+            transaction = em.getTransaction();
+            transaction.begin();
+
+            // First, execute the query to get skill and skill_name from ESD_SKILL_MAPPING
+            List<Object[]> skillMappings = em.createNativeQuery("SELECT SKILL, SKILL_NAME FROM ESD_SKILL_MAPPING")
+                                             .getResultList();
+
+            // Iterate through the results of the SELECT query
+            for (Object[] skillMapping : skillMappings) {
+                String skill = (String) skillMapping[0];  // First column is the skill
+                String skillName = (String) skillMapping[1];  // Second column is the skill_name
+
+                // Check if the skill already exists in the skill_master table
+                Long count = ((Number) em.createNativeQuery("SELECT COUNT(*) FROM skill_master WHERE skill = :skill")
+                                         .setParameter("skill", skill)
+                                         .getSingleResult()).longValue();
+
+                if (count == 0) {
+                    // The skill does not exist, proceed with the insert
+                    Query insertQuery = em.createNativeQuery(
+                        "INSERT INTO skill_master " +
+                        "(SKILL, SKILL_DESCRIPTION, CREATED_BY, MODIFIED_BY, CREATED_DATE, MODIFIED_DATE, STATUS, MECHANIC, INSPECTOR, ETOPS, DEFECT) " +
+                        "VALUES (:skill, :skillName, 'TRAX_IFACE', 'TRAX_IFACE', SYSDATE, SYSDATE, 'ACTIVE', 'Y', 'Y', 'N', 'N')"
+                    );
+                    insertQuery.setParameter("skill", skill);
+                    insertQuery.setParameter("skillName", skillName);
+                    insertQuery.executeUpdate();
+                    logger.info("Inserted skill: " + skill + " with description: " + skillName);
+                } else {
+                    // The skill already exists, skip the insert
+                    logger.info("Skill " + skill + " already exists in skill_master. Skipping insert.");
+                }
+            }
+
+            // Commit the transaction
+            transaction.commit();
+        } catch (Exception ex) {
+            // If an error occurs, rollback the transaction
+            if (transaction != null && transaction.isActive()) {
+                transaction.rollback();
+            }
+            logger.severe("Error inserting skills into skill_master: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
     
@@ -344,7 +394,7 @@ public class Authorization_Controller_Data {
                         "SELECT distinct tech_control " +
                         "FROM pn_authority_esd " +
                         "WHERE pn_type = :pnType and authority = 'EASA' and tech_control <> 'MODULE' ")
-                        .setParameter("pnType", e.getRecordItemName())
+                        .setParameter("pnType", e.getRecordItemName().toUpperCase())
                         .getResultList();
                     
                     
@@ -359,7 +409,7 @@ public class Authorization_Controller_Data {
                         "FROM pn_master pm, pn_authority_approval pa, pn_authority_esd pe " +
                         "WHERE pm.pn = pa.pn AND pm.pn_type = :pnType " +
                         "AND pa.authority <> 'EASA' AND pe.pn_type = pm.pn_type AND pe.tech_control <> 'MODULE' ")
-                        .setParameter("pnType", e.getRecordItemName())
+                        .setParameter("pnType", e.getRecordItemName().toUpperCase())
                         .getResultList();
 
                     
@@ -416,7 +466,7 @@ public class Authorization_Controller_Data {
                 license.getId().setEmployee(e.getStaffNumber());
                 license.setIssuedAuthority(issuedAuthority);
                 license.setEngine(techControl);
-                license.setLicenceType(e.getRecordItemName());
+                license.setLicenceType(e.getRecordItemName().toUpperCase());
 
                 String skill = null;
                 try {

@@ -157,7 +157,10 @@ public class RunAble implements Runnable {
                             data.deleteEmployeeControlRecords(employeeId);
                             processedEmployees.add(employeeId);  
                         }
+                        
+                       
                     }
+                    data.insertSkillsToSkillMaster();
 
                     for (String[] row : allData) {
                         employee = new EmployeeLicense();
