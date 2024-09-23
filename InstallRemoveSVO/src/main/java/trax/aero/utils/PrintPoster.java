@@ -63,8 +63,7 @@ public class PrintPoster {
 
 		
 
-		String url = "Y".equals(isWPP) ? System.getProperty("Trax_Print_WPP_URL") + "rest/print/printwpp"
-				: System.getProperty("Trax_Print_URL") + "rest/print/print";
+		String url = System.getProperty("Trax_Print_URL") + "rest/print/print";
 		Client client = null;
 
 		try {
