@@ -185,7 +185,7 @@ public class Unit_Price_RFO_Data {
 	                        // The currencies do not match, handle the conversion using exchange rates
 	                        BigDecimal exchangeRateDecimal = BigDecimal.ZERO;
 
-	                        if (Currency.equals("GBP") && !operationCurrency.equals("GBP")) {
+	                        if (Currency.equals("GBP") && !(operationCurrency.equals("GBP"))) {
 	                            // Set exchange query for SGD
 	                            ex.setString(1, operationCurrency);
 	                            ResultSet exRs = ex.executeQuery();
@@ -199,14 +199,14 @@ public class Unit_Price_RFO_Data {
 	                            UnitPrice = unitPriceConverted.toString();
 
 	                            // Update with SGD
-	                            sgd.setString(1, UnitPrice);
-	                            sgd.setString(2, QTY);
-	                            sgd.setString(3, request.getWO());
-	                            sgd.setString(4, o.getMaterial());
-	                            sgd.executeUpdate();
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
-	                        } else if (Currency.equals("EUR") && !operationCurrency.equals("GBP") || !operationCurrency.equals("EUR") ) {
+	                        } else if (Currency.equals("EUR") && !(operationCurrency.equals("GBP") || operationCurrency.equals("EUR"))) {
 	                            // Set exchange query for SGD
 	                            ex.setString(1, operationCurrency);
 	                            ResultSet exRs = ex.executeQuery();
@@ -220,14 +220,57 @@ public class Unit_Price_RFO_Data {
 	                            UnitPrice = unitPriceConverted.toString();
 
 	                            // Update with SGD
-	                            sgd.setString(1, UnitPrice);
-	                            sgd.setString(2, QTY);
-	                            sgd.setString(3, request.getWO());
-	                            sgd.setString(4, o.getMaterial());
-	                            sgd.executeUpdate();
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
-	                        }else if (Currency.equals("SGD") && operationCurrency.equals("USD")) {
+	                        } else if (Currency.equals("USD") && !(operationCurrency.equals("GBP") || operationCurrency.equals("EUR") || operationCurrency.equals("USD"))) {
+	                            // Set exchange query for SGD
+	                            ex.setString(1, operationCurrency);
+	                            ResultSet exRs = ex.executeQuery();
+
+	                            if (exRs.next()) {
+	                                exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                            }
+
+	                            // Convert unit price to SGD: UnitPrice * exchange rate
+	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
+	                            UnitPrice = unitPriceConverted.toString();
+
+	                            // Update with SGD
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
+
+	                        }  else if (Currency.equals("SGD") 
+	                        		&& !(operationCurrency.equals("GBP") || operationCurrency.equals("EUR") || operationCurrency.equals("USD")|| operationCurrency.equals("SGD"))) {
+	                            // Set exchange query for SGD
+	                            ex.setString(1, operationCurrency);
+	                            ResultSet exRs = ex.executeQuery();
+
+	                            if (exRs.next()) {
+	                                exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                            }
+
+	                            // Convert unit price to SGD: UnitPrice * exchange rate
+	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
+	                            UnitPrice = unitPriceConverted.toString();
+
+	                            // Update with SGD
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
+
+	                        } else if (!(Currency.equals("GBP")) && operationCurrency.equals("GBP")) {
 	                            // Set exchange query for USD
 	                            ex.setString(1, Currency);
 	                            ResultSet exRs = ex.executeQuery();
@@ -246,7 +289,90 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(3, request.getWO());
 	                            usd.setString(4, o.getMaterial());
 	                            usd.executeUpdate();
-	                            System.out.println("Converted and updated with USD prices.");
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
+	                            
+	                        } else if (!(Currency.equals("GBP") || Currency.equals("EUR") ) && operationCurrency.equals("EUR")) {
+	                            // Set exchange query for USD
+	                            ex.setString(1, Currency);
+	                            ResultSet exRs = ex.executeQuery();
+
+	                            if (exRs.next()) {
+	                                exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                            }
+
+	                            // Convert unit price to USD: UnitPrice / exchange rate
+	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+	                            UnitPrice = unitPriceConverted.toString();
+
+	                            // Update with USD
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
+	                            
+	                        } else if (!(Currency.equals("GBP") || Currency.equals("EUR") ) && operationCurrency.equals("EUR")) {
+	                            // Set exchange query for USD
+	                            ex.setString(1, Currency);
+	                            ResultSet exRs = ex.executeQuery();
+
+	                            if (exRs.next()) {
+	                                exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                            }
+
+	                            // Convert unit price to USD: UnitPrice / exchange rate
+	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+	                            UnitPrice = unitPriceConverted.toString();
+
+	                            // Update with USD
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
+	                            
+	                        } else if (!(Currency.equals("GBP") || Currency.equals("EUR") || Currency.equals("USD")) && operationCurrency.equals("USD")) {
+	                            // Set exchange query for USD
+	                            ex.setString(1, Currency);
+	                            ResultSet exRs = ex.executeQuery();
+
+	                            if (exRs.next()) {
+	                                exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                            }
+
+	                            // Convert unit price to USD: UnitPrice / exchange rate
+	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+	                            UnitPrice = unitPriceConverted.toString();
+
+	                            // Update with USD
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
+	                        } else if (!(Currency.equals("GBP") || Currency.equals("EUR") || Currency.equals("USD") || Currency.equals("SGD")) && operationCurrency.equals("SGD")) {
+	                            // Set exchange query for USD
+	                            ex.setString(1, Currency);
+	                            ResultSet exRs = ex.executeQuery();
+
+	                            if (exRs.next()) {
+	                                exchangeRateDecimal = new BigDecimal(exRs.getString(1));
+	                            }
+
+	                            // Convert unit price to USD: UnitPrice / exchange rate
+	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
+	                            UnitPrice = unitPriceConverted.toString();
+
+	                            // Update with USD
+	                            usd.setString(1, UnitPrice);
+	                            usd.setString(2, QTY);
+	                            usd.setString(3, request.getWO());
+	                            usd.setString(4, o.getMaterial());
+	                            usd.executeUpdate();
+	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                        } else {
 	                            System.out.println("The currencies do not match and cannot be converted.");
 	                        }
