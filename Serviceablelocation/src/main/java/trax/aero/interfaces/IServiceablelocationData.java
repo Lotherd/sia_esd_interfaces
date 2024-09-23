@@ -11,7 +11,7 @@ import trax.aero.pojo.MT_TRAX_SND_I28_4134_REQ;
 
 public interface IServiceablelocationData {
 
-	
+	public void logError(String error, String string);
 	public String print(String wo,String task_card , byte[] bs, String formNo, String formLine) throws Exception ;
 			
 			

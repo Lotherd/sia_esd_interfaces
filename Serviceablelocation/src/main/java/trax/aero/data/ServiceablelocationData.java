@@ -367,7 +367,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		public void setComplete(MT_TRAX_RCV_I28_4134_RES response) throws Exception
 		{
 					
-			String sqlDate ="UPDATE WO w1 SET w1.STATUS =  'COMPLETED'  WHERE w1.rfo_no = ? AND w1.MODULE = 'SHOP' and EXISTS (  SELECT 1 FROM WO w2 WHERE w2.wo = w1.wo  and status = 'POSTCOMPLT') ";
+			String sqlDate ="UPDATE WO w1 SET w1.STATUS =  'COMPLETED', POSTCOMPLETED_BY = null , POSTCOMPLETED_DATE = null , MODIFIED_BY = 'TRAX_IFACE' , MODIFIED_DATE = sysdate  WHERE w1.rfo_no = ? AND w1.MODULE = 'SHOP' and EXISTS (  SELECT 1 FROM WO w2 WHERE w2.wo = w1.wo  and status = 'POSTCOMPLT') ";
 			
 			PreparedStatement pstmt2 = null; 
 			pstmt2 = con.prepareStatement(sqlDate);
@@ -470,7 +470,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			insertData(lock);
 		}
 		
-		public void logError(String error) {
+		public void logError(String error, String wo) {
 			
 			InterfaceAudit ia = null;
 			ia = new InterfaceAudit();
@@ -480,6 +480,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			ia.setTransactionDate(new Date());
 			ia.setCreatedBy("TRAX_IFACE");
 			ia.setModifiedBy("TRAX_IFACE");
+			ia.setOrderLine(new BigDecimal(wo));
 			ia.setCreatedDate(new Date());
 			ia.setModifiedDate(new Date());
 			ia.setExceptionId(new BigDecimal(-2000));
