@@ -100,7 +100,7 @@ public class Run implements Runnable {
 								
 								exceuted = ("Received acknowledgement with Error Code: " + input.getExceptionId() 
 								+", Status Message: "+input.getExceptionDetail()) ;
-								data.logError(exceuted, input.getWo());
+								data.logError(exceuted, input);
 								logger.severe(exceuted);
 								ServiceablelocationController.addError(exceuted);
 								
