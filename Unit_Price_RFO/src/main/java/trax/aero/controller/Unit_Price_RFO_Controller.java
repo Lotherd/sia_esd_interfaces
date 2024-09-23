@@ -28,7 +28,7 @@ public class Unit_Price_RFO_Controller {
 	static String toEmail = System.getProperty("UnitPrice_toEmail");
 	
 	public Unit_Price_RFO_Controller() {
-		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+		factory = Persistence.createEntityManagerFactory("TraxESD");
 		factory.createEntityManager();
 	}
 	
