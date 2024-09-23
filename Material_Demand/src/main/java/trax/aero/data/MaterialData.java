@@ -108,6 +108,11 @@ public class MaterialData implements IMaterialData {
 				if(header.getWo() == null && header.getTaskCard() == null) {
 					continue;
 				}
+				if(header.getCreatedBy().equalsIgnoreCase("TRAX_IFACE") 
+				|| header.getCreatedBy().equalsIgnoreCase("TRAXIFACE") ) {
+					continue;
+				}
+				
 				MT_TRAX_SND_I10_4110 requisition = new MT_TRAX_SND_I10_4110();
 				orders = new ArrayList<Order>();
 				requisition.setOrder(orders);
@@ -273,7 +278,10 @@ public class MaterialData implements IMaterialData {
 					}
 					
 					em.refresh(detail);
-					
+					if(detail.getCreatedBy().equalsIgnoreCase("TRAX_IFACE") 
+							|| detail.getCreatedBy().equalsIgnoreCase("TRAXIFACE") ) {
+								continue;
+					}
 					
 					if(detail.getInterfaceSyncFlag() != null &&  detail.getInterfaceSyncFlag().equalsIgnoreCase("S")) {
 						continue;
