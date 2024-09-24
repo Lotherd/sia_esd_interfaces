@@ -52,7 +52,7 @@ public class PicklistDistributionRec implements Serializable {
 	private String emobilityPickedFlag;
 
 	@Column(name="LEGACY_BATCH")
-	private BigDecimal legacyBatch;
+	private String legacyBatch;
 
 	@Column(name="MODIFIED_BY")
 	private String modifiedBy;
@@ -191,11 +191,11 @@ public class PicklistDistributionRec implements Serializable {
 		this.emobilityPickedFlag = emobilityPickedFlag;
 	}
 
-	public BigDecimal getLegacyBatch() {
+	public String getLegacyBatch() {
 		return this.legacyBatch;
 	}
 
-	public void setLegacyBatch(BigDecimal legacyBatch) {
+	public void setLegacyBatch(String legacyBatch) {
 		this.legacyBatch = legacyBatch;
 	}
 
