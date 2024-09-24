@@ -118,6 +118,14 @@ public class Unit_Price_RFO_Data {
 	    
 	    String variance = "update wo_actuals set variance_price = ? where wo = ? and task_card_pn = ? ";
 	    
+	    String tempActuals = "insert into wo_actuals_material_temp  (wo_actual_transaction, trasaction_category,  wo, get_price, qty, unit_cost, total_cost, add_bill_currency, add_bill_curr_amount, unit_sell_b, variance_price) " +
+	    					 "values ( ?, 'MATERIAL', ?, null , ?, ?, ?, ?, ?, ?, ? )";
+	    
+	    String updatetempActuals = "update wo_actuals_material_temp set get_price = null, qty = ?, unit_cost = ?, total_cost = ?, add_bill_currency = ?, add_bill_curr_amount = ?, unit_sell_b = ?, variance_price = ? " + 
+	    							"where wo = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL' ";
+	    
+	    String selectActuals = "select wo_actual_transaction from wo_actuals where wo = ? and task_card_pn = ? and trasaction_category = 'MATERIAL' ";
+	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(pridedone);
 	             PreparedStatement ps1 = con.prepareStatement(getcurrency);
 	             PreparedStatement usd = con.prepareStatement(setpriceUSD);
@@ -125,10 +133,23 @@ public class Unit_Price_RFO_Data {
 	             PreparedStatement ex = con.prepareStatement(exchamgerate);
 	             PreparedStatement chold = con.prepareStatement(checkoldprice);
 	             PreparedStatement old = con.prepareStatement(oldprice);
-	             PreparedStatement var = con.prepareStatement(variance)) {
+	             PreparedStatement var = con.prepareStatement(variance);
+	    		 PreparedStatement tempA = con.prepareStatement(tempActuals);
+	    		 PreparedStatement UtempA = con.prepareStatement(updatetempActuals);
+	    		 PreparedStatement actu = con.prepareStatement(selectActuals)) {
 	        
 	        for (Operation_TRAX o : request.getOperation()) {
 	            if (request.getWO() != null && !request.getWO().isEmpty()) {
+	            	
+	            	
+	            	//Get transaction number 
+	            	actu.setString(1, request.getWO());
+	            	actu.setString(1, o.getMaterial());
+	                ResultSet actus = actu.executeQuery();
+	                
+	                if (actus.next()) {
+                       String Transaction = actus.getString(1);
+                    }
 
 	                // Set the WO parameter in the query
 	                ps1.setString(1, request.getWO());
@@ -495,6 +516,8 @@ public class Unit_Price_RFO_Data {
 	                            old.setString(3, o.getMaterial());
 	                            old.executeUpdate();
 	                            System.out.println("Old price updated.");
+	                            
+	                            
 	                        }
 	                    } else {
 	                        System.out.println("No old price found for WO: " + request.getWO() + " and Material: " + o.getMaterial());
@@ -503,6 +526,39 @@ public class Unit_Price_RFO_Data {
 	                    pstmt1.setString(1, request.getWO());
 	                    pstmt1.setString(2, o.getMaterial());
 	                    pstmt1.executeUpdate();
+	                    
+	                    // Inserción o actualización en wo_actuals_material_temp
+	                    try {
+	                        tempA.setString(1, Trnasction);
+	                        tempA.setString(2, request.getWO());
+	                        tempA.setString(3, QTY);
+	                        tempA.setString(4, UnitPrice);
+	                        tempA.setString(5, unitPriceDecimal.multiply(new BigDecimal(QTY)).toString());
+	                        tempA.setString(6, o.getCurrency());
+	                        tempA.setString(7, o.getSell_Total_Price());
+	                        tempA.setString(8, UnitPrice);
+	                        tempA.setString(9, "0");
+	                        tempA.executeUpdate();
+	                        System.out.println("Insert en wo_actuals_material_temp realizado correctamente.");
+	                    } catch (SQLException e) {
+	                        if (e.getErrorCode() == /* código de error de clave duplicada */) {
+	                            System.out.println("El registro ya existe, actualizando en wo_actuals_material_temp.");
+	                            UtempA.setString(1, QTY);
+	                            UtempA.setString(2, UnitPrice);
+	                            UtempA.setString(3, unitPriceDecimal.multiply(new BigDecimal(QTY)).toString());
+	                            UtempA.setString(4, o.getCurrency());
+	                            UtempA.setString(5, o.getSell_Total_Price());
+	                            UtempA.setString(6, UnitPrice);
+	                            UtempA.setString(7, "0");
+	                            UtempA.setString(8, request.getWO());
+	                            UtempA.setString(9, Trnasction);
+	                            UtempA.executeUpdate();
+	                            System.out.println("Update en wo_actuals_material_temp realizado correctamente.");
+	                        } else {
+	                            throw e;
+	                        }
+	                    }
+
 
 	                    if (request.getError_code() != null && !request.getError_code().equalsIgnoreCase("53")) {
 	                        executed = "WO: " + request.getWO() + ", PN: " + o.getMaterial() + ", Error Code: " + request.getError_code() + ", Remarks: " + request.getRemarks();
