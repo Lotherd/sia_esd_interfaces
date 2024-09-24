@@ -76,7 +76,7 @@ public class Unit_Price_RFO_Data {
 		    } catch (Exception e) {
 		    	Unit_Price_RFO_Controller.addError(e.toString());
 		    }
-		factory = Persistence.createEntityManagerFactory("TraxESD");
+		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
 		em = factory.createEntityManager();
 	}
 	
@@ -106,9 +106,9 @@ public class Unit_Price_RFO_Data {
 	    
 	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
 	    
-	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ? where wo = ? and task_card_pn = ? ";
+	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ? where wo = ? and task_card_pn = ? ";
 	    
-	    String setpriceSGD = "update wo_actuals set unit_sell_currency = ?, qty = ? where wo = ? and task_card_pn = ? ";
+	    String setpriceSGD = "update wo_actuals set add_bill_currency = ?, add_bill_curr_amount = ? where wo = ? and task_card_pn = ? ";
 	    
 	    String exchamgerate = " select distinct exchange_rate from currency_exchange_history where currency = ? ";
 	    
@@ -172,16 +172,37 @@ public class Unit_Price_RFO_Data {
 	                    if (Currency != null && Currency.equals(operationCurrency)) {
 	                        // The currencies are equal
 	                        System.out.println("The currencies match: " + Currency);
+	                        
+	                        // Convert unit_price and qty from String to BigDecimal
+	                        BigDecimal unitPriceBD = new BigDecimal(UnitPrice);
+	                        BigDecimal qtyBD = new BigDecimal(QTY);
+	                        
+	                        // Calculate the total cost
+	                        BigDecimal totalCostBD = unitPriceBD.multiply(qtyBD);
+	                        
+	                        // Convert total cost back to String
+	                        String totalCost = totalCostBD.toString();
+	                        
 	                        if (Currency.equals(operationCurrency)) {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Updated with " + operationCurrency + " prices.");
 	                        } 
 
 	                    } else {
+	                    	
+	                    	
+	                    	
+	                    	sgd.setString(1, o.getCurrency());
+                            sgd.setString(2, o.getSell_Total_Price());
+                            sgd.setString(3, request.getWO());
+                            sgd.setString(4, o.getMaterial());
+                            sgd.executeUpdate();
+	                    	
 	                        // The currencies do not match, handle the conversion using exchange rates
 	                        BigDecimal exchangeRateDecimal = BigDecimal.ZERO;
 
@@ -197,12 +218,18 @@ public class Unit_Price_RFO_Data {
 	                            // Convert unit price to SGD: UnitPrice * exchange rate
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
+	                            
+	                            // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
 
 	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -219,11 +246,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
+	                            // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
 	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -240,11 +273,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
+	                            // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
 	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -262,11 +301,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).multiply(exchangeRateDecimal).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
+	                            // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
 	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -283,11 +328,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
-	                            // Update with USD
+	                         // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
+	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                            
@@ -304,11 +355,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
-	                            // Update with USD
+	                         // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
+	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                            
@@ -325,11 +382,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
-	                            // Update with USD
+	                         // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
+	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                            
@@ -346,11 +409,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
-	                            // Update with USD
+	                         // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
+	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                        } else if (!(Currency.equals("GBP") || Currency.equals("EUR") || Currency.equals("USD") || Currency.equals("SGD")) && operationCurrency.equals("SGD")) {
@@ -366,11 +435,17 @@ public class Unit_Price_RFO_Data {
 	                            BigDecimal unitPriceConverted = new BigDecimal(UnitPrice).divide(exchangeRateDecimal, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP);
 	                            UnitPrice = unitPriceConverted.toString();
 
-	                            // Update with USD
+	                         // Calculate total cost: unitPriceConverted * qty
+	                            BigDecimal qtyBD = new BigDecimal(QTY);
+	                            BigDecimal totalCostBD = unitPriceConverted.multiply(qtyBD).setScale(2, RoundingMode.HALF_UP);
+	                            String totalCost = totalCostBD.toString();
+
+	                            // Update with SGD
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
-	                            usd.setString(3, request.getWO());
-	                            usd.setString(4, o.getMaterial());
+	                            usd.setString(3, totalCost);
+	                            usd.setString(4, request.getWO());
+	                            usd.setString(5, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                        } else {
