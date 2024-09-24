@@ -502,6 +502,7 @@ public class InstallRemoveData {
 				
 					if(containsType(Inbound.getApplication_Log(), "E")){
 						logger.info("1");
+						logger.info(text);
 						pstmt2.setString(1, "E");
 						pstmt2.setString(2, Inbound.getHeader().getTRAXTRANS());
 						pstmt2.executeQuery();
@@ -512,6 +513,7 @@ public class InstallRemoveData {
 						
 					}else if(containsType(Inbound.getApplication_Log(), "W")) {
 						logger.info("2");	
+						logger.info(text);
 						pstmt2.setString(1, "W");
 						pstmt2.setString(2, Inbound.getHeader().getTRAXTRANS());
 						pstmt2.executeQuery();
