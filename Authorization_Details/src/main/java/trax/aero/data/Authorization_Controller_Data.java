@@ -231,9 +231,9 @@ public class Authorization_Controller_Data {
 
                     employeeSkill.setId(pk);
                     employeeSkill.setStatus("ACTIVE");
-                    employeeSkill.setCreatedBy("TRAX_IFACE");
+                    employeeSkill.setCreatedBy("IFACE_ESD");
                     employeeSkill.setCreatedDate(new Date());
-                    employeeSkill.setModifiedBy("TRAX_IFACE");
+                    employeeSkill.setModifiedBy("IFACE_ESD");
                     employeeSkill.setModifiedDate(new Date());
                     employeeSkill.setLicense(e.getAuthorizationNumber());
                     employeeSkill.setPntype(recordItemName != null ? recordItemName : "N/A");
@@ -293,7 +293,7 @@ public class Authorization_Controller_Data {
                     Query insertQuery = em.createNativeQuery(
                         "INSERT INTO skill_master " +
                         "(SKILL, SKILL_DESCRIPTION, CREATED_BY, MODIFIED_BY, CREATED_DATE, MODIFIED_DATE, STATUS, MECHANIC, INSPECTOR, ETOPS, DEFECT) " +
-                        "VALUES (:skill, :skillName, 'TRAX_IFACE', 'TRAX_IFACE', SYSDATE, SYSDATE, 'ACTIVE', 'Y', 'Y', 'N', 'N')"
+                        "VALUES (:skill, :skillName, 'IFACE_ESD', 'IFACE_ESD', SYSDATE, SYSDATE, 'ACTIVE', 'Y', 'Y', 'N', 'N')"
                     );
                     insertQuery.setParameter("skill", skill);
                     insertQuery.setParameter("skillName", skillName);
@@ -324,12 +324,12 @@ public class Authorization_Controller_Data {
                 em.getTransaction().begin();  
             }
 
-            Long count = em.createQuery("SELECT COUNT(e) FROM EmployeeControl e WHERE e.id.employee = :employee", Long.class)
+            Long count = em.createQuery("SELECT COUNT(e) FROM EmployeeControl e WHERE e.id.employee = :employee AND createdBy = 'IFACE_ESD' ", Long.class)
                            .setParameter("employee", employeeId)
                            .getSingleResult();
 
             if (count > 0) {
-                int deletedCount = em.createQuery("DELETE FROM EmployeeControl e WHERE e.id.employee = :employee")
+                int deletedCount = em.createQuery("DELETE FROM EmployeeControl e WHERE e.id.employee = :employee AND createdBy= 'IFACE_ESD' ")
                                      .setParameter("employee", employeeId)
                                      .executeUpdate();
 
@@ -451,7 +451,7 @@ public class Authorization_Controller_Data {
                     EmployeeControlPK employeepk = new EmployeeControlPK();
                     license.setId(employeepk);
                     license.setCreatedDate(new Date());
-                    license.setCreatedBy("TRAX_IFACE");
+                    license.setCreatedBy("IFACE_ESD");
                     license.getId().setEmployee(e.getStaffNumber());
                     license.getId().setEmployeeControl("LICENCE");
                     license.setDateIssued(new Date());
@@ -508,7 +508,7 @@ public class Authorization_Controller_Data {
                 }
 
                 // Update modified details
-                license.setModifiedBy("TRAX_IFACE");
+                license.setModifiedBy("IFACE_ESD");
                 license.setModifiedDate(new Date());
 
                 logger.info("Before inserting EmployeeControl for authority: " + issuedAuthority);

@@ -144,12 +144,18 @@ public class Unit_Price_RFO_Data {
 	            	
 	            	//Get transaction number 
 	            	actu.setString(1, request.getWO());
-	            	actu.setString(1, o.getMaterial());
+	            	actu.setString(2, o.getMaterial());
 	                ResultSet actus = actu.executeQuery();
 	                
+	                String Trnasction = null;
 	                if (actus.next()) {
-                       String Transaction = actus.getString(1);
+                       Trnasction = actus.getString(1);
                     }
+	                
+	                if (Trnasction == null) {
+	                    System.out.println("No transaction found for WO: " + request.getWO() + " and Material: " + o.getMaterial());
+	                    continue;
+	                }
 
 	                // Set the WO parameter in the query
 	                ps1.setString(1, request.getWO());
@@ -472,7 +478,9 @@ public class Unit_Price_RFO_Data {
 	                        } else {
 	                            System.out.println("The currencies do not match and cannot be converted.");
 	                        }
+	                        
 	                    }
+	                    
 
 	                    // Check the old price
 	                    chold.setString(1, request.getWO());
@@ -509,7 +517,9 @@ public class Unit_Price_RFO_Data {
 	                            var.setString(3, o.getMaterial());
 	                            var.executeUpdate();
 	                            System.out.println("Variance updated with value: " + varianceDecimal.toString());
-
+	                            
+	                            
+	                            insertOrUpdateTempActuals(con, Trnasction, request.getWO(), QTY, UnitPrice, o.getCurrency(), o.getSell_Total_Price(), varianceDecimal);
 	                            // Update old price with the new UnitPrice
 	                            old.setString(1, UnitPrice);
 	                            old.setString(2, request.getWO());
@@ -527,38 +537,7 @@ public class Unit_Price_RFO_Data {
 	                    pstmt1.setString(2, o.getMaterial());
 	                    pstmt1.executeUpdate();
 	                    
-	                    // Inserción o actualización en wo_actuals_material_temp
-	                    try {
-	                        tempA.setString(1, Trnasction);
-	                        tempA.setString(2, request.getWO());
-	                        tempA.setString(3, QTY);
-	                        tempA.setString(4, UnitPrice);
-	                        tempA.setString(5, unitPriceDecimal.multiply(new BigDecimal(QTY)).toString());
-	                        tempA.setString(6, o.getCurrency());
-	                        tempA.setString(7, o.getSell_Total_Price());
-	                        tempA.setString(8, UnitPrice);
-	                        tempA.setString(9, "0");
-	                        tempA.executeUpdate();
-	                        System.out.println("Insert en wo_actuals_material_temp realizado correctamente.");
-	                    } catch (SQLException e) {
-	                        if (e.getErrorCode() == /* código de error de clave duplicada */) {
-	                            System.out.println("El registro ya existe, actualizando en wo_actuals_material_temp.");
-	                            UtempA.setString(1, QTY);
-	                            UtempA.setString(2, UnitPrice);
-	                            UtempA.setString(3, unitPriceDecimal.multiply(new BigDecimal(QTY)).toString());
-	                            UtempA.setString(4, o.getCurrency());
-	                            UtempA.setString(5, o.getSell_Total_Price());
-	                            UtempA.setString(6, UnitPrice);
-	                            UtempA.setString(7, "0");
-	                            UtempA.setString(8, request.getWO());
-	                            UtempA.setString(9, Trnasction);
-	                            UtempA.executeUpdate();
-	                            System.out.println("Update en wo_actuals_material_temp realizado correctamente.");
-	                        } else {
-	                            throw e;
-	                        }
-	                    }
-
+	                    
 
 	                    if (request.getError_code() != null && !request.getError_code().equalsIgnoreCase("53")) {
 	                        executed = "WO: " + request.getWO() + ", PN: " + o.getMaterial() + ", Error Code: " + request.getError_code() + ", Remarks: " + request.getRemarks();
@@ -584,6 +563,53 @@ public class Unit_Price_RFO_Data {
 	    }
 
 	    return executed;
+	}
+	
+	public void insertOrUpdateTempActuals(Connection con, String transaction, String WO, String QTY, String UnitPrice, String Currency, String sellTotalPrice, BigDecimal varianceDecimal) throws SQLException {
+	    String tempActuals = "insert into wo_actuals_material_temp  (wo_actual_transaction, trasaction_category, wo, get_price, qty, unit_cost, total_cost, add_bill_currency, add_bill_curr_amount, unit_sell_b, variance_price) " +
+	                         "values ( ?, 'MATERIAL', ?, null, ?, ?, ?, ?, ?, ?, ? )";
+	    
+	    String updateTempActuals = "update wo_actuals_material_temp set get_price = null, qty = ?, unit_cost = ?, total_cost = ?, add_bill_currency = ?, add_bill_curr_amount = ?, unit_sell_b = ?, variance_price = ? " + 
+	                               "where wo = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL'";
+
+	    try (PreparedStatement tempA = con.prepareStatement(tempActuals);
+	         PreparedStatement updateA = con.prepareStatement(updateTempActuals)) {
+
+	        try {
+	            // Calculate totalCost inside the SQL by multiplying qty and unit_cost
+	            tempA.setString(1, transaction);
+	            tempA.setString(2, WO);
+	            tempA.setString(3, QTY);
+	            tempA.setString(4, UnitPrice);
+	            // Compute totalCost as qty * unit_cost
+	            tempA.setBigDecimal(5, new BigDecimal(QTY).multiply(new BigDecimal(UnitPrice)));
+	            tempA.setString(6, Currency);
+	            tempA.setString(7, sellTotalPrice);
+	            tempA.setString(8, UnitPrice);  // variance_price or other placeholder value
+	            tempA.setString(9, varianceDecimal.toString());  // Setting variance_price from varianceDecimal
+	            tempA.executeUpdate();
+	            System.out.println("Insert into wo_actuals_material_temp completed successfully.");
+	        } catch (SQLException e) {
+	            // If a duplicate entry is found, we perform an update
+	            if (e.getSQLState().startsWith("23")) {  // SQLState starting with "23" typically indicates constraint violations
+	                System.out.println("Record already exists, updating wo_actuals_material_temp.");
+	                updateA.setString(1, QTY);
+	                updateA.setString(2, UnitPrice);
+	                // Compute totalCost in the update as well
+	                updateA.setBigDecimal(3, new BigDecimal(QTY).multiply(new BigDecimal(UnitPrice)));
+	                updateA.setString(4, Currency);
+	                updateA.setString(5, sellTotalPrice);
+	                updateA.setString(6, UnitPrice);
+	                updateA.setString(7, varianceDecimal.toString());  // Setting variance_price from varianceDecimal
+	                updateA.setString(8, WO);
+	                updateA.setString(9, transaction);
+	                updateA.executeUpdate();
+	                System.out.println("Update into wo_actuals_material_temp completed successfully.");
+	            } else {
+	                throw e;  // rethrow the exception if it's not a duplicate entry
+	            }
+	        }
+	    }
 	}
 
 	
