@@ -22,7 +22,7 @@ import trax.aero.pojo.Root;
 public class PrintPoster {
 
 	
-	public int sendPrintJob(String printWindow, Root dw) {
+	public int sendPrintJob(String printWindow, Root dw, String user) {
 		int job = 0;
 		String s_wo_print = "Inventory Detail Transaction History Print - All History Detail";
 
@@ -45,7 +45,7 @@ public class PrintPoster {
 			propJob.setSelectedPrint("All History Detail");
 			propJob.setPrintTitle(s_wo_print);
 			propJob.setPrintParameters(xml.getBytes());
-			propJob.setUser("ADM");
+			propJob.setUser(user);
 			propJob.setComparisonOperator("=");
 			addJobToJMSQueue(propJob, "N");
 

@@ -564,6 +564,47 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		insertData(lock);
 	}
 	
+	private String getEmployee(I19_Response response) {
+		System.out.println("Finding Employee");
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+		try
+		{
+			String sql = ("select created_by from PN_INVENTORY_HISTORY where TRANSACTION_NO = ?");
+			
+			pstmt1 = con.prepareStatement(sql);
+			pstmt1.setString(1, response.getTransaction());
+			rs1 = pstmt1.executeQuery();
+
+			if (rs1 != null) 
+			{
+				while (rs1.next()) 
+				{
+					if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
+						return (rs1.getString(1));
+					}else {
+						return "ADM";
+					}
+				}
+			}	
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			return "ADM";
+		}finally {
+			try {
+				if(pstmt1 != null && !pstmt1.isClosed())
+					pstmt1.close();
+				if(rs1 != null && !rs1.isClosed())
+					rs1.close();
+			}catch (Exception e) {
+				// TODO: handle exception
+			}
+		}
+		return "ADM";
+	}
+	
 	public void unlockTable(String notificationType)
 	{
 		
@@ -795,7 +836,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		r.getDw_inventory_detail_history_other_print().getRow().setIssue("NO");
 		r.getDw_inventory_detail_history_other_print().getRow().setDate_to(formatter.format(yearEndDate));
 		
-		poster.sendPrintJob("oux_inventory_detail_history_print_sel", r);
+		poster.sendPrintJob("oux_inventory_detail_history_print_sel", r,getEmployee(input));
 		
 	}
 	

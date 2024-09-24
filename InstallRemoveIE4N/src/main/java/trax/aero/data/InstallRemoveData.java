@@ -322,7 +322,20 @@ public class InstallRemoveData {
 							}
 							
 							if(rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
-								out.setSuperior_Order_Equipment(rs1.getString(6));
+								if(rs1.getString(6).length() < 18) {
+									out.setSuperior_Order_Equipment(rs1.getString(6));
+								}else {
+									String NHA_PN = rs1.getString(6);
+									NHA_PN = NHA_PN.replaceAll("IN", "\"");
+									NHA_PN = NHA_PN.replaceAll("FT", "'");
+									
+									if(NHA_PN.contains(":UPLOAD"))
+									{
+										NHA_PN=  NHA_PN.substring(0, NHA_PN.indexOf(":"));
+									}								
+									NHA_PN = NHA_PN.substring(0,18);
+									out.setSuperior_Order_Equipment(NHA_PN);
+								}
 							}else {
 								out.setSuperior_Order_Equipment("");
 							}
