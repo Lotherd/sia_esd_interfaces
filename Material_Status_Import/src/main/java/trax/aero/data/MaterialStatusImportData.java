@@ -1295,7 +1295,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		ia.setExceptionId(new BigDecimal(51));
 		ia.setExceptionByTrax("Y");
 	    String extractedError = extractErrorDetail(error);
-	    ia.setExceptionDetail(extractedError);
+	    ia.setMessageDescription(extractedError);
 		ia.setExceptionStackTrace(error);
 		ia.setExceptionClassTrax("MaterialStatusImport_I11&I12");	
 		
