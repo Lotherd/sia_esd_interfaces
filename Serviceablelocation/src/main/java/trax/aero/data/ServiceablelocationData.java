@@ -97,9 +97,9 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			
 			String sql = 
-			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by  from wo w, wo_shop_detail wsd \r\n" + 
-			"where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null\r\n" + 
-			"and w.status = 'POSTCOMPLT'";
+			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by  from wo w, wo_shop_detail wsd ,system_tran_code s  \r\n" + 
+			"    where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null and w.source_type = s.system_code and s.party = '1P' \r\n" + 
+			"			and w.status = 'POSTCOMPLT'";
 
 			if((MaxRecord != null && !MaxRecord.isEmpty())) {
 				sql= sql + " AND ROWNUM <= ?";		
@@ -231,7 +231,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 					ms_pn.l_batch = getBatch(response);
 
 					ms_pn.s_calling_window = "w_pn_identification_tag_print";
-
+					ms_pn.l_wo = new Integer( response.getWo());
 					
 					ms_pn.s_employee = getEmployee(response);
 					
