@@ -265,7 +265,7 @@ public class CreationU_RFO_Data {
                 "AND h.STATE_OF_PART = 'UNSERVICEABLE' " +
                 "AND h.made_as_ccs IS NOT NULL";
 		
-		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
+		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ? AND PN = ? AND TRANSACTION_NO = ?";
 		
 		if (MaxRecord != null && !MaxRecord.isEmpty()) {
 			sqlPN = "SELECT * FROM (" + sqlPN;
@@ -365,6 +365,7 @@ public class CreationU_RFO_Data {
 						pstmt2.setString(1, req.getWo());
 						pstmt2.setString(2, req.getTc());
 						pstmt2.setString(3, req.getPn());
+						pstmt2.setString(4, req.getTransaction());
 						pstmt2.executeQuery();
 		    	  }
 		      }
