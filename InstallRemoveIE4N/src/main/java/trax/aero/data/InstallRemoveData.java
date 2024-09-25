@@ -252,7 +252,7 @@ public class InstallRemoveData {
 						"APTH.NHA_PN ,\r\n" + 
 						"APTH.schedule_category,\r\n" + 
 						"APTH.REMOVE_AS_SERVICEABLE,\r\n" + 
-						"APTH.TRANSACTION_DATE,\r\n" + 
+						"APTH.CREATED_DATE,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.TRANSACTION_HOUR) AS HOUR,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.TRANSACTION_MINUTE) AS MINUTE,\r\n" + 
 						"APTH.TRANSACTION_TYPE,\r\n" +
@@ -369,6 +369,12 @@ public class InstallRemoveData {
 								Format formatter = new SimpleDateFormat("yyyyMMdd");
 								date = formatter.format(Date);		
 								out.setDismantle_Install_Date(date);
+								
+								
+								formatter = new SimpleDateFormat("HHmmss");
+								date = formatter.format(Date);		
+								out.setDismantle_Install_Date(date);
+								
 							}
 						
 							if(rs1.getString(10) != null && !rs1.getString(10).isEmpty()) 
@@ -389,7 +395,7 @@ public class InstallRemoveData {
 							}
 							time=time.replaceAll("hh", hour);
 							time=time.replaceAll("mm", minute);
-							out.setDismantle_Install_Time(time);
+							//out.setDismantle_Install_Time(time);
 							
 							
 							if(rs1.getString(12) != null && !rs1.getString(12).isEmpty() && 
