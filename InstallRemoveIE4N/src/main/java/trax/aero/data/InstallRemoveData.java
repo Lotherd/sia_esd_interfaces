@@ -373,7 +373,7 @@ public class InstallRemoveData {
 								
 								formatter = new SimpleDateFormat("HHmmss");
 								date = formatter.format(Date);		
-								out.setDismantle_Install_Date(date);
+								out.setDismantle_Install_Time(date);
 								
 							}
 						
