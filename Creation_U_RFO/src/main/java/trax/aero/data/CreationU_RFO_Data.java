@@ -154,15 +154,21 @@ public class CreationU_RFO_Data {
 	                    executed = "Request WO: " + traxWoNumber + ", Error Code: " + errorCode + ", Remarks: " + remarks + ", SVO: " + sapSvo;
 	                    CreationU_RFO_Controller.addError(executed);
 	                    
-	                    pn.setString(1, transaction);
-	                    pn.setString(2, traxWoNumber);
-	                    pn.setString(3, tcNumber);
+	                    pn.setString(1, request.getTransaction());
+	                    pn.setString(2, request.getTraxWoNumber());
+	                    pn.setString(3, request.getTcNumber());
 		    			ResultSet rs = pn.executeQuery();
 		    			
-		    			
-		    			String PN = rs.getString(1);
+		    			// Check if a result is returned
+		    			String PN = null;
+		    			if (rs.next()) {
+		    			    PN = rs.getString(1); // Get the first column (PN)
+		    			} else {
+		    			    // Handle the case where no PN is found
+		    			    logger.warning("No PN found for transaction: " + transaction + ", WO: " + traxWoNumber);
+		    			}
 	                    
-	                    psInsertError.setString(1, traxWoNumber);
+	                    psInsertError.setString(1, request.getTraxWoNumber());
 	                    psInsertError.setString(2, PN);
 	                    psInsertError.setString(3, errorCode);
 	                    psInsertError.setString(4, remarks);
