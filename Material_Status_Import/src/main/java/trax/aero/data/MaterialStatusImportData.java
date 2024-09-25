@@ -173,7 +173,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 								
 				//LOCATION TRANSFER
 				BigDecimal qtySum = new BigDecimal(0);
-				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "ISSUED");
+				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
 				for( Transfer_order to: input.getTransfer_order()) {
 					setCustTo(picklistDistributionDIS,to);
 					setCustTo(picklistDistributionREQ,to);
