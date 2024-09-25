@@ -249,7 +249,7 @@ public class InstallRemoveData {
 						"APTH.POSITION,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.QTY) AS QTY,\r\n" + 
 						"(SELECT PID.LEGACY_BATCH FROM PN_INVENTORY_DETAIL PID WHERE APTH.PN = PID.PN AND APTH.SN = PID.SN AND APTH.BATCH =  PID.BATCH ) as legacy_batch," + 
-						"APTH.NHA_PN ,\r\n" + 
+						"(SELECT w.EQUIPMENT FROM WO w WHERE APTH.WO = w.WO  ) ,\r\n" + 
 						"APTH.schedule_category,\r\n" + 
 						"APTH.REMOVE_AS_SERVICEABLE,\r\n" + 
 						"APTH.CREATED_DATE,\r\n" + 
