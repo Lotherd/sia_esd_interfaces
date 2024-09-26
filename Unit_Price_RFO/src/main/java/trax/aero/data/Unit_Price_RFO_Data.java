@@ -102,7 +102,7 @@ public class Unit_Price_RFO_Data {
 	public String markTransaction(INT27_TRAX request) {
 	    executed = "OK";
 
-	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL, GET_PRICE = NULL WHERE WO = ? and task_card_pn = ? ";
+	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL, GET_PRICE = 'N' WHERE WO = ? and task_card_pn = ? ";
 	    
 	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
 	    
@@ -567,9 +567,9 @@ public class Unit_Price_RFO_Data {
 	
 	public void insertOrUpdateTempActuals(Connection con, String transaction, String WO, String QTY, String UnitPrice, String Currency, String sellTotalPrice, BigDecimal varianceDecimal) throws SQLException {
 	    String tempActuals = "insert into wo_actuals_material_temp  (wo_actual_transaction, trasaction_category, wo, get_price, qty, unit_cost, total_cost, add_bill_currency, add_bill_curr_amount, unit_sell_b, variance_price) " +
-	                         "values ( ?, 'MATERIAL', ?, null, ?, ?, ?, ?, ?, ?, ? )";
+	                         "values ( ?, 'MATERIAL', ?, 'N', ?, ?, ?, ?, ?, ?, ? )";
 	    
-	    String updateTempActuals = "update wo_actuals_material_temp set get_price = null, qty = ?, unit_cost = ?, total_cost = ?, add_bill_currency = ?, add_bill_curr_amount = ?, unit_sell_b = ?, variance_price = ? " + 
+	    String updateTempActuals = "update wo_actuals_material_temp set get_price = 'N', qty = ?, unit_cost = ?, total_cost = ?, add_bill_currency = ?, add_bill_curr_amount = ?, unit_sell_b = ?, variance_price = ? " + 
 	                               "where wo = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL'";
 
 	    try (PreparedStatement tempA = con.prepareStatement(tempActuals);
@@ -640,7 +640,7 @@ public class Unit_Price_RFO_Data {
 	            "INNER JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
 	            "WHERE W.RFO_NO IS NOT NULL " +
 	            "AND W.MOD_NO IS NOT NULL " +
-	            "AND WA.GET_PRICE IS NOT NULL " + 
+	            "AND WA.GET_PRICE = 'Y' " + 
 	            "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL ";
 
 	    String markPrice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? ";
