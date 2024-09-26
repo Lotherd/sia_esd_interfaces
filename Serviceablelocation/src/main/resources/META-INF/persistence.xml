@@ -10,6 +10,10 @@
 		<class>trax.aero.model.BlobTablePK</class>
 		 <class>trax.aero.model.InterfaceAudit</class>
 		 <class>trax.aero.model.Wo</class>
+		 <class>trax.aero.model.AuthorityApproval</class>
+		 <class>trax.aero.model.AuthorityApprovalPK</class>
+		 <class>trax.aero.model.ConditionApproval</class>
+		 <class>trax.aero.model.ConditionApprovalPK</class>
 		<shared-cache-mode>NONE</shared-cache-mode>
 		<properties>
 			<property name="hibernate.dialect"

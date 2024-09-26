@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.ejb.Stateless;
@@ -97,9 +98,12 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			
 			String sql = 
-			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.customer  from wo w, wo_shop_detail wsd ,system_tran_code s  \r\n" + 
-			"    where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null and w.source_type = s.system_code and s.party = '1P' \r\n" + 
-			"			and w.status = 'POSTCOMPLT'";
+			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority\r\n" + 
+			"from wo w, wo_shop_detail wsd ,system_tran_code s ,AUTHORITY_FORM_AUDIT afa , wo_authority_approval wap \r\n" + 
+			"where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null \r\n" + 
+			"and w.source_type = s.system_code and s.party = '1P'  and afa.wo = wsd.wo and \r\n" + 
+			"afa.pn = wsd.pn and afa.printed_status ='ISSUED' and afa.status = 'AS REMOVED'\r\n" + 
+			"and w.status = 'POSTCOMPLT' and wap.wo = w.wo AND w.AUTHORITY_SELECTED = 'ARC'";
 
 			if((MaxRecord != null && !MaxRecord.isEmpty())) {
 				sql= sql + " AND ROWNUM <= ?";		
@@ -155,9 +159,20 @@ public class ServiceablelocationData implements IServiceablelocationData {
 						else {
 							request.setRelationCode("");
 						}
-						
-						request.setInspLot("");
-						request.setCode("");
+						if(rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
+							request.setInspLot(rs1.getString(6));
+						}
+						else {
+							request.setInspLot("");
+						}
+						String code = "";
+						if(rs1.getString(7) != null && !rs1.getString(7).isEmpty()) {
+							code =getCode("CONDITION",code, rs1.getString(7));
+						}
+						if(rs1.getString(8) != null && !rs1.getString(8).isEmpty()) {
+							code =getCode("AUTHORITY",code, rs1.getString(8));
+						}
+						request.setCode(code);
 					
 						requests.add(request);	
 						
@@ -183,6 +198,53 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		}
 		
 		
+		private String getCode(String value,String code, String string) {
+			ArrayList<String> groups = new ArrayList<String>();
+			
+			String query = "", group = code;
+			if(value.contains("CONDITION")) {
+				query = " Select CODE FROM CONDITION_APPROVAL where CONDITION = ?";
+			}else {
+				query = " Select CODE FROM AUTHORITY_APPROVAL where AUTHORITY = ?";
+			}
+			try
+			{
+				
+				
+				
+				List<Object[]>	rs = null;
+				
+				
+				rs = em.createNativeQuery(query).setParameter(1, string).getResultList();	
+				
+				
+				
+				if (rs != null) 
+				{
+					for(Object[] a : rs )
+					{
+						
+					groups.add(a[0]+"" );
+
+					}
+				}
+				for(String g : groups) {
+					group = group + g +",";
+					
+				}
+				
+				
+			}
+			catch (Exception e) 
+			{
+				logger.severe("An Exception occurred executing the query to get the site recipient. " + "\n error: " + e.toString());
+			}
+			
+			
+			return group;
+		}
+
+
 		public void markTransaction(MT_TRAX_RCV_I28_4134_RES response) throws Exception
 		{
 			/*
@@ -380,7 +442,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			//setting up variables
 			exceuted = "OK";
 			
-			String sqlDate ="UPDATE WO SET INSPECTION_LOT_NUMBER = ?   WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP'";
+			String sqlDate ="UPDATE WO SET INSPECTION_LOT_NUMBER = ? ,interface_esd_date = null    WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP' and WO.INSPECTION_LOT_NUMBER IS NULL";
 			
 			PreparedStatement pstmt2 = null; 
 			pstmt2 = con.prepareStatement(sqlDate);
@@ -704,6 +766,42 @@ public class ServiceablelocationData implements IServiceablelocationData {
 				e.printStackTrace();
 				return null;
 			}
+		}
+
+		@Override
+		public String setAuthority(String authority, String code) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void deleteCondition(String condition) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public String setCondition(String condition, String status, String code) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public String getCondition(String site) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void deleteAuthority(String authority, String code) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public String getAuthority(String site) {
+			// TODO Auto-generated method stub
+			return null;
 		}
 		
 }
