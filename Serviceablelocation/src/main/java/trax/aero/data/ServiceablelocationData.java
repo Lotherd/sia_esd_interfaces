@@ -99,11 +99,16 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			String sql = 
 			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority\r\n" + 
-			"from wo w, wo_shop_detail wsd ,system_tran_code s ,AUTHORITY_FORM_AUDIT afa , wo_authority_approval wap \r\n" + 
-			"where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null \r\n" + 
-			"and w.source_type = s.system_code and s.party = '1P'  and afa.wo = wsd.wo and \r\n" + 
+			"from wo w\r\n" + 
+			"INNER JOIN wo_shop_detail wsd ON w.wo = wsd.wo\r\n" + 
+			"INNER JOIN system_tran_code s ON w.source_type = s.system_code \r\n" + 
+			"LEFT JOIN  wo_authority_approval wap on  wap.wo = w.wo\r\n" + 
+			"INNER JOIN  AUTHORITY_FORM_AUDIT afa on  afa.wo = wsd.wo and afa.pn = wsd.pn\r\n" + 
+			"where \r\n" + 
+			"w.rfo_no is not null  and w.interface_esd_date is null \r\n" + 
+			"and s.party = '1P'  and afa.wo = wsd.wo and \r\n" + 
 			"afa.pn = wsd.pn and afa.printed_status ='ISSUED' and afa.status = 'AS REMOVED'\r\n" + 
-			"and w.status = 'POSTCOMPLT' and wap.wo = w.wo AND w.AUTHORITY_SELECTED = 'ARC'";
+			"and w.status = 'POSTCOMPLT' and   w.AUTHORITY_SELECTED = 'ARC'";
 
 			if((MaxRecord != null && !MaxRecord.isEmpty())) {
 				sql= sql + " AND ROWNUM <= ?";		
