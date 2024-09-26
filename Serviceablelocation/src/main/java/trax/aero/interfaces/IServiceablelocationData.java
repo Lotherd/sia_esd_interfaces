@@ -37,4 +37,28 @@ public interface IServiceablelocationData {
 	
 	public boolean lockAvailable(String notificationType);
 	public void logError(String exceuted, MT_TRAX_RCV_I28_4134_RES input);
+
+
+
+	public String setAuthority(String authority, String code);
+
+
+
+	public void deleteCondition(String condition);
+
+
+
+	public String setCondition(String condition, String status, String code);
+
+
+
+	public String getCondition(String site);
+
+
+
+	public void deleteAuthority(String authority, String code);
+
+
+
+	public String getAuthority(String site);
 }

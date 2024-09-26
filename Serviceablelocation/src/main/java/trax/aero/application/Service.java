@@ -13,6 +13,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBContext;
@@ -155,6 +156,190 @@ public class Service {
        }
         
 	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
+	}
+	
+	
+	
+	
+	
+	@GET
+	@Path("/setCondition")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response setCondition(@QueryParam("condition") String condition, @QueryParam("status") String status,
+	 @QueryParam("code") String code)
+	{
+		
+		String exceuted = "OK";
+		                              
+		try 
+        {    		 
+        	exceuted = data.setCondition(condition,status,code);
+		}
+		catch(Exception e)
+		{
+			exceuted = e.toString();
+			logger.severe(e.toString());
+			
+		}
+       finally 
+       {   
+    	  
+			
+    	   logger.info("finishing");
+       }
+	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
+	}
+	
+	@GET
+	@Path("/deleteCondition")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteCondition(@QueryParam("condition") String condition, @QueryParam("status") String status,
+			 @QueryParam("code") String code )
+	{
+		
+		String exceuted = "OK";
+		                              
+		try 
+        {    		 
+			data.deleteCondition(condition);
+		}
+		catch(Exception e)
+		{
+			exceuted = e.toString();
+			logger.severe(e.toString());
+		
+		}
+       finally 
+       {   
+    	   
+    	   logger.info("finishing");
+       }
+	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
+	}
+	
+	@GET
+	@Path("/getCondition")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getCondition(@QueryParam("condition") String site )
+	{
+		
+		String exceuted = "OK";
+		
+		String group = null;
+		                              
+		try 
+        {    		 
+			group = data.getCondition(site);
+        	if(group == null ) {
+        		exceuted = "Issue found";
+        		throw new Exception("Issue found");
+        	}
+		}
+		catch(Exception e)
+		{
+			exceuted = e.toString();
+			logger.severe(e.toString());
+		
+		}
+       finally 
+       {   
+    	   
+    	   logger.info("finishing");
+       }
+		
+		
+	   return Response.ok(group,MediaType.APPLICATION_JSON).build();
+	}
+	
+	
+	
+	@GET
+	@Path("/setAuthority")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response setAuthority(@QueryParam("authority") String authority
+			, @QueryParam("code") String code)
+	{
+		
+		String exceuted = "OK";
+		                              
+		try 
+        {    		 
+        	exceuted = data.setAuthority(authority, code);
+		}
+		catch(Exception e)
+		{
+			exceuted = e.toString();
+			logger.severe(e.toString());
+			
+		}
+       finally 
+       {   
+    	  
+			
+    	   logger.info("finishing");
+       }
+	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
+	}
+	
+	@GET
+	@Path("/deleteAuthority")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteAuthority(@QueryParam("authority") String authority
+			, @QueryParam("code") String code )
+	{
+		
+		String exceuted = "OK";
+		                              
+		try 
+        {    		 
+			data.deleteAuthority(authority, code);
+		}
+		catch(Exception e)
+		{
+			exceuted = e.toString();
+			logger.severe(e.toString());
+		
+		}
+       finally 
+       {   
+    	   
+    	   logger.info("finishing");
+       }
+	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
+	}
+	
+	@GET
+	@Path("/getAuthority")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getAuthority(@QueryParam("authority") String site )
+	{
+		
+		String exceuted = "OK";
+		
+		String group = null;
+		                              
+		try 
+        {    		 
+			group = data.getAuthority(site);
+        	if(group == null ) {
+        		exceuted = "Issue found";
+        		throw new Exception("Issue found");
+        	}
+		}
+		catch(Exception e)
+		{
+			exceuted = e.toString();
+			logger.severe(e.toString());
+		
+		}
+       finally 
+       {   
+    	   
+    	   logger.info("finishing");
+       }
+		
+		
+	   return Response.ok(group,MediaType.APPLICATION_JSON).build();
 	}
 	
 }
