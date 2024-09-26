@@ -97,7 +97,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			
 			String sql = 
-			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.customer  from wo w, wo_shop_detail wsd ,system_tran_code s  \r\n" + 
+			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by , w.INSPECTION_LOT_NUMBER  from wo w, wo_shop_detail wsd ,system_tran_code s  \r\n" + 
 			"    where w.rfo_no is not null  and w.wo = wsd.wo and w.interface_esd_date is null and w.source_type = s.system_code and s.party = '1P' \r\n" + 
 			"			and w.status = 'POSTCOMPLT'";
 
@@ -155,8 +155,13 @@ public class ServiceablelocationData implements IServiceablelocationData {
 						else {
 							request.setRelationCode("");
 						}
+						if(rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
+							request.setInspLot(rs1.getString(6));
+						}
+						else {
+							request.setInspLot("");
+						}
 						
-						request.setInspLot("");
 						request.setCode("");
 					
 						requests.add(request);	
@@ -380,7 +385,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			//setting up variables
 			exceuted = "OK";
 			
-			String sqlDate ="UPDATE WO SET INSPECTION_LOT_NUMBER = ?   WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP'";
+			String sqlDate ="UPDATE WO SET INSPECTION_LOT_NUMBER = ? ,interface_esd_date = null    WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP' and WO.INSPECTION_LOT_NUMBER IS NULL";
 			
 			PreparedStatement pstmt2 = null; 
 			pstmt2 = con.prepareStatement(sqlDate);
