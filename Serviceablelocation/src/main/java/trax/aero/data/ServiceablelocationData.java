@@ -219,25 +219,25 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			}else {
 				query = " Select CODE FROM AUTHORITY_APPROVAL where AUTHORITY = ?";
 			}
+			PreparedStatement pstmt1 = null;
+			ResultSet rs1 = null;
 			try
 			{
 				
 				
 				
-				List<Object[]>	rs = null;
-				
-				
-				rs = em.createNativeQuery(query).setParameter(1, string).getResultList();	
-				
-				
-				
-				if (rs != null) 
-				{
-					for(Object[] a : rs )
-					{
-						
-					groups.add((String)a[0]);
+				pstmt1 = con.prepareStatement(query);
+				pstmt1.setString(1, code);
+				rs1 = pstmt1.executeQuery();
 
+				if (rs1 != null) 
+				{
+					while (rs1.next()) 
+					{
+						if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
+						
+							groups.add(rs1.getString(1) );
+						}	
 					}
 				}
 				for(String g : groups) {
@@ -250,7 +250,17 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			catch (Exception e) 
 			{
 				logger.severe("An Exception occurred executing the query to get the site recipient. " + "\n error: " + e.toString());
+			}finally{
+				try {
+			
+				if(pstmt1 != null && !pstmt1.isClosed())
+					pstmt1.close();
+				if(rs1 != null && !rs1.isClosed())
+					rs1.close();
+			}catch (Exception e) {
+				// TODO: handle exception
 			}
+			}	
 			
 			
 			return group;
