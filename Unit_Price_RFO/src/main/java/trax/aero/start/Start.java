@@ -19,7 +19,7 @@ public class Start {
 	
 	private ScheduledExecutorService scheduledServ;
 	  Run timer = null;
-	  Logger logger = LogManager.getLogger("ManHourItem");
+	  Logger logger = LogManager.getLogger("UnitPrice");
 
 	  @PostConstruct
 	  public void start() {
@@ -37,7 +37,7 @@ public class Start {
 	      scheduledServ.scheduleAtFixedRate(
 	          timer,
 	          30,
-	          Long.parseLong(System.getProperty("ManHR_interval", "60")), 
+	          Long.parseLong(System.getProperty("UnitPrice_interval", "60")), 
 	          TimeUnit.SECONDS
 	      );
 	  }
