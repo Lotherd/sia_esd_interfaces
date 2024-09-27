@@ -126,7 +126,7 @@ public class Unit_Price_RFO_Data {
 	    String updatetempActuals = "update wo_actuals_material_temp set get_price = null, qty = ?, unit_cost = ?, total_cost = ?, add_bill_currency = ?, add_bill_curr_amount = ?, unit_sell_b = ?, variance_price = ? " + 
 	    							"where wo = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL' ";
 	    
-	    String selectActuals = "select wo_actual_transaction from wo_actuals where wo = ? and task_card_pn = ? and trasaction_category = 'MATERIAL' ";
+	    String selectActuals = "select wo_actual_transaction from wo_actuals where wo = ? and pn = ? and trasaction_category = 'MATERIAL' ";
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(pridedone);
 	             PreparedStatement ps1 = con.prepareStatement(getcurrency);
