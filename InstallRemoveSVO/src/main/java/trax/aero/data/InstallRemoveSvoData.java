@@ -295,7 +295,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					        Inbound.setRemoveAsServiceable("");
 					    } else {
 					        // Handle other cases if necessary, or leave as it is
-					        Inbound.setRemoveAsServiceable(status);
+					        Inbound.setRemoveAsServiceable("");
 					    }
 					} else {
 					    Inbound.setRemoveAsServiceable("");
