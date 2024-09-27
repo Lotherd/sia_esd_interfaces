@@ -429,10 +429,10 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
 	            "ATH.TRANSACTION_NO, " +
 	            "W.SOURCE_TYPE " +
 	            "FROM WO W " +
-	            "JOIN WO_TASK_CARD WT ON W.WO = WT.WO " +
+	            "JOIN WO_TASK_CARD WT ON W.WO = WT.WO  JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
 	            "JOIN PN_INVENTORY_HISTORY ATH ON W.WO = ATH.WO AND WT.TASK_CARD = ATH.TASK_CARD " +
 	            "WHERE W.RFO_NO IS NOT NULL " +
-	            "AND WT.INV_CHECK = 'Y' " +
+	            "AND WA.INVOICED_FLAG = 'Y' " +
 	            "AND ( " +
 	            "    (W.STATUS = 'CLOSED' AND (ATH.INTERFACE_TECO_FLAG = 'D' OR ATH.INTERFACE_TECO_FLAG IS NULL)) " +
 	            "    OR " +
@@ -526,7 +526,7 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "CASE " +
                 "    WHEN w.status = 'CLOSED' " +
                 "         AND NOT EXISTS ( " +
-                "        SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED' " +
+                "        SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL') " +
                 "    ) " +
                 "         AND ( " +
                 "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
@@ -549,30 +549,28 @@ private static Map<String, Integer> attemptCounts = new HashMap<>();
                 "w.source_type " +
                 "FROM wo w " +
                 "JOIN wo_task_card wt ON w.wo = wt.wo " +
+                "JOIN wo_Actuals wa ON w.wo = wa.wo " +
                 "LEFT JOIN pn_inventory_history ath ON w.wo = ath.wo AND wt.task_card = ath.task_card " +
                 "WHERE w.rfo_no IS NOT NULL AND SVO_USED IS NULL " +
                 "AND ( " +
-                "    (w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check = 'Y' " +
-                "    AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +
+                "    (w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND WA.INVOICED_FLAG = 'Y' " +
+                "    AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL')) " +
                 "    AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
                 "    OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
-                "    AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
+                "    AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))) " +
                 ") " +
                 "OR " +
-                "(w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND wt.inv_check IS NULL " +
+                "(w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND WA.INVOICED_FLAG IS NULL " +
                 "AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL') " +
                 "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
                 "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
-                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
-                ") " +
+                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))) " +
                 "OR " +
                 "(w.status = 'OPEN' AND w.reopen_reason IS NOT NULL AND (w.interface_teco_flag = 'Y' OR w.interface_teco_flag IS NULL) " +
-                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CLOSED') " +
-                "OR NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL')) " +
+                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL'))) " +
                 "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
                 "OR (ath.svo_no IS NOT NULL AND ath.interface_transfer_flag = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
-                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N')))" +
-                "))";
+                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.interface_transfer_flag = 'N'))))";
 
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ?";
 	    String sqlMark2 = "UPDATE WO SET INTERFACE_TECO_FLAG = CASE " +
