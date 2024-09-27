@@ -256,7 +256,7 @@ public class Import_TC_MHR_Data {
 	                    "AND W.rfo_no IS NOT NULL) AS ESD_RFO, TASK_CARD_CATEGORY, " +
 	                    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + " +
 	                    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) " +
-	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD.TASK_CARD AND WO = WO_TASK_CARD.WO) AS Total_Hours " +
+	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD.TASK_CARD AND WO = WO_TASK_CARD.WO) AS Total_Hours, STATUS as TASK_CARD_STATUS " +
 	                    "FROM WO_TASK_CARD " +
 	                    "WHERE (INTERFACE_TRANSFERRED_DATE IS NULL " +
 	                    "OR (MODIFIED_DATE > INTERFACE_TRANSFERRED_DATE AND " +
@@ -284,7 +284,7 @@ public class Import_TC_MHR_Data {
 	                    "AND W.rfo_no IS NOT NULL) AS ESD_RFO, TASK_CARD_CATEGORY, " +
 	                    "(SELECT COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + " +
 	                    "COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) " +
-	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD_ADUIT.TASK_CARD AND WO = WO_TASK_CARD_ADUIT.WO) AS Total_Hours " +
+	                    "FROM WO_task_card_item WHERE TASK_CARD = WO_TASK_CARD_ADUIT.TASK_CARD AND WO = WO_TASK_CARD_ADUIT.WO) AS Total_Hours, STATUS as TASK_CARD_STATUS " +
 	                    "FROM WO_TASK_CARD_ADUIT " +
 	                    "WHERE (INTERFACE_SAP_TRANSFERRED_DATE IS NULL " +
 	                    "OR (MODIFIED_DATE > INTERFACE_SAP_TRANSFERRED_DATE AND " +
@@ -323,8 +323,8 @@ public class Import_TC_MHR_Data {
 	     "SELECT COALESCE(SUM(NVL(man_hours, 0)), 0) AS total_man_hours, COALESCE(SUM(NVL(inspector_man_hours, 0)), 0) AS total_inspector_man_hours, COALESCE(SUM(NVL(man_hours, 0) * NVL(man_require, 0)), 0) + COALESCE(SUM(NVL(inspector_man_hours, 0) * NVL(inspector_man_require, 0)), 0) AS Total_Hours\r\n"
 	     + "FROM WO_task_card_item WHERE TASK_CARD = ? AND WO = ?";
 	    
-	    String sqlStatus = 
-	    	" SELECT STATUS FROM WO_TASK_CARD WHERE WO =? and TASK_CARD = ?";
+	   // String sqlStatus = 
+	    //	" SELECT STATUS FROM WO_TASK_CARD WHERE WO =? and TASK_CARD = ?";
 	    
 	    String sqlStatusAudit = 
 	    		"SELECT Transaction_type FROM wo_task_card_aduit WHERE WO = ? AND TASK_CARD = ? and rownum = 1 ORDER BY modified_Date DESC";
@@ -345,8 +345,8 @@ public class Import_TC_MHR_Data {
 	    PreparedStatement pstmt3 = null;
 	    ResultSet rs3 = null;
 	    
-	    PreparedStatement pstmt4 = null;
-	    ResultSet rs4 = null;
+	    //PreparedStatement pstmt4 = null;
+	    //ResultSet rs4 = null;
 	    
 	    PreparedStatement pstmt5 = null;
 	    ResultSet rs5 = null;
@@ -365,7 +365,7 @@ public class Import_TC_MHR_Data {
 	      pstmt1 = con.prepareStatement(sqlTaskCard);
 	      pstmt2 = con.prepareStatement(sqlItem);
 	      pstmt3 = con.prepareStatement(sqlWork);
-	      pstmt4 = con.prepareStatement(sqlStatus);
+	     // pstmt4 = con.prepareStatement(sqlStatus);
 	      pstmt5 = con.prepareStatement(sqlCategory);
 	      pstmt6 = con.prepareStatement(sqlMark);
 	      pstmt7 = con.prepareStatement(sqlMark2);
@@ -416,17 +416,19 @@ public class Import_TC_MHR_Data {
 	                	operation.setTcCategory("");
 	                }
 
-	                pstmt4.setString(1, traxWO);
+	                /*pstmt4.setString(1, traxWO);
 	                pstmt4.setString(2, taskCard);
-	                rs4 = pstmt4.executeQuery();
+	                rs4 = pstmt4.executeQuery();*/
+	                
 	                String deletionIndicator = "";
-	                String status = rs4.getString(1);
-	                if (rs4 != null && rs4.next()) {
-	                    logger.info("Status of the WO: " + rs4.getString(1));
-	                    if ("CANCEL".equals(rs4.getString(1))) {
+	                String status = "";
+	               
+	                    logger.info("Status of the WO: " + rs1.getString(10));
+	                    status = rs1.getString(10);
+	                    if ("CANCEL".equals(rs1.getString(1))) {
 	                        deletionIndicator = "X";
 	                    }
-	                }
+	           
 
 	                if (deletionIndicator.equals("")) {
 	                    pstmt8.setString(1, traxWO);
@@ -497,8 +499,8 @@ public class Import_TC_MHR_Data {
 	                
 	                
 	   	         	
-	   	         	if (rs4 != null) rs4.close();
-	                if (pstmt4 != null) pstmt4.close();
+	                //if (rs4 != null && !rs4.isClosed()) rs4.close();
+	                //if (rs5 != null && !rs5.isClosed()) rs5.close();
 	            }
 
 	            for (OrderSND order : orderMap.values()) {
@@ -521,8 +523,8 @@ public class Import_TC_MHR_Data {
 	         if (pstmt2 != null) pstmt2.close();
 	         if (rs3 != null) rs3.close();
 	         if (pstmt3 != null) pstmt3.close();
-	         if (rs4 != null) rs4.close();
-             if (pstmt4 != null) pstmt4.close();
+	         //if (rs4 != null) rs4.close();
+            // if (pstmt4 != null) pstmt4.close();
              if (rs5 != null) rs5.close();
              if (pstmt5 != null) pstmt5.close();
 	         if (rs6 != null) rs6.close();
