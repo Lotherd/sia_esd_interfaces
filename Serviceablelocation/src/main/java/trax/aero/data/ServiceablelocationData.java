@@ -210,11 +210,11 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		}
 		
 		
-		private String getCode(String value,String code, String string) {
+		private String getCode(String table,String code, String value) {
 			ArrayList<String> groups = new ArrayList<String>();
 			
 			String query = "", group = code;
-			if(value.contains("CONDITION")) {
+			if(table.contains("CONDITION")) {
 				query = " Select CODE FROM CONDITION_APPROVAL where CONDITION = ?";
 			}else {
 				query = " Select CODE FROM AUTHORITY_APPROVAL where AUTHORITY = ?";
@@ -227,7 +227,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 				
 				
 				pstmt1 = con.prepareStatement(query);
-				pstmt1.setString(1, code);
+				pstmt1.setString(1, value);
 				rs1 = pstmt1.executeQuery();
 
 				if (rs1 != null) 
