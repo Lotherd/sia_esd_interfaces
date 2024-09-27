@@ -426,7 +426,10 @@ public class Import_TC_MHR_Data {
 	                        deletionIndicator = "X";
 	                    }
 	                }
-	                
+	                if (rs4 != null) rs4.close();
+	                if (pstmt4 != null) pstmt4.close();
+	                if (rs5 != null) rs5.close();
+	                if (pstmt5 != null) pstmt5.close();
 
 	                if (deletionIndicator.equals("")) {
 	                    pstmt8.setString(1, traxWO);
@@ -511,12 +514,18 @@ public class Import_TC_MHR_Data {
 	        logger.severe(executed);
 	        throw new Exception("Issue found");
 	    } finally {
-	        if (rs1 != null && !rs1.isClosed()) rs1.close();
-	        if (pstmt1 != null && !pstmt1.isClosed()) pstmt1.close();
-	        if (pstmt2 != null && !pstmt2.isClosed()) pstmt2.close();
-	        if (pstmt3 != null && !pstmt3.isClosed()) pstmt3.close();
-	        if (pstmt4 != null && !pstmt4.isClosed()) pstmt4.close();
-	        if (pstmt5 != null && !pstmt5.isClosed()) pstmt5.close();
+	    	 if (rs1 != null) rs1.close();
+	         if (pstmt1 != null) pstmt1.close();
+	         if (rs2 != null) rs2.close();
+	         if (pstmt2 != null) pstmt2.close();
+	         if (rs3 != null) rs3.close();
+	         if (pstmt3 != null) pstmt3.close();
+	         if (rs6 != null) rs6.close();
+	         if (pstmt6 != null) pstmt6.close();
+	         if (rs7 != null) rs7.close();
+	         if (pstmt7 != null) pstmt7.close();
+	         if (rs8 != null) rs8.close();
+	         if (pstmt8 != null) pstmt8.close();
 	    }
 
 	    return list;
