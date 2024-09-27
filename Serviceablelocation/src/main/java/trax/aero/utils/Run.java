@@ -86,11 +86,11 @@ public class Run implements Runnable {
 						    marshaller.marshal(input,sw);
 						    logger.info("Input: " + sw.toString());
 						    if(input.getExceptionId().equalsIgnoreCase("53")) {
-								data.markTransaction(input);
-								data.setInspLot(input);
-								data.printLabel(input);
+								data.markTransaction(input,request);
+								data.setInspLot(input,request);
+								data.printLabel(input, request);
 							}else {
-								data.markTransaction(input);
+								data.markTransaction(input,request);
 								data.setComplete(input);
 								exceuted = (  "RFO: " + input.getRfo() 
 								+ ", Date: " + new Date().toString()  + ", SHOP WO: " +input.getWo() );

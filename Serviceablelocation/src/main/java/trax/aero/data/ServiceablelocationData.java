@@ -98,7 +98,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			
 			String sql = 
-			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,w.created_by , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority\r\n" + 
+			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,afa.CERTIFIED_BY , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority\r\n" + 
 			"from wo w\r\n" + 
 			"INNER JOIN wo_shop_detail wsd ON w.wo = wsd.wo\r\n" + 
 			"INNER JOIN system_tran_code s ON w.source_type = s.system_code \r\n" + 
@@ -229,7 +229,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 					for(Object[] a : rs )
 					{
 						
-					groups.add(a[0]+"" );
+					groups.add((String)a[0]);
 
 					}
 				}
@@ -250,7 +250,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		}
 
 
-		public void markTransaction(MT_TRAX_RCV_I28_4134_RES response) throws Exception
+		public void markTransaction(MT_TRAX_RCV_I28_4134_RES response , MT_TRAX_SND_I28_4134_REQ request) throws Exception
 		{
 			/*
 			  <UD_SUCCESS xmlns=""></UD_SUCCESS>
@@ -288,7 +288,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 		}
 		
-		public void printLabel(MT_TRAX_RCV_I28_4134_RES response) {
+		public void printLabel(MT_TRAX_RCV_I28_4134_RES response , MT_TRAX_SND_I28_4134_REQ request) {
 			
 					logger.info("Setting ");
 						
@@ -300,7 +300,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 					ms_pn.s_calling_window = "w_pn_identification_tag_print";
 					ms_pn.l_wo = new Integer( response.getWo());
 					
-					ms_pn.s_employee = getEmployee(response);
+					ms_pn.s_employee = request.getRelationCode();
 					
 					ms_pn.s_message ="SERVICETAG";
 				
@@ -434,7 +434,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		
 		
 		
-		public void setInspLot(MT_TRAX_RCV_I28_4134_RES response) throws Exception
+		public void setInspLot(MT_TRAX_RCV_I28_4134_RES response , MT_TRAX_SND_I28_4134_REQ request) throws Exception
 		{
 			/*
 			  <UD_SUCCESS xmlns=""></UD_SUCCESS>
@@ -455,7 +455,8 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			{	
 				logger.info("Marking RFO: " + response.getRfo());
 				pstmt2.setString(1, response.getInspLot());
-				pstmt2.setString(2, response.getRfo());
+				pstmt2.setString(2,request.getCode());
+				pstmt2.setString(3, response.getRfo());
 				pstmt2.executeQuery();
 			}
 			catch (Exception e) 
