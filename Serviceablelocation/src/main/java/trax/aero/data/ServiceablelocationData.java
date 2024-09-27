@@ -98,7 +98,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			
 			String sql = 
-			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,afa.CERTIFIED_BY , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority, w.code\r\n" + 
+			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,afa.CERTIFIED_BY , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority, w.INTERFACE_CODE\r\n" + 
 			"from wo w\r\n" + 
 			"INNER JOIN wo_shop_detail wsd ON w.wo = wsd.wo\r\n" + 
 			"INNER JOIN system_tran_code s ON w.source_type = s.system_code \r\n" + 
@@ -270,7 +270,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			//setting up variables
 			exceuted = "OK";
 			
-			String sqlDate ="UPDATE WO SET WO.interface_esd_date = sysdate, WO.code = ? WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP'";
+			String sqlDate ="UPDATE WO SET WO.interface_esd_date = sysdate, WO.INTERFACE_CODE = ? WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP'";
 			
 			PreparedStatement pstmt2 = null; 
 			pstmt2 = con.prepareStatement(sqlDate);
