@@ -420,16 +420,13 @@ public class Import_TC_MHR_Data {
 	                pstmt4.setString(2, taskCard);
 	                rs4 = pstmt4.executeQuery();
 	                String deletionIndicator = "";
+	                String status = rs4.getString(1);
 	                if (rs4 != null && rs4.next()) {
 	                    logger.info("Status of the WO: " + rs4.getString(1));
 	                    if ("CANCEL".equals(rs4.getString(1))) {
 	                        deletionIndicator = "X";
 	                    }
 	                }
-	                if (rs4 != null) rs4.close();
-	                if (pstmt4 != null) pstmt4.close();
-	                if (rs5 != null) rs5.close();
-	                if (pstmt5 != null) pstmt5.close();
 
 	                if (deletionIndicator.equals("")) {
 	                    pstmt8.setString(1, traxWO);
@@ -485,20 +482,23 @@ public class Import_TC_MHR_Data {
 	                pstmt6.setString(1, operation.getTcDescription());
 	                pstmt6.setString(2, operation.getTcCategory());
 	                pstmt6.setString(3, operation.getStandardManHours());
-	                pstmt6.setString(4, rs4.getString(1));
+	                pstmt6.setString(4, status);
 	                pstmt6.setString(5, taskCard);
 	                pstmt6.setString(6, traxWO);
-	                pstmt6.executeQuery();
+	                pstmt6.executeUpdate(); 
 
 	                pstmt7.setString(1, operation.getTcDescription());
 	                pstmt7.setString(2, operation.getTcCategory());
 	                pstmt7.setString(3, operation.getStandardManHours());
-	                pstmt7.setString(4, rs4.getString(1));
+	                pstmt7.setString(4, status);
 	                pstmt7.setString(5, taskCard);
 	                pstmt7.setString(6, traxWO);
 	                pstmt7.executeQuery();
 	                
-	                if (rs4 != null && !rs4.isClosed()) rs4.close();
+	                
+	   	         	
+	   	         	if (rs4 != null) rs4.close();
+	                if (pstmt4 != null) pstmt4.close();
 	            }
 
 	            for (OrderSND order : orderMap.values()) {
@@ -506,6 +506,7 @@ public class Import_TC_MHR_Data {
 	                req.getOrder().add(order);
 	                list.add(req);
 	            }
+	            
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
@@ -520,6 +521,10 @@ public class Import_TC_MHR_Data {
 	         if (pstmt2 != null) pstmt2.close();
 	         if (rs3 != null) rs3.close();
 	         if (pstmt3 != null) pstmt3.close();
+	         if (rs4 != null) rs4.close();
+             if (pstmt4 != null) pstmt4.close();
+             if (rs5 != null) rs5.close();
+             if (pstmt5 != null) pstmt5.close();
 	         if (rs6 != null) rs6.close();
 	         if (pstmt6 != null) pstmt6.close();
 	         if (rs7 != null) rs7.close();
