@@ -279,7 +279,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					}
 					
 					if(rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
-						Inbound.setLicenceType("");
+						Inbound.setLicenceType(rs1.getString(6));
 					}
 					else {
 						Inbound.setLicenceType("");
@@ -398,7 +398,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					else {
 						Inbound.setTransaction("");
 					}
-										
+					
 					list.add(Inbound);	
 					
 					pstmt2.setString(1, Inbound.getWo());
