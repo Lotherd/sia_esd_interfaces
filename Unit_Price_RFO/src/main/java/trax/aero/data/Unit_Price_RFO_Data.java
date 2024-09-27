@@ -171,8 +171,15 @@ public class Unit_Price_RFO_Data {
 	                    String Currency = rs.getString(1);
 
 	                    // Get the TotalPrice and QTY from Operation_TRAX
-	                    String TotalPrice = o.getSell_Total_Price();
-	                    String QTY = o.getQty();
+	                    String TotalPrice = o.getSell_Total_Price().trim();
+	                    String QTY = o.getQty().trim(); 
+	                    BigDecimal qtyDecimal1 = new BigDecimal(QTY); 
+	                    QTY = qtyDecimal1.stripTrailingZeros().toPlainString(); 
+
+	                    
+	                    if (QTY.contains(".")) {
+	                        QTY = QTY.split("\\.")[0]; 
+	                    }
 	                    String UnitPrice = "";
 
 	                    try {
@@ -187,11 +194,11 @@ public class Unit_Price_RFO_Data {
 	                        // Convert the result to String
 	                        UnitPrice = unitPriceDecimal.toString();
 	                    } catch (NumberFormatException e) {
-	                        executed = "Error al convertir los valores de precio/cantidad a número: " + e.getMessage();
+	                        executed = "Error converting the values of price and qty to number: " + e.getMessage();
 	                        Unit_Price_RFO_Controller.addError(executed);
 	                        logger.severe(executed);
 	                    } catch (ArithmeticException e) {
-	                        executed = "Error en la operación aritmética: " + e.getMessage();
+	                        executed = "Error on the operation: " + e.getMessage();
 	                        Unit_Price_RFO_Controller.addError(e.toString());
 	                        logger.severe(e.toString());
 	                    }
@@ -229,7 +236,7 @@ public class Unit_Price_RFO_Data {
 	                    	
 	                    	
 	                    	sgd.setString(1, o.getCurrency());
-                            sgd.setString(2, o.getSell_Total_Price());
+                            sgd.setString(2, o.getSell_Total_Price().trim());
                             sgd.setString(3, request.getWO());
                             sgd.setString(4, o.getMaterial());
                             sgd.executeUpdate();
@@ -523,7 +530,7 @@ public class Unit_Price_RFO_Data {
 	                            System.out.println("Variance updated with value: " + varianceDecimal.toString());
 	                            
 	                            
-	                            insertOrUpdateTempActuals(con, Trnasction, request.getWO(), QTY, UnitPrice, o.getCurrency(), o.getSell_Total_Price(), varianceDecimal);
+	                            insertOrUpdateTempActuals(con, Trnasction, request.getWO(), QTY, UnitPrice, o.getCurrency(), o.getSell_Total_Price().trim(), varianceDecimal);
 	                            // Update old price with the new UnitPrice
 	                            old.setString(1, UnitPrice);
 	                            old.setString(2, request.getWO());
