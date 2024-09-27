@@ -103,7 +103,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			"INNER JOIN wo_shop_detail wsd ON w.wo = wsd.wo\r\n" + 
 			"INNER JOIN system_tran_code s ON w.source_type = s.system_code \r\n" + 
 			"LEFT JOIN  wo_authority_approval wap on  wap.wo = w.wo\r\n" + 
-			"INNER JOIN  AUTHORITY_FORM_AUDIT afa on  afa.wo = wsd.wo and afa.pn = wsd.pn\r\n" + 
+			"INNER JOIN  AUTHORITY_FORM_AUDIT afa on  afa.wo = wsd.wo and afa.pn = wsd.pn AND wap.authority  = afa.authority_form\r\n" + 
 			"where \r\n" + 
 			"w.rfo_no is not null  and w.interface_esd_date is null \r\n" + 
 			"and s.party = '1P' and afa.printed_status ='ISSUED' \r\n" + 
