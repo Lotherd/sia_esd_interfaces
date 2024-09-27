@@ -342,7 +342,11 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					}
 					
 					if(rs1.getString(11) != null && !rs1.getString(11).isEmpty()) {
-						Inbound.setNotes(rs1.getString(11).substring(0, 7));
+						if(rs1.getString(11).length() > 8) {
+							Inbound.setNotes(rs1.getString(11).substring(0, 7));
+						}else {
+							Inbound.setNotes(rs1.getString(11));
+						}
 					}
 					else {
 						Inbound.setNotes("");
