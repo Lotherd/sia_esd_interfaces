@@ -103,6 +103,8 @@ public class Unit_Price_RFO_Data {
 	    executed = "OK";
 
 	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL, GET_PRICE = 'N' WHERE WO = ? and task_card_pn = ? ";
+
+		String pridedone2 = "UPDATE wo_actuals_material_temp SET GET_PRICE = 'N' WHERE WO = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL' ";
 	    
 	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
 	    
@@ -136,7 +138,9 @@ public class Unit_Price_RFO_Data {
 	             PreparedStatement var = con.prepareStatement(variance);
 	    		 PreparedStatement tempA = con.prepareStatement(tempActuals);
 	    		 PreparedStatement UtempA = con.prepareStatement(updatetempActuals);
-	    		 PreparedStatement actu = con.prepareStatement(selectActuals)) {
+	    		 PreparedStatement actu = con.prepareStatement(selectActuals);
+	    		 PreparedStatement tempA2 = con.prepareStatement(pridedone2);
+				 ) {
 	        
 	        for (Operation_TRAX o : request.getOperation()) {
 	            if (request.getWO() != null && !request.getWO().isEmpty()) {
@@ -547,6 +551,10 @@ public class Unit_Price_RFO_Data {
 	                        pstmt1.setString(1, request.getWO());
 	                        pstmt1.setString(2, o.getMaterial());
 	                        pstmt1.executeUpdate();
+
+							tempA2.setString(1, request.getWO());
+							tempA2.setString(2, Trnasction);
+							tempA2.executeUpdate();
 	                    }
 	                } else {
 	                    // Handle the case where no currency is found
@@ -636,7 +644,7 @@ public class Unit_Price_RFO_Data {
 	            "FROM WO W " +
 	            "INNER JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
 	            "INNER JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
-	            "INNER JOIN PICKLIST_HEADER PH ON W.WO = PH.WO " +
+	            "INNER JOIN PICKLIST_HEADER PH ON W.WO = PH.WO AND WA.TASK_CARD = PH.TASK_CARD AND PH.STATUS = 'CLOSED' " +
 	            "INNER JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
 	            "WHERE W.RFO_NO IS NOT NULL " +
 	            "AND W.MOD_NO IS NOT NULL " +
