@@ -19,7 +19,7 @@ import trax.aero.pojo.INT27_TRAX;
 public class Run implements Runnable{
 	
 	Unit_Price_RFO_Data data = null;
-	final String url = System.getProperty("UnitPrice_URL");
+	final String url = System.getProperty("UnitPriceURL");
 	final int MAX_ATTEMPTS = 3;
 	Logger logger = LogManager.getLogger("UnitPrice");
 	

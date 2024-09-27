@@ -632,7 +632,7 @@ public class Unit_Price_RFO_Data {
 	    ArrayList<Operation_SND> orlist = new ArrayList<>();
 	    String lastWO = "";
 
-	    String sqlPRICE = "SELECT DISTINCT W.WO, W.MOD_NO, W.RFO_NO, PDR.LEGACY_BATCH, WSD.PN " +
+	    String sqlPRICE = "SELECT DISTINCT W.WO, W.MOD_NO, W.RFO_NO, PDR.LEGACY_BATCH, WA.PN " +
 	            "FROM WO W " +
 	            "INNER JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
 	            "INNER JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
