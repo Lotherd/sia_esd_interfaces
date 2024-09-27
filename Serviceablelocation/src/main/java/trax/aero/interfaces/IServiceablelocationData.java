@@ -31,7 +31,7 @@ public interface IServiceablelocationData {
 
 	public void openCon() throws SQLException, Exception;
 
-	public void printLabel(MT_TRAX_RCV_I28_4134_RES response);
+	public void printLabel(MT_TRAX_RCV_I28_4134_RES response, MT_TRAX_SND_I28_4134_REQ request);
 	
 	public ArrayList<MT_TRAX_SND_I28_4134_REQ> getRequests() throws Exception;
 	
