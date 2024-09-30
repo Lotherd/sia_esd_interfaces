@@ -99,9 +99,9 @@ public class CreationBatch_Data {
 		
 		String sqlselect = "SELECT  PN, WO, TASK_CARD FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL AND PN = ?";
 		
-		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'S' WHERE PN = ? AND WO = ? AND TASK_CARD = ? ";
+		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'S' WHERE PN = ? AND WO = ? AND TASK_CARD = ? AND INTERFACE_TRANSFER_FLAG = 'D' ";
 		
-		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE LEGACY_BATCH = ? AND PN = ? AND WO = ? AND TASK_CARD = ? ";
+		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE LEGACY_BATCH = ? AND PN = ? AND WO = ? AND TASK_CARD = ?  AND INTERFACE_TRANSFER_FLAG = 'D' ";
 		
 		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	             + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I30', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Batch I_30', sysdate, sysdate FROM dual";
@@ -219,9 +219,6 @@ public class CreationBatch_Data {
 			pstmt1 = con.prepareStatement(sqlPN);
 			pstmt2 = con.prepareStatement(sqlMark);
 			
-			if (MaxRecord != null && !MaxRecord.isEmpty()) {
-		        pstmt1.setString(1, MaxRecord);
-		      }
 
 		      rs1 = pstmt1.executeQuery();
 		      
