@@ -207,7 +207,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
                 "                   WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
                 "                   AND Z.PN = A3.PN) " +
-                "    AND A3.INTERFACE_TRANSFER_FLAG = 'S') " +
+                "    AND (A3.INTERFACE_TRANSFER_FLAG = 'S' OR A3.INTERFACE_TRANSFER_FLAG IS NULL)) " +
                 "   OR " +
                 "   (PM.CATEGORY IN ('B', 'C', 'D') " +
                 "    AND EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
