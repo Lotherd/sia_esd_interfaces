@@ -105,39 +105,69 @@ public class Creation_Sales_Data {
 		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I07', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Sales I_07', sysdate, sysdate FROM dual";
 
-String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
+		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
+		
+	    String sqlCheckContract = "SELECT CONTRACT_NUMBER FROM CUSTOMER_ORDER_HEADER WHERE WO = ?";
+
 		
 		try 
 			(PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
 			 PreparedStatement pstmt2 = con.prepareStatement(sqlReturn);
 			 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
-	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)){
+	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
+			 PreparedStatement psCheckContract = con.prepareStatement(sqlCheckContract)){
 			
 			if (request != null) {
+				
+				 // Check contract number
+	            psCheckContract.setString(1, request.getWO());
+	            ResultSet rs = psCheckContract.executeQuery();
+	            boolean hasContract = false;
+
+	            if (rs.next()) {
+	                String contractNumber = rs.getString("CONTRACT_NUMBER");
+	                hasContract = (contractNumber != null && !contractNumber.isEmpty());
+	            }
+	            
+	            
 				if(request.getRfoNO() != null && !request.getRfoNO().isEmpty()) {
 					pstmt1.setString(2, request.getWO());
 					pstmt1.setString(1, request.getRfoNO());
 					pstmt1.executeUpdate();
 				}
 				
-				if (request.getExceptionId() != null && !request.getExceptionId().equalsIgnoreCase("53")) {
-					executed = "WO: " + request.getWO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
-					Creation_Sales_Controller.addError(executed);
-					
-					
-                    
-                    psInsertError.setString(1, request.getWO());
-                    psInsertError.setString(2, request.getExceptionId());
-                    psInsertError.setString(3, request.getExceptionDetail());
-                    psInsertError.executeUpdate();
-					
-					pstmt2.setString(1, request.getWO());
-					pstmt2.executeUpdate();
-				}else {
-					psDeleteError.setString(1, request.getWO());
-                    psDeleteError.executeUpdate();
-				}
-			}
+				// Handle error if ExceptionId is not 53 or contract does not exist
+	            if (!hasContract) {
+	                executed = "WO: " + request.getWO() + ", Error Code: 51, Remarks: WO does not have Contract";
+	                Creation_Sales_Controller.addError(executed);
+
+	                // Insert error into interface_audit with hardcoded values
+	                psInsertError.setString(1, request.getWO());
+	                psInsertError.setString(2, "51");
+	                psInsertError.setString(3, "WO does not have Contract added ");
+	                psInsertError.executeUpdate();
+
+	                pstmt2.setString(1, request.getWO());
+	                pstmt2.executeUpdate();
+
+	            } else if (request.getExceptionId() != null && !request.getExceptionId().equalsIgnoreCase("53")) {
+	                executed = "WO: " + request.getWO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
+	                Creation_Sales_Controller.addError(executed);
+
+	                // Insert error with provided details
+	                psInsertError.setString(1, request.getWO());
+	                psInsertError.setString(2, request.getExceptionId());
+	                psInsertError.setString(3, request.getExceptionDetail());
+	                psInsertError.executeUpdate();
+
+	                pstmt2.setString(1, request.getWO());
+	                pstmt2.executeUpdate();
+	            } else {
+	                // Delete error if no issues
+	                psDeleteError.setString(1, request.getWO());
+	                psDeleteError.executeUpdate();
+	            }
+	        }
 			
 		}catch (SQLException e) {
 	        executed = e.toString();
