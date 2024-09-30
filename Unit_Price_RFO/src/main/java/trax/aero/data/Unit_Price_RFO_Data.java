@@ -108,7 +108,7 @@ public class Unit_Price_RFO_Data {
 	    
 	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
 	    
-	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ? where wo = ? and pn = ? ";
+	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ?, unit_sell = ?, total_sell = ?  where wo = ? and pn = ? ";
 	    
 	    String setpriceSGD = "update wo_actuals set add_bill_currency = ?, add_bill_curr_amount = ? where wo = ? and pn = ? ";
 	    
@@ -225,8 +225,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Updated with " + operationCurrency + " prices.");
 	                        } 
@@ -266,8 +268,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -293,8 +297,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -320,8 +326,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -348,8 +356,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 
@@ -375,8 +385,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                            
@@ -402,8 +414,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                            
@@ -429,8 +443,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                            
@@ -456,8 +472,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                        } else if (!(Currency.equals("GBP") || Currency.equals("EUR") || Currency.equals("USD") || Currency.equals("SGD")) && operationCurrency.equals("SGD")) {
@@ -482,8 +500,10 @@ public class Unit_Price_RFO_Data {
 	                            usd.setString(1, UnitPrice);
 	                            usd.setString(2, QTY);
 	                            usd.setString(3, totalCost);
-	                            usd.setString(4, request.getWO());
-	                            usd.setString(5, o.getMaterial());
+	                            usd.setString(4, UnitPrice);
+	                            usd.setString(5, totalCost);
+	                            usd.setString(6, request.getWO());
+	                            usd.setString(7, o.getMaterial());
 	                            usd.executeUpdate();
 	                            System.out.println("Converted and updated with " + operationCurrency + " prices.");
 	                        } else {
