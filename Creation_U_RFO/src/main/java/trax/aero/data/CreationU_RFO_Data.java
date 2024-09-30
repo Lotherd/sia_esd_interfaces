@@ -285,9 +285,6 @@ public class CreationU_RFO_Data {
 			pstmt1 = con.prepareStatement(sqlPN);
 			pstmt2 = con.prepareStatement(sqlMark);
 			
-			if (MaxRecord != null && !MaxRecord.isEmpty()) {
-		        pstmt1.setString(1, MaxRecord);
-		      }
 
 		      rs1 = pstmt1.executeQuery();
 		      
