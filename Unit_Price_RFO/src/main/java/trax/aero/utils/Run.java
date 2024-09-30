@@ -9,6 +9,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+
 import trax.aero.controller.Unit_Price_RFO_Controller;
 import trax.aero.data.Unit_Price_RFO_Data;
 import trax.aero.logger.LogManager;
@@ -81,8 +82,8 @@ public class Run implements Runnable{
 							    if(input.getError_code() != null && !input.getError_code().isEmpty() && input.getError_code().equalsIgnoreCase("53")) {
 							    	executed = data.markTransaction(input);
 							    } else {
-							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", Order Number: "+input.getOrder_number() + ", Error Code: " +input.getError_code());
-							    	Unit_Price_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", Order Number: "+input.getOrder_number() + ", Error Code: " +input.getError_code());
+							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", WO: "+input.getWO() + ", Error Code: " +input.getError_code());
+							    	Unit_Price_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getWO() + ", Error Code: " +input.getError_code());
 							    	executed = data.markTransaction(input);
 							    	executed = "Issue found";
 							    }
