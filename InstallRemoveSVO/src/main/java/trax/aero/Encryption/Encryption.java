@@ -81,46 +81,4 @@ public class Encryption
 		}
 		return str;
 	}
-
-	public static void encryptFile(File inputFile, File outputFile)
-			throws NoSuchAlgorithmException, NoSuchProviderException,
-			NoSuchPaddingException, InvalidKeyException, ShortBufferException,
-			IllegalBlockSizeException, BadPaddingException, IOException {
-		doCrypto(Cipher.ENCRYPT_MODE, inputFile, outputFile);
-	}
-
-	public static void decryptFile(File inputFile, File outputFile)
-			throws NoSuchAlgorithmException, NoSuchProviderException,
-			NoSuchPaddingException, InvalidKeyException, ShortBufferException,
-			IllegalBlockSizeException, BadPaddingException, IOException {
-		doCrypto(Cipher.DECRYPT_MODE, inputFile, outputFile);
-	}
-
-	private static void doCrypto(int cipherMode, File inputFile,
-			File outputFile) throws NoSuchAlgorithmException, NoSuchProviderException,
-	NoSuchPaddingException, InvalidKeyException, ShortBufferException,
-	IllegalBlockSizeException, BadPaddingException, IOException {
-
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-		byte[] keyBytes = null;
-		
-		keyBytes = Base64.decodeBase64(encryptionKey.getBytes());
-		final SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
-		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS7Padding",
-				"BC");
-		cipher.init(cipherMode, key);
-
-		FileInputStream inputStream = new FileInputStream(inputFile);
-		byte[] inputBytes = new byte[(int) inputFile.length()];
-		inputStream.read(inputBytes);
-
-		byte[] outputBytes = cipher.doFinal(inputBytes);
-
-		FileOutputStream outputStream = new FileOutputStream(outputFile);
-		outputStream.write(outputBytes);
-
-		inputStream.close();
-		outputStream.close();
-
-	}
 }
