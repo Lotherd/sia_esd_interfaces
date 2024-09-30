@@ -102,23 +102,23 @@ public class Unit_Price_RFO_Data {
 	public String markTransaction(INT27_TRAX request) {
 	    executed = "OK";
 
-	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL, GET_PRICE = 'N' WHERE WO = ? and task_card_pn = ? ";
+	    String pridedone = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL, GET_PRICE = 'N' WHERE WO = ? and pn = ? ";
 
 		String pridedone2 = "UPDATE wo_actuals_material_temp SET GET_PRICE = 'N' WHERE WO = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL' ";
 	    
 	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
 	    
-	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ? where wo = ? and task_card_pn = ? ";
+	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ? where wo = ? and pn = ? ";
 	    
-	    String setpriceSGD = "update wo_actuals set add_bill_currency = ?, add_bill_curr_amount = ? where wo = ? and task_card_pn = ? ";
+	    String setpriceSGD = "update wo_actuals set add_bill_currency = ?, add_bill_curr_amount = ? where wo = ? and pn = ? ";
 	    
 	    String exchamgerate = " select distinct exchange_rate from currency_exchange_history where currency = ? ";
 	    
-	    String checkoldprice = "select distinct unit_sell_b from wo_actuals where wo = ? and task_card_pn = ? ";
+	    String checkoldprice = "select distinct unit_sell_b from wo_actuals where wo = ? and pn = ? ";
 	    
-	    String oldprice = "update wo_actuals set unit_sell_b = ? where wo = ? and task_card_pn = ? ";
+	    String oldprice = "update wo_actuals set unit_sell_b = ? where wo = ? and pn = ? ";
 	    
-	    String variance = "update wo_actuals set variance_price = ? where wo = ? and task_card_pn = ? ";
+	    String variance = "update wo_actuals set variance_price = ? where wo = ? and pn = ? ";
 	    
 	    String tempActuals = "insert into wo_actuals_material_temp  (wo_actual_transaction, trasaction_category,  wo, get_price, qty, unit_cost, total_cost, add_bill_currency, add_bill_curr_amount, unit_sell_b, variance_price) " +
 	    					 "values ( ?, 'MATERIAL', ?, null , ?, ?, ?, ?, ?, ?, ? )";
@@ -498,8 +498,10 @@ public class Unit_Price_RFO_Data {
 	                    chold.setString(2, o.getMaterial());
 	                    ResultSet rs1 = chold.executeQuery();
 
-	                    if (rs1.next()) {
+	                    if (rs1 != null && rs1.next()) {
 	                        String oldPrice = rs1.getString(1);
+	                        
+	                        BigDecimal oldPriceDecimal1 = (oldPrice == null || oldPrice.equals("0")) ? BigDecimal.ZERO : new BigDecimal(oldPrice);
 
 	                        if (oldPrice == null || oldPrice.equals("0")) {
 	                            // Old price is 0 or null, update variance to 0
@@ -515,7 +517,11 @@ public class Unit_Price_RFO_Data {
 	                            old.setString(3, o.getMaterial());
 	                            old.executeUpdate();
 	                            System.out.println("Old price updated.");
+	                            
+	                            System.out.println("Inserting values on temp table for WO: " + request.getWO());
 
+	                            insertOrUpdateTempActuals(con, Trnasction, request.getWO(), QTY, UnitPrice, o.getCurrency(), o.getSell_Total_Price().trim(), oldPriceDecimal1);
+	                            
 	                        } else {
 	                            // Calculate variance as the difference between oldPrice and UnitPrice
 	                            BigDecimal oldPriceDecimal = new BigDecimal(oldPrice);
@@ -529,7 +535,8 @@ public class Unit_Price_RFO_Data {
 	                            var.executeUpdate();
 	                            System.out.println("Variance updated with value: " + varianceDecimal.toString());
 	                            
-	                            
+	                            System.out.println("Inserting values on temp table for WO: " + request.getWO());
+
 	                            insertOrUpdateTempActuals(con, Trnasction, request.getWO(), QTY, UnitPrice, o.getCurrency(), o.getSell_Total_Price().trim(), varianceDecimal);
 	                            // Update old price with the new UnitPrice
 	                            old.setString(1, UnitPrice);
@@ -537,13 +544,13 @@ public class Unit_Price_RFO_Data {
 	                            old.setString(3, o.getMaterial());
 	                            old.executeUpdate();
 	                            System.out.println("Old price updated.");
-	                            
-	                            
 	                        }
 	                    } else {
 	                        System.out.println("No old price found for WO: " + request.getWO() + " and Material: " + o.getMaterial());
 	                    }
-
+	                    
+	                    
+	                    System.out.println("Returning Get Price Flag to N for WO: " + request.getWO());
 	                    pstmt1.setString(1, request.getWO());
 	                    pstmt1.setString(2, o.getMaterial());
 	                    pstmt1.executeUpdate();

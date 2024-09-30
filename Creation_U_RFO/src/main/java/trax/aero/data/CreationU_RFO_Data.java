@@ -102,8 +102,8 @@ public class CreationU_RFO_Data {
 	    
 	    String selectpn = "SELECT PN FROM PN_INVENTORY_HISTORY WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ? ";
 	    
-	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-	                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I22', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'CreationU_RFO I_22', sysdate, sysdate FROM dual";
+	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE, ORDER_NUMBER_REFERENCE) "
+	                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I22', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'CreationU_RFO I_22', sysdate, sysdate, ? FROM dual";
 	    
 	    String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
 
@@ -172,6 +172,7 @@ public class CreationU_RFO_Data {
 	                    psInsertError.setString(2, PN);
 	                    psInsertError.setString(3, errorCode);
 	                    psInsertError.setString(4, remarks);
+	                    psInsertError.setString(5, transaction);
 	                    psInsertError.executeUpdate();
 
 	                    // Log the insertion of the error into the audit table
