@@ -185,7 +185,7 @@ public class CreationBatch_Data {
 		
 		ArrayList<INT30_SND> list = new ArrayList<INT30_SND>();
 		
-		String sqlPN =  "SELECT W.CUSTOMER, H.PN, H.WO, H.TASK_CARD, H.TRANSACTION_NO" +
+		String sqlPN =  "SELECT W.CUSTOMER, H.PN, H.WO, H.TASK_CARD, H.TRANSACTION_NO " +
                 "FROM WO W " +
                 "JOIN WO_TASK_CARD WT ON WT.WO = W.WO " +
                 "JOIN PN_INVENTORY_HISTORY H ON WT.WO = H.WO AND WT.TASK_CARD = H.TASK_CARD " +
@@ -203,18 +203,12 @@ public class CreationBatch_Data {
                 "    SELECT 1 " +
                 "    FROM ZEPARTSER_MASTER Z " +
                 "    WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(W.CUSTOMER, '0') " +
-                "    AND Z.PN = H.PN" +
+                "    AND Z.PN = H.PN " +
                 ")";
 		
 		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? AND TRANSACTION_NO = ? ";
 		
-		if (MaxRecord != null && !MaxRecord.isEmpty()) {
-			sqlPN = "SELECT * FROM (" + sqlPN;
-		}
-		
-		if (MaxRecord != null && !MaxRecord.isEmpty()) {
-			sqlPN = sqlPN + " ) WHERE ROWNUM <= ?";
-		}
+
 		
 		PreparedStatement pstmt1 = null;
 		 ResultSet rs1 = null;

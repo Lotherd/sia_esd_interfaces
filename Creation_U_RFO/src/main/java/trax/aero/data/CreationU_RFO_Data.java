@@ -275,13 +275,6 @@ public class CreationU_RFO_Data {
 		
 		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'Y' WHERE WO = ? AND TASK_CARD = ? AND PN = ? AND TRANSACTION_NO = ?";
 		
-		if (MaxRecord != null && !MaxRecord.isEmpty()) {
-			sqlPN = "SELECT * FROM (" + sqlPN;
-		}
-		
-		if (MaxRecord != null && !MaxRecord.isEmpty()) {
-			sqlPN = sqlPN + " ) WHERE ROWNUM <= ?";
-		}
 		
 		PreparedStatement pstmt1 = null;
 		 ResultSet rs1 = null;
