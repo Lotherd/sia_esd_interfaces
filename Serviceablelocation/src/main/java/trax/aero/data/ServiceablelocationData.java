@@ -466,7 +466,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			//setting up variables
 			exceuted = "OK";
 			
-			String sqlDate ="UPDATE WO SET INSPECTION_LOT_NUMBER = ? ,interface_esd_date = null    WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP' and WO.INSPECTION_LOT_NUMBER IS NULL";
+			String sqlDate ="UPDATE WO SET INSPECTION_LOT_NUMBER = ? ,interface_esd_date = null, INTERFACE_CODE = ?    WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP' and WO.INSPECTION_LOT_NUMBER IS NULL";
 			
 			PreparedStatement pstmt2 = null; 
 			pstmt2 = con.prepareStatement(sqlDate);
@@ -474,7 +474,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			{	
 				logger.info("Marking RFO: " + response.getRfo());
 				pstmt2.setString(1, response.getInspLot());
-				pstmt2.setString(2,request.getCode());
+				pstmt2.setString(2,"FIRST");
 				pstmt2.setString(3, response.getRfo());
 				pstmt2.executeQuery();
 			}
