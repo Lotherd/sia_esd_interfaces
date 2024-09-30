@@ -364,6 +364,8 @@ public class InstallRemoveData {
 								out.setUnserviceable_Serviceable_Indicator("X");
 							}else if(rs1.getString(16).equalsIgnoreCase("CANNIBALIZATION")){
 								out.setUnserviceable_Serviceable_Indicator("C");
+							}else {
+								out.setUnserviceable_Serviceable_Indicator("");
 							}
 							
 							if(rs1.getDate(9) !=null ) {
