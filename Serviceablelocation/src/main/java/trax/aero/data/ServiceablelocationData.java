@@ -179,7 +179,8 @@ public class ServiceablelocationData implements IServiceablelocationData {
 						}
 						request.setCode(code);
 						logger.info("code: " + code);
-						if(rs1.getString(9) != null && !rs1.getString(9).isEmpty()) {
+						if(rs1.getString(9) != null && !rs1.getString(9).isEmpty() && 
+								rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
 							logger.info("Current code: " + code + " old code" +rs1.getString(9));
 							if(code.equalsIgnoreCase(rs1.getString(9))) {
 								continue;
