@@ -422,9 +422,9 @@ public class InstallRemoveData {
 							}
 							
 							if(rs1.getString(14) != null && !rs1.getString(14).isEmpty()) {
-								out.setFunctional_Location("");
+							//	out.setFunctional_Location("");
 							}else  {
-								out.setFunctional_Location("");
+								//out.setFunctional_Location("");
 							}							
 							
 							out.setTRAXTRANS(item.getTransaction());
