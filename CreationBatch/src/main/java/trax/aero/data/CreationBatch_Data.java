@@ -185,7 +185,7 @@ public class CreationBatch_Data {
 		
 		ArrayList<INT30_SND> list = new ArrayList<INT30_SND>();
 		
-		String sqlPN =  "SELECT W.CUSTOMER, H.PN, H.WO, H.TASK_CARD " +
+		String sqlPN =  "SELECT W.CUSTOMER, H.PN, H.WO, H.TASK_CARD, H.TRANSACTION_NO" +
                 "FROM WO W " +
                 "JOIN WO_TASK_CARD WT ON WT.WO = W.WO " +
                 "JOIN PN_INVENTORY_HISTORY H ON WT.WO = H.WO AND WT.TASK_CARD = H.TASK_CARD " +
@@ -206,7 +206,7 @@ public class CreationBatch_Data {
                 "    AND Z.PN = H.PN" +
                 ")";
 		
-		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
+		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? AND TRANSACTION_NO = ? ";
 		
 		if (MaxRecord != null && !MaxRecord.isEmpty()) {
 			sqlPN = "SELECT * FROM (" + sqlPN;
@@ -246,10 +246,12 @@ public class CreationBatch_Data {
 						
 		    		  String wo = rs1.getString(3);
 		    		  String tc = rs1.getString(4);
+		    		  String transaction = rs1.getString(5);
 		    		  
 						pstmt2.setString(1, wo);
 						pstmt2.setString(2, tc);
 						pstmt2.setString(3, req.getPN());
+						pstmt2.setString(4, transaction);
 						pstmt2.executeQuery();
 		    	  }
 		      }
