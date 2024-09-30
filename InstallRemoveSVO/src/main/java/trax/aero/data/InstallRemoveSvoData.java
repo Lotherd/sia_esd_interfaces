@@ -176,7 +176,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "A3.INTERNAL_EXTERNAL AS INTERNAL_EXTERNAL, " +
                 "A3.TRANSACTION_TYPE AS TRANSACTION_TYPE, " +
                 "A3.REMOVAL_REASON AS REMOVAL_REASON, " +
-                "(select dbms_lob.substr(n.notes_text, 4000, 1) from note_pad n where n.notes = A3.notes order by created_date desc FETCH FIRST 1 ROWS ONLY) AS NOTES, " +
+                "(select dbms_lob.substr(n.notes_text, 4000, 1) from note_pad n where n.notes = A3.notes and notes_line = 1) AS NOTES, " +
                 "A1.CUSTOMER AS CUSTOMER, " +
                 "A1.RFO_NO AS RFO_NO, " +
                 "A3.LEGACY_BATCH AS LEGACY_BATCH, " +
