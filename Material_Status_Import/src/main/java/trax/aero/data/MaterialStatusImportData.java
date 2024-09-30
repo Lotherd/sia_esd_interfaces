@@ -46,6 +46,7 @@ import trax.aero.model.PnInventoryHistory;
 import trax.aero.model.PnInventoryHistoryPK;
 import trax.aero.model.PnMaster;
 import trax.aero.model.SystemTranCode;
+import trax.aero.model.Wo;
 import trax.aero.model.WoTaskCard;
 import trax.aero.pojo.MaterialStatusImportMaster;
 import trax.aero.pojo.Transfer_order;
@@ -202,7 +203,11 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 				insertData(pnInventoryDetail);
 				
-				picklistHeader.setLocation(location);
+				try {
+					picklistHeader.setLocation(getWo(woTaskCard).getLocation());
+				}catch (Exception e) {
+
+				}			
 				insertData(picklistHeader);
 				logger.info("UPDATING picklistDistribution: " + picklistHeader.getPicklist());
 				insertData(picklistDistributionDIS);
@@ -244,6 +249,25 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 	}
 	
+
+	private Wo getWo(WoTaskCard woTaskCard) {
+			logger.info("Checking WO");
+			try 
+			{
+				Wo wo = em.createQuery("Select w From Wo w where w.id.wo =:work", Wo.class)
+						.setParameter("work", woTaskCard.getId().getWo())
+						.getSingleResult();
+				return wo;
+			}
+			catch(Exception e)
+			{
+				logger.info("NO Production WO found");
+				e.printStackTrace();
+				return null;
+			}
+	}
+
+
 
 	private void setCustTo(PicklistDistribution picklistDistributionDIS, Transfer_order to) {
 		PicklistDistributionRec rec = null;
