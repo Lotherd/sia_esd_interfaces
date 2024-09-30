@@ -183,12 +183,16 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				
 				//LOCATION TRANSFER
 				BigDecimal qtySum = new BigDecimal(0);
-				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
 				for( Transfer_order to: input.getTransfer_order()) {
 					setCustTo(picklistDistributionDIS,to);
 					setCustTo(picklistDistributionREQ,to);
 					qtySum.add(to.getTRANSFER_ORDER_QUANTITY());
 				}
+				picklistDistributionREQ.setQtyPicked(qtySum);
+				picklistDistributionDIS.setQtyPicked(qtySum);
+				
+				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
+
 				pnInventoryDetail.setLegacyBatch(input.getTransfer_order().get(0).getLEGACY_BATCH());
 
 				picklistDistributionDIS.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
@@ -197,8 +201,6 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				picklistDistributionREQ.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
-				picklistDistributionREQ.setQtyPicked(qtySum);
-				picklistDistributionDIS.setQtyPicked(qtySum);
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
 				insertData(pnInventoryDetail);
