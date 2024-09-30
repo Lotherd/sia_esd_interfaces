@@ -241,10 +241,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 						}	
 					}
 				}
-				for(String g : groups) {
-					group = group + g +",";
-					
-				}
+				group = groups.get(0) +","+groups.get(1);
 				
 				
 			}
