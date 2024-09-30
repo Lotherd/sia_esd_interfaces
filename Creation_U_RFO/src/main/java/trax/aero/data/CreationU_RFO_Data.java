@@ -245,7 +245,7 @@ public class CreationU_RFO_Data {
                 "    WHEN H.STATE_OF_PART = 'SERVICEABLE' THEN hd.qty_available " +
                 "    WHEN H.STATE_OF_PART = 'UNSERVICEABLE' THEN hd.QTY_US " +
                 "    ELSE NULL " +
-                "END AS QTY " +
+                "END AS QTY, h.INTERNAL_EXTERNAL" +
                 "FROM wo w " +
                 "JOIN wo_task_card wt ON wt.wo = w.wo " +
                 "JOIN pn_inventory_history h ON wt.wo = h.wo " +
@@ -338,7 +338,20 @@ public class CreationU_RFO_Data {
 		    			  req.setRelationCode("");
 		    		  }
 		    		  
-		    		  req.setInternalExternal("I");
+		    		  if(rs1.getString(13) != null && !rs1.getString(13).isEmpty()) {
+						    String internalExternal = rs1.getString(13);
+						    
+						    if (internalExternal.equalsIgnoreCase("Internal")) {
+						    	req.setInternalExternal("I");
+						    } else if (internalExternal.equalsIgnoreCase("External")) {
+						    	req.setInternalExternal("E");
+						    } else {
+						        // Handle other cases if necessary, or leave as it is
+						    	req.setInternalExternal(internalExternal);
+						    }
+						} else {
+							req.setInternalExternal("");
+						}
 		    		  
 		    		  if(rs1.getString(3) != null) {
 		    			  req.setTc(rs1.getString(3));
