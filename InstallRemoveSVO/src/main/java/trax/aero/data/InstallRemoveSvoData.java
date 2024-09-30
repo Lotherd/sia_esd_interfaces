@@ -279,6 +279,8 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					}
 					
 					if(rs1.getString(6) != null && !rs1.getString(6).isEmpty()) {
+						String licence = rs1.getString(6);
+						licence = trax.aero.Encryption.Encryption.cryptoControl(licence, false);
 						Inbound.setLicenceType(rs1.getString(6));
 					}
 					else {
