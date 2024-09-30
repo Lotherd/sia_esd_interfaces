@@ -241,11 +241,12 @@ public class CreationU_RFO_Data {
                 "h.legacy_batch, " +
                 "h.transaction_no, " +
                 "h.svo_no, " +
+                "h.INTERNAL_EXTERNAL, " + 
                 "CASE " +
                 "    WHEN H.STATE_OF_PART = 'SERVICEABLE' THEN hd.qty_available " +
                 "    WHEN H.STATE_OF_PART = 'UNSERVICEABLE' THEN hd.QTY_US " +
                 "    ELSE NULL " +
-                "END AS QTY, h.INTERNAL_EXTERNAL" +
+                "END AS QTY" +
                 "FROM wo w " +
                 "JOIN wo_task_card wt ON wt.wo = w.wo " +
                 "JOIN pn_inventory_history h ON wt.wo = h.wo " +
@@ -338,8 +339,8 @@ public class CreationU_RFO_Data {
 		    			  req.setRelationCode("");
 		    		  }
 		    		  
-		    		  if(rs1.getString(13) != null && !rs1.getString(13).isEmpty()) {
-						    String internalExternal = rs1.getString(13);
+		    		  if(rs1.getString(13) != null && !rs1.getString(12).isEmpty()) {
+						    String internalExternal = rs1.getString(12);
 						    
 						    if (internalExternal.equalsIgnoreCase("Internal")) {
 						    	req.setInternalExternal("I");
@@ -373,8 +374,8 @@ public class CreationU_RFO_Data {
 		    		  
 		    		  req.setRfoNo(rs1.getString(4));
 		    		  
-		    		  if(rs1.getString(12) != null) {
-		    			  req.setQty(rs1.getString(12));
+		    		  if(rs1.getString(13) != null) {
+		    			  req.setQty(rs1.getString(13));
 		    		  } else {
 		    			  req.setQty("");
 		    		  }
