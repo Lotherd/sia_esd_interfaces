@@ -190,10 +190,11 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				}
 				picklistDistributionREQ.setQtyPicked(qtySum);
 				picklistDistributionDIS.setQtyPicked(qtySum);
-				
-				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
+				try {
+					picklistHeader.setLocation(getWo(woTaskCard).getLocation());
+				}catch (Exception e) {
 
-				pnInventoryDetail.setLegacyBatch(input.getTransfer_order().get(0).getLEGACY_BATCH());
+				}	pnInventoryDetail.setLegacyBatch(input.getTransfer_order().get(0).getLEGACY_BATCH());
 
 				picklistDistributionDIS.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionDIS.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
@@ -201,15 +202,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				picklistDistributionREQ.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
+				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
+
+				
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
 				insertData(pnInventoryDetail);
 				
-				try {
-					picklistHeader.setLocation(getWo(woTaskCard).getLocation());
-				}catch (Exception e) {
-
-				}			
+						
 				insertData(picklistHeader);
 				logger.info("UPDATING picklistDistribution: " + picklistHeader.getPicklist());
 				insertData(picklistDistributionDIS);
