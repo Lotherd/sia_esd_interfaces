@@ -37,8 +37,8 @@ public class MT_TRAX_SND_I43_4076_REQ {
 	@XmlElement(name = "Equipment")
     private String Equipment;
 
-	@XmlElement(name = "Functional_Location")
-    private String Functional_Location;
+	//@XmlElement(name = "Functional_Location")
+    //private String Functional_Location;
 
 	@XmlElement(name = "Serial_Number")
     private String Serial_Number;
@@ -155,7 +155,7 @@ public class MT_TRAX_SND_I43_4076_REQ {
     {
         this.Equipment = Equipment;
     }
-
+/*
     public String getFunctional_Location ()
     {
         return Functional_Location;
@@ -165,7 +165,7 @@ public class MT_TRAX_SND_I43_4076_REQ {
     {
         this.Functional_Location = Functional_Location;
     }
-
+*/
     public String getSerial_Number ()
     {
         return Serial_Number;
