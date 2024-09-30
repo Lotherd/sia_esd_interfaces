@@ -356,14 +356,14 @@ public class InstallRemoveData {
 							}
 							
 							//REMOVE_AS_SERVICEABLE
-							if((rs1.getString(8) == null || rs1.getString(8).isEmpty() || rs1.getString(8).equalsIgnoreCase("NO"))
-							|| (rs1.getString(16) == null || rs1.getString(16).isEmpty() || rs1.getString(16).equalsIgnoreCase("UNSERVICEABLE"))) {
-								out.setUnserviceable_Serviceable_Indicator("");
-							}else if(rs1.getString(8).equalsIgnoreCase("CANNIBALIZATION")){
+							if(rs1.getString(8).equalsIgnoreCase("CANNIBALIZATION")){
 								out.setUnserviceable_Serviceable_Indicator("C");
 							}else if(rs1.getString(8).equalsIgnoreCase("SERVICEABLE") ||
 									rs1.getString(16).equalsIgnoreCase("SERVICEABLE")) {
 								out.setUnserviceable_Serviceable_Indicator("X");
+							}else if((rs1.getString(8) == null || rs1.getString(8).isEmpty() || rs1.getString(8).equalsIgnoreCase("UNSERVICEABLE"))
+							|| (rs1.getString(16) == null || rs1.getString(16).isEmpty() || rs1.getString(16).equalsIgnoreCase("UNSERVICEABLE"))) {
+								out.setUnserviceable_Serviceable_Indicator("");
 							}else {
 								out.setUnserviceable_Serviceable_Indicator("");
 							}
