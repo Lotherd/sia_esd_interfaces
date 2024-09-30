@@ -219,7 +219,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL)" +
                 ")";
 
-		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE WO = ? AND TASK_CARD = ? AND PN = ? ";
+		String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE TRANSACTION_NO = ? ";
 		
 				
 		PreparedStatement pstmt1 = null;
@@ -411,9 +411,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					
 					list.add(Inbound);	
 					
-					pstmt2.setString(1, Inbound.getWo());
-					pstmt2.setString(2, Inbound.getTc());
-					pstmt2.setString(3, Inbound.getPn());
+					pstmt2.setString(1, Inbound.getTransaction());
 					pstmt2.executeQuery();
 					
 				}
