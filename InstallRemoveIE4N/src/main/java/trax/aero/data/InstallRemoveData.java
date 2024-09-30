@@ -251,14 +251,14 @@ public class InstallRemoveData {
 						"(SELECT PID.LEGACY_BATCH FROM PN_INVENTORY_DETAIL PID WHERE APTH.PN = PID.PN AND APTH.SN = PID.SN AND APTH.BATCH =  PID.BATCH ) as legacy_batch," + 
 						"(SELECT w.EQUIPMENT FROM WO w WHERE APTH.WO = w.WO  ) ,\r\n" + 
 						"APTH.schedule_category,\r\n" + 
-						"APTH.STATE_OF_PART,\r\n" + 
+						"APTH.REMOVE_AS_SERVICEABLE,\r\n" + 
 						"APTH.transaction_date,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.TRANSACTION_HOUR) AS HOUR,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.TRANSACTION_MINUTE) AS MINUTE,\r\n" + 
 						"APTH.TRANSACTION_TYPE,\r\n" +
 						"APTH.SVO_NO,\r\n"+
 						"(SELECT PID.FUNCTIONAL_LOCATION FROM PN_INVENTORY_DETAIL PID WHERE APTH.PN = PID.PN AND APTH.SN = PID.SN AND APTH.BATCH =  PID.BATCH ) as fun_loc,"+
-						"APTH.IE4N_FORCE_INSTALL , APTH.REMOVE_AS_SERVICEABLE\r\n"+
+						"APTH.IE4N_FORCE_INSTALL , APTH.STATE_OF_PART\r\n"+
 						"FROM\r\n" + 
 						"PN_INVENTORY_HISTORY APTH\r\n" + 
 						"WHERE \r\n" + 
@@ -359,11 +359,11 @@ public class InstallRemoveData {
 							if((rs1.getString(8) == null || rs1.getString(8).isEmpty() || rs1.getString(8).equalsIgnoreCase("NO"))
 							|| (rs1.getString(16) == null || rs1.getString(16).isEmpty() || rs1.getString(16).equalsIgnoreCase("UNSERVICEABLE"))) {
 								out.setUnserviceable_Serviceable_Indicator("");
-							}else if(rs1.getString(8).equalsIgnoreCase("YES") ||
+							}else if(rs1.getString(8).equalsIgnoreCase("CANNIBALIZATION")){
+								out.setUnserviceable_Serviceable_Indicator("C");
+							}else if(rs1.getString(8).equalsIgnoreCase("SERVICEABLE") ||
 									rs1.getString(16).equalsIgnoreCase("SERVICEABLE")) {
 								out.setUnserviceable_Serviceable_Indicator("X");
-							}else if(rs1.getString(16).equalsIgnoreCase("CANNIBALIZATION")){
-								out.setUnserviceable_Serviceable_Indicator("C");
 							}else {
 								out.setUnserviceable_Serviceable_Indicator("");
 							}
@@ -422,7 +422,7 @@ public class InstallRemoveData {
 							}
 							
 							if(rs1.getString(14) != null && !rs1.getString(14).isEmpty()) {
-								out.setFunctional_Location(rs1.getString(14));
+								out.setFunctional_Location("");
 							}else  {
 								out.setFunctional_Location("");
 							}							
