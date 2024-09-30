@@ -210,10 +210,10 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		}
 		
 		
-		private String getCode(String table,String code, String value) {
+		private String getCode(String table,String list, String value) {
 			ArrayList<String> groups = new ArrayList<String>();
 			
-			String query = "", group = code;
+			String query = "", group = list;
 			if(table.contains("CONDITION")) {
 				query = " Select CODE FROM CONDITION_APPROVAL where CONDITION = ?";
 			}else {
