@@ -107,7 +107,7 @@ public class Creation_Sales_Data {
 
 		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
 		
-	    String sqlCheckContract = "SELECT CONTRACT_NUMBER FROM CUSTOMER_ORDER_HEADER WHERE WO = ?";
+	    String sqlCheckContract = "SELECT CONTRACT_NUMBER FROM CUSTOMER_ORDER_HEADER WHERE ORDER_NUMBER = ? ";
 
 		
 		try 
