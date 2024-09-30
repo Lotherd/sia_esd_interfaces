@@ -252,7 +252,7 @@ public class InstallRemoveData {
 						"(SELECT w.EQUIPMENT FROM WO w WHERE APTH.WO = w.WO  ) ,\r\n" + 
 						"APTH.schedule_category,\r\n" + 
 						"APTH.STATE_OF_PART,\r\n" + 
-						"APTH.MODIFIED_DATE,\r\n" + 
+						"APTH.transaction_date,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.TRANSACTION_HOUR) AS HOUR,\r\n" + 
 						"PKG_INTERFACE.GETXMLNUMBERSTRING(APTH.TRANSACTION_MINUTE) AS MINUTE,\r\n" + 
 						"APTH.TRANSACTION_TYPE,\r\n" +
