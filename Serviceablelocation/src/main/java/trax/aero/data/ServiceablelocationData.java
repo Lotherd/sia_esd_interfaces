@@ -238,7 +238,9 @@ public class ServiceablelocationData implements IServiceablelocationData {
 						if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
 						
 							groups.add(rs1.getString(1) );
-						}	
+						}else {
+							groups.add("");
+						}
 					}
 				}
 				group = groups.get(0) +","+groups.get(1);
