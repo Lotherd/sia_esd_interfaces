@@ -95,31 +95,33 @@ public class Creation_Sales_Data {
 	}
 	
 	public String markTransaction(INT7_TRAX request) {
-		executed = "OK";
-		
-		String sqlUpdateWO = "UPDATE WO SET RFO_NO = ?, INTERFACE_ESD_TRANSFERRED_DATE = SYSDATE, INTERFACE_ESD_TRANSFERRED_FLAG = 'Y' WHERE WO = ?";
-		
-		String sqlReturn = "UPDATE WO SET STATUS = 'CONF SLOT', INTERFACE_ESD_TRANSFERRED_FLAG = CASE WHEN SOURCE_TYPE IN ('X3', 'E8') THEN 'D' ELSE '5' \r\n " +
-							"END, INTERFACE_ESD_TRANSFERRED_DATE = CASE WHEN SOURCE_TYPE IN ('X3', 'E8') THEN NULL ELSE SYSDATE END WHERE WO = ?";
-		
-		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+	    executed = "OK";
+	    
+	    String sqlUpdateWO = "UPDATE WO SET RFO_NO = ?, INTERFACE_ESD_TRANSFERRED_DATE = SYSDATE, INTERFACE_ESD_TRANSFERRED_FLAG = 'Y' WHERE WO = ?";
+	    
+	    String sqlReturn = "UPDATE WO SET STATUS = 'CONF SLOT', INTERFACE_ESD_TRANSFERRED_FLAG = CASE WHEN SOURCE_TYPE IN ('X3', 'E8') THEN 'D' ELSE '5' \r\n " +
+	                        "END, INTERFACE_ESD_TRANSFERRED_DATE = CASE WHEN SOURCE_TYPE IN ('X3', 'E8') THEN NULL ELSE SYSDATE END WHERE WO = ?";
+	    
+	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I07', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Sales I_07', sysdate, sysdate FROM dual";
 
-		String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?";
-		
+	    String sqlDeleteAllErrors = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?"; 
+	    
+	    String sqlDeleteErrorWithContract = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EXCEPTION_DETAIL = 'WO does not have Contract added'";
+
 	    String sqlCheckContract = "SELECT CONTRACT_NUMBER FROM CUSTOMER_ORDER_HEADER WHERE ORDER_NUMBER = ? ";
 
-		
-		try 
-			(PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
-			 PreparedStatement pstmt2 = con.prepareStatement(sqlReturn);
-			 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
-	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
-			 PreparedStatement psCheckContract = con.prepareStatement(sqlCheckContract)){
-			
-			if (request != null) {
-				
-				 // Check contract number
+	    
+	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
+	         PreparedStatement pstmt2 = con.prepareStatement(sqlReturn);
+	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
+	         PreparedStatement psDeleteAllErrors = con.prepareStatement(sqlDeleteAllErrors); 
+	         PreparedStatement psDeleteErrorWithContract = con.prepareStatement(sqlDeleteErrorWithContract);
+	         PreparedStatement psCheckContract = con.prepareStatement(sqlCheckContract)) {
+	        
+	        if (request != null) {
+	            
+	            // Check contract number
 	            psCheckContract.setString(1, request.getWO());
 	            ResultSet rs = psCheckContract.executeQuery();
 	            boolean hasContract = false;
@@ -129,19 +131,22 @@ public class Creation_Sales_Data {
 	                hasContract = (contractNumber != null && !contractNumber.isEmpty());
 	            }
 	            
+	            if (request.getRfoNO() != null && !request.getRfoNO().isEmpty()) {
+	                pstmt1.setString(2, request.getWO());
+	                pstmt1.setString(1, request.getRfoNO());
+	                pstmt1.executeUpdate();
+	            }
 	            
-				if(request.getRfoNO() != null && !request.getRfoNO().isEmpty()) {
-					pstmt1.setString(2, request.getWO());
-					pstmt1.setString(1, request.getRfoNO());
-					pstmt1.executeUpdate();
-				}
-				
-				// Handle error if ExceptionId is not 53 or contract does not exist
+	            
+	            psDeleteAllErrors.setString(1, request.getWO());
+	            psDeleteAllErrors.executeUpdate();  
+	            
+	         
 	            if (!hasContract) {
 	                executed = "WO: " + request.getWO() + ", Error Code: 51, Remarks: WO does not have Contract";
 	                Creation_Sales_Controller.addError(executed);
 
-	                // Insert error into interface_audit with hardcoded values
+	              
 	                psInsertError.setString(1, request.getWO());
 	                psInsertError.setString(2, "51");
 	                psInsertError.setString(3, "WO does not have Contract added ");
@@ -154,7 +159,7 @@ public class Creation_Sales_Data {
 	                executed = "WO: " + request.getWO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 	                Creation_Sales_Controller.addError(executed);
 
-	                // Insert error with provided details
+	              
 	                psInsertError.setString(1, request.getWO());
 	                psInsertError.setString(2, request.getExceptionId());
 	                psInsertError.setString(3, request.getExceptionDetail());
@@ -163,20 +168,21 @@ public class Creation_Sales_Data {
 	                pstmt2.setString(1, request.getWO());
 	                pstmt2.executeUpdate();
 	            } else {
-	                // Delete error if no issues
-	                psDeleteError.setString(1, request.getWO());
-	                psDeleteError.executeUpdate();
+	               
+	                if (hasContract) {
+	                    psDeleteErrorWithContract.setString(1, request.getWO());
+	                    psDeleteErrorWithContract.executeUpdate();
+	                }
 	            }
 	        }
-			
-		}catch (SQLException e) {
+	        
+	    } catch (SQLException e) {
 	        executed = e.toString();
 	        Creation_Sales_Controller.addError(executed);
 	        logger.severe(executed);
 	    } 
-		
-		
-		return executed;
+	    
+	    return executed;
 	}
 	
 	
