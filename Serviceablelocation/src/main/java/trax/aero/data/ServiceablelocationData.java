@@ -482,9 +482,14 @@ public class ServiceablelocationData implements IServiceablelocationData {
 				pstmt2.setString(3, response.getRfo());
 				pstmt2.executeQuery();
 				
-				setEQ_WORKCENTER(response, request);
-				setLEGACY_BATCH(response, request);
-
+				if(response.getEquipment() != null && !response.getEquipment().isEmpty()  &&
+						response.getWorkCenter() != null && !response.getWorkCenter().isEmpty() ) {
+					setEQ_WORKCENTER(response, request);
+				}
+				if(response.getLegacyBatch() != null && !response.getLegacyBatch().isEmpty()  &&
+						response.getSn() != null && !response.getSn().isEmpty() ) {
+					setLEGACY_BATCH(response, request);
+				}
 			}
 			catch (Exception e) 
 	        {
