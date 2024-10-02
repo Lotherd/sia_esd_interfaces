@@ -292,7 +292,11 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			try 
 			{	
 				logger.info("Marking RFO: " + response.getRfo());
-				pstmt2.setString(1, request.getCode());
+				if(response.getExceptionId().equalsIgnoreCase("53")) {
+					pstmt2.setString(1, request.getCode());
+				}else {
+					pstmt2.setString(1, "FIRST");
+				}
 				pstmt2.setString(2, response.getRfo());
 				pstmt2.executeQuery();
 			}
