@@ -98,7 +98,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 			
 			String sql = 
-			"select w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,afa.CERTIFIED_BY , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority, w.INTERFACE_CODE\r\n" + 
+			"select distinct w.rfo_no, wsd.pn,wsd.pn_sn,w.wo,afa.CERTIFIED_BY , w.INSPECTION_LOT_NUMBER, wsd.pn_condition , wap.authority, w.INTERFACE_CODE\r\n" + 
 			"from wo w\r\n" + 
 			"INNER JOIN wo_shop_detail wsd ON w.wo = wsd.wo\r\n" + 
 			"INNER JOIN system_tran_code s ON w.source_type = s.system_code \r\n" + 
@@ -376,49 +376,6 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			return 0;
 		}
 
-		private String getEmployee(MT_TRAX_RCV_I28_4134_RES response) {
-			System.out.println("Finding Employee");
-			PreparedStatement pstmt1 = null;
-			ResultSet rs1 = null;
-			try
-			{
-				String sql = ("select w.created_by from wo w " + 
-						"where w.rfo_no is not null  " + 
-						"and w.rfo_no = ?");
-				
-				pstmt1 = con.prepareStatement(sql);
-				pstmt1.setString(1, response.getRfo());
-				rs1 = pstmt1.executeQuery();
-
-				if (rs1 != null) 
-				{
-					while (rs1.next()) 
-					{
-						if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
-							return (rs1.getString(1));
-						}else {
-							return "ADM";
-						}
-					}
-				}	
-			}
-			catch (Exception e) 
-			{
-				e.printStackTrace();
-				return "ADM";
-			}finally {
-				try {
-					if(pstmt1 != null && !pstmt1.isClosed())
-						pstmt1.close();
-					if(rs1 != null && !rs1.isClosed())
-						rs1.close();
-				}catch (Exception e) {
-					// TODO: handle exception
-				}
-			}
-			return "ADM";
-		}
-		
 		private BigDecimal getSeqNo() 
 		{		
 			System.out.println("Finding next seq");
