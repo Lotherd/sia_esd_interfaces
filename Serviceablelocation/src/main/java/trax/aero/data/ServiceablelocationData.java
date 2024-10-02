@@ -212,8 +212,8 @@ public class ServiceablelocationData implements IServiceablelocationData {
 		
 		
 		private String getCode(String table,String list, String value) {
-			ArrayList<String> groups = new ArrayList<String>();
-			
+
+			String code= "";
 			String query = "", group = list;
 			if(table.contains("CONDITION")) {
 				query = " Select CODE FROM CONDITION_APPROVAL where CONDITION = ?";
@@ -237,16 +237,16 @@ public class ServiceablelocationData implements IServiceablelocationData {
 					{
 						if(rs1.getString(1) != null && !rs1.getString(1).isEmpty()) {
 						
-							groups.add(rs1.getString(1) );
+							code = (rs1.getString(1) );
 						}else {
-							groups.add("");
+							code = ("");
 						}
 					}
 				}
 				if(group.contains(",")) {
-					group = group +groups.get(0) ;
+					group = group +code ;
 				}else {
-					group = groups.get(0) +",";
+					group = code +",";
 				}
 				
 				
