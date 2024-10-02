@@ -243,13 +243,18 @@ public class ServiceablelocationData implements IServiceablelocationData {
 						}
 					}
 				}
-				group = groups.get(0) +","+groups.get(1);
+				if(group.contains(",")) {
+					group = group +groups.get(0) ;
+				}else {
+					group = groups.get(0) +",";
+				}
+				
 				
 				
 			}
 			catch (Exception e) 
 			{
-				logger.severe("An Exception occurred executing the query to get the site recipient. " + "\n error: " + e.toString());
+				e.printStackTrace();
 			}finally{
 				try {
 			
