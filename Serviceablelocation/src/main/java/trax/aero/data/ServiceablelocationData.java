@@ -329,7 +329,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 				
 					poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_print"
 							, "pn identification tag print"
-							, "ADM", getSeqNo(), ms_pn);
+							, request.getRelationCode(), getSeqNo(), ms_pn);
 					
 		}
 		
@@ -481,6 +481,10 @@ public class ServiceablelocationData implements IServiceablelocationData {
 				pstmt2.setString(2,"FIRST");
 				pstmt2.setString(3, response.getRfo());
 				pstmt2.executeQuery();
+				
+				setEQ_WORKCENTER(response, request);
+				setLEGACY_BATCH(response, request);
+
 			}
 			catch (Exception e) 
 	        {
@@ -497,6 +501,86 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			
 		}
 
+		
+		public void setEQ_WORKCENTER(MT_TRAX_RCV_I28_4134_RES response , MT_TRAX_SND_I28_4134_REQ request) throws Exception
+		{
+			/*
+			  <UD_SUCCESS xmlns=""></UD_SUCCESS>
+			  <EQUIPMENT xmlns="">string</EQUIPMENT>
+			  <WORKCENTER xmlns="">string</WORKCENTER>
+			  <LEGACY_BATCH xmlns="">string</LEGACY_BATCH>
+			 */
+			
+			
+			//setting up variables
+			exceuted = "OK";
+			
+			String sqlDate ="UPDATE WO SET EQUIPMENT = ? ,WORK_CENTER = ?   WHERE WO.rfo_no = ? AND WO.MODULE = 'SHOP'";
+			
+			PreparedStatement pstmt2 = null; 
+			pstmt2 = con.prepareStatement(sqlDate);
+			try 
+			{	
+				logger.info("Marking RFO: " + response.getRfo());
+				pstmt2.setString(1, response.getEquipment());
+				pstmt2.setString(2,response.getWorkCenter());
+				pstmt2.setString(3, response.getRfo());
+				pstmt2.executeQuery();
+			}
+			catch (Exception e) 
+	        {
+				ServiceablelocationController.addError(e.toString());
+				logger.severe(e.toString());
+	            exceuted = e.toString();
+	            throw new Exception("Issue found");
+			}finally {
+				
+				if(pstmt2 != null && !pstmt2.isClosed())
+					pstmt2.close();
+				
+			}
+			
+		}
+		
+		public void setLEGACY_BATCH(MT_TRAX_RCV_I28_4134_RES response , MT_TRAX_SND_I28_4134_REQ request) throws Exception
+		{
+			/*
+			  <UD_SUCCESS xmlns=""></UD_SUCCESS>
+			  <EQUIPMENT xmlns="">string</EQUIPMENT>
+			  <WORKCENTER xmlns="">string</WORKCENTER>
+			  <LEGACY_BATCH xmlns="">string</LEGACY_BATCH>
+			 */
+			
+			
+			//setting up variables
+			exceuted = "OK";
+			
+			String sqlDate ="UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ? WHERE PN = ? AND SN = ? ";
+			
+			PreparedStatement pstmt2 = null; 
+			pstmt2 = con.prepareStatement(sqlDate);
+			try 
+			{	
+				logger.info("Marking RFO: " + response.getRfo());
+				pstmt2.setString(1, response.getLegacyBatch());
+				pstmt2.setString(2,response.getPn());
+				pstmt2.setString(3, response.getSn());
+				pstmt2.executeQuery();
+			}
+			catch (Exception e) 
+	        {
+				ServiceablelocationController.addError(e.toString());
+				logger.severe(e.toString());
+	            exceuted = e.toString();
+	            throw new Exception("Issue found");
+			}finally {
+				
+				if(pstmt2 != null && !pstmt2.isClosed())
+					pstmt2.close();
+				
+			}
+			
+		}
 		
 		public void setComplete(MT_TRAX_RCV_I28_4134_RES response) throws Exception
 		{
