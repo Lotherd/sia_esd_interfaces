@@ -20,14 +20,12 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
 import org.apache.commons.io.IOUtils;
-import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
 
 import trax.aero.controller.ServiceablelocationController;
 import trax.aero.data.ServiceablelocationData;
 import trax.aero.interfaces.IServiceablelocationData;
 import trax.aero.logger.LogManager;
 import trax.aero.pojo.MT_TRAX_RCV_I28_4134_RES;
-import trax.aero.pojo.MultipartBody;
 
 
 
@@ -58,11 +56,11 @@ public class Service {
 			logger.info("Input: " + sw.toString());
 			data.openCon();
 			if(response.getExceptionId().equalsIgnoreCase("53")) {
-				data.markTransaction(response);
-				data.setInspLot(response);
-				data.printLabel(response);
+				data.markTransaction(response, null);
+				data.setInspLot(response, null);
+				data.printLabel(response, null);
 			}else {
-				data.markTransaction(response);
+				data.markTransaction(response, null);
 				data.setComplete(response);
 				exceuted = ("RFO: " +  response.getRfo()
 				+ ", Date: " + new Date().toString()  + ", SHOP WO: " +response.getWo()    );
@@ -110,53 +108,7 @@ public class Service {
     }
 	
 	
-	@POST
-	@Path("/printFile")
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	public Response  CarryForwardPrint(
-			@MultipartForm MultipartBody body)
-	{
-		String fianl = "{\n\"status\": \"OK\", \n\"statusCode\": \"200\"\n}";
-		String exceuted = "OK";
-		try 
-        {   
-			
-	           	logger.info("Input: " + body.json.toString());
-	          
-	           	
-	        	exceuted = data.print(body.json.getWo(), body.json.getTask_card(), IOUtils.toByteArray(body.file),
-	        			body.json.getForm_No(), body.json.getForm_Line());
-	        	
-	        
-        	
-        	
-        	if(exceuted == null || !exceuted.equalsIgnoreCase("OK")) {
-        		exceuted = "Issue found";
-        		throw new Exception("Issue found");
-        	}else {
-        		exceuted = fianl;
-        	}
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-       finally 
-       {   
-    	   try 
-			{
-				if(data.getCon() != null && !data.getCon().isClosed())
-					data.getCon().close();
-			} 
-			catch (SQLException e) 
-			{ 
-				exceuted = e.toString();
-			}
-    	   logger.info("finishing");
-       }
-        
-	   return Response.ok(exceuted,MediaType.APPLICATION_JSON).build();
-	}
+	
 	
 	
 	
