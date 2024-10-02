@@ -22,7 +22,7 @@ import javax.annotation.PreDestroy;
 public class Start
 {
 	
-	Logger logger = LogManager.getLogger("DowngradeLoop_I94");
+	Logger logger = LogManager.getLogger("Serviceablelocation_I28");
 
 	private ScheduledExecutorService scheduledServ;
 	Run timer = null;
