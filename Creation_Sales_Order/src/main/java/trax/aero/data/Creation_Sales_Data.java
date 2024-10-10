@@ -33,67 +33,82 @@ import trax.aero.utils.DataSourceClient;
 import trax.aero.utils.ErrorType;
 
 public class Creation_Sales_Data {
-	
-	EntityManagerFactory factory;
-	EntityManager em;
-	String executed;
-	private Connection con;
-	
-	final String MaxRecord = System.getProperty("Creation_Sales_MaxRecord");
+    EntityManagerFactory factory;
+    EntityManager em;
+    String executed;
+    private Connection con;
+
+    final String MaxRecord = System.getProperty("Creation_Sales_MaxRecord");
 	Logger logger = LogManager.getLogger("CreationSales");
-	
-	public Creation_Sales_Data(String mark) {
-		try {
-			if(this.con == null || this.con.isClosed()) {
-				this.con = DataSourceClient.getConnection();
-				logger.info("The connection was stablished successfully with status: " +String.valueOf(!this.con.isClosed()));
-			}
-		} catch(SQLException e) {
-			logger.severe("An error ocurred getting the status of the connection");
-			Creation_Sales_Controller.addError(e.toString());
-		} catch(CustomizeHandledException e1) {
-			Creation_Sales_Controller.addError(e1.toString());
-		} catch(Exception e) {
-			Creation_Sales_Controller.addError(e.toString());
-		}
-		
-	}
-	
-	public Creation_Sales_Data() {
-		try {
-			if(this.con == null || this.con.isClosed()) {
-				this.con = DataSourceClient.getConnection();
-				logger.info("The connection was stablished successfully with status: " + String.valueOf(!this.con.isClosed()));
-			}
-		} catch (SQLException e) {
-		      logger.severe("An error occured getting the status of the connection");
-		      Creation_Sales_Controller.addError(e.toString());
-		    } catch (CustomizeHandledException e1) {
-		      Creation_Sales_Controller.addError(e1.toString());
-		    } catch (Exception e) {
-		      Creation_Sales_Controller.addError(e.toString());
-		    }
-		factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
-		em = factory.createEntityManager();
-	}
-	
-	public Connection getCon() {
-		return con;
-	}
-	
-	public String markSendData() throws JAXBException {
-		INT7_TRAX request = new INT7_TRAX();
-		  try {
-		        markTransaction(request);
-		        logger.info("markTransaction completed successfully.");
-		        return "OK";
-		    } catch (Exception e) {
-		    	logger.log(Level.SEVERE, "Error executing markTransaction", e);
-		    	e.printStackTrace();
-		        return null; 
-		    }
-	}
-	
+
+    public Creation_Sales_Data(String mark) {
+        try {
+            if (this.con == null || this.con.isClosed()) {
+                this.con = DataSourceClient.getConnection();
+                logger.info("The connection was established successfully with status: " + String.valueOf(!this.con.isClosed()));
+            }
+        } catch (SQLException e) {
+        	logger.severe("An error ocurred getting the status of the connection");
+            Creation_Sales_Controller.addError(e.toString());
+        } catch (CustomizeHandledException e1) {
+            Creation_Sales_Controller.addError(e1.toString());
+        } catch (Exception e) {
+            Creation_Sales_Controller.addError(e.toString());
+        }
+    }
+
+    public Creation_Sales_Data() {
+        try {
+            if (this.con == null || this.con.isClosed()) {
+                this.con = DataSourceClient.getConnection();
+                logger.info("The connection was established successfully with status: " + String.valueOf(!this.con.isClosed()));
+            }
+        } catch (SQLException e) {
+        	logger.severe("An error occurred getting the status of the connection");
+            Creation_Sales_Controller.addError(e.toString());
+        } catch (CustomizeHandledException e1) {
+            Creation_Sales_Controller.addError(e1.toString());
+        } catch (Exception e) {
+            Creation_Sales_Controller.addError(e.toString());
+        }
+        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+        em = factory.createEntityManager();
+    }
+
+    public Connection getCon() {
+        return con;
+    }
+    
+    private BigDecimal getTransactionNo(String code) {
+        BigDecimal acctBal = null;
+        String sql = "SELECT pkg_application_function.config_number (?) FROM DUAL";
+        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+            pstmt.setString(1, code);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    acctBal = rs.getBigDecimal(1);
+                } else {
+                    logger.severe("The sequence number returned from pkg_application_function.config_number is null for code: " + code);
+                }
+            }
+        } catch (SQLException e) {
+            logger.severe("An unexpected SQL error occurred getting the sequence for code: " + code + ". Exception details: " + e.getMessage());
+        }
+        return acctBal;
+    }
+
+    public String markSendData() throws JAXBException {
+        INT7_TRAX request = new INT7_TRAX();
+        try {
+            markTransaction(request);
+            logger.info("markTransaction completed successfully.");
+            return "OK";
+        } catch (Exception e) {
+            logger.severe("Error executing markTransaction");
+            return null;
+        }
+    }
+
 	public String markTransaction(INT7_TRAX request) {
 	    executed = "OK";
 	    
@@ -105,11 +120,14 @@ public class Creation_Sales_Data {
 	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I07', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Sales I_07', sysdate, sysdate FROM dual";
 
-	    String sqlDeleteAllErrors = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ?"; 
+	    String sqlDeleteAllErrors = "DELETE interface_audit WHERE ORDER_NUMBER = ? "; 
 	    
-	    String sqlDeleteErrorWithContract = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EXCEPTION_DETAIL = 'WO does not have Contract added'";
+	    String sqlDeleteErrorWithContract = "DELETE interface_audit WHERE ORDER_NUMBER = ? AND EXCEPTION_DETAIL = 'WO does not have Contract added' ";
 
 	    String sqlCheckContract = "SELECT CONTRACT_NUMBER FROM CUSTOMER_ORDER_HEADER WHERE ORDER_NUMBER = ? ";
+	    
+	    String sqlInitialLoad = "SELECT PN, PN_SN FROM WO_SHOP_DETAIL WHERE WO = ?";
+        String sqlInitialLoad2 = "SELECT LOCATION FROM WO WHERE WO = ?";
 
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
@@ -117,7 +135,9 @@ public class Creation_Sales_Data {
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteAllErrors = con.prepareStatement(sqlDeleteAllErrors); 
 	         PreparedStatement psDeleteErrorWithContract = con.prepareStatement(sqlDeleteErrorWithContract);
-	         PreparedStatement psCheckContract = con.prepareStatement(sqlCheckContract)) {
+	         PreparedStatement psCheckContract = con.prepareStatement(sqlCheckContract);
+	    	 PreparedStatement psInitialLoad = con.prepareStatement(sqlInitialLoad);
+	         PreparedStatement psInitialLoad2 = con.prepareStatement(sqlInitialLoad2)) {
 	        
 	        if (request != null) {
 	            
@@ -135,11 +155,75 @@ public class Creation_Sales_Data {
 	                pstmt1.setString(2, request.getWO());
 	                pstmt1.setString(1, request.getRfoNO());
 	                pstmt1.executeUpdate();
+	                
+	                logger.info("Performing initial load for WO: " + request.getWO());
+                    psInitialLoad.setString(1, request.getWO());
+                    try (ResultSet rsInitialLoad = psInitialLoad.executeQuery()) {
+                        if (rsInitialLoad.next()) {
+                            String pn = rsInitialLoad.getString("PN");
+                            String sn = rsInitialLoad.getString("PN_SN");
+
+                            psInitialLoad2.setString(1, request.getWO());
+                            try (ResultSet rsInitialLoad2 = psInitialLoad2.executeQuery()) {
+                                if (rsInitialLoad2.next()) {
+                                    String location = rsInitialLoad2.getString("LOCATION");
+
+                                    BigDecimal initialBatchVal = getTransactionNo("BATCH");
+                                    if (initialBatchVal == null) {
+                                        executed = "Failed to retrieve initial batch for WO: " + request.getWO();
+                                        Creation_Sales_Controller.addError(executed);
+                                        logger.severe("Batch retrieval failed for WO: " + request.getWO());
+                                        return executed;
+                                    }
+                                    long initialBatch = initialBatchVal.longValue();
+                                    long goodsReceivedBatch = initialBatch;
+                                    long batch = initialBatch;
+
+                                    logger.info("Inserting into pn_inventory_detail for PN: " + pn + ", SN: " + sn);
+                                    String insertInventoryDetail = "INSERT INTO pn_inventory_detail (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, QTY_AVAILABLE) VALUES (?, ?, ?, ?, ?, ?)";
+                                    try (PreparedStatement pstmtInsertDetail = con.prepareStatement(insertInventoryDetail)) {
+                                        pstmtInsertDetail.setString(1, pn);
+                                        pstmtInsertDetail.setString(2, sn);
+                                        pstmtInsertDetail.setString(3, location);
+                                        pstmtInsertDetail.setLong(4, batch);
+                                        pstmtInsertDetail.setLong(5, goodsReceivedBatch);
+                                        pstmtInsertDetail.setInt(6, 10); // Cantidad disponible
+                                        pstmtInsertDetail.executeUpdate();
+                                    }
+
+                                    BigDecimal transactionVal = getTransactionNo("PNINVHIS");
+                                    if (transactionVal == null) {
+                                        executed = "Failed to retrieve transaction number for WO: " + request.getWO();
+                                        Creation_Sales_Controller.addError(executed);
+                                        logger.severe("Transaction number retrieval failed for WO: " + request.getWO());
+                                        return executed;
+                                    }
+                                    long transactionNo = transactionVal.longValue();
+
+                                    logger.info("Inserting into pn_inventory_history for PN: " + pn + ", SN: " + sn);
+                                    String insertInventoryHistory = "INSERT INTO pn_inventory_history (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, TRANSACTION_NO, WO, TRANSACTION_TYPE, TRANSACTION_DATE) VALUES (?, ?, ?, ?, ?, ?, ?, 'INITIAL_LOAD', SYSDATE)";
+                                    try (PreparedStatement pstmtInsertHistory = con.prepareStatement(insertInventoryHistory)) {
+                                        pstmtInsertHistory.setString(1, pn);
+                                        pstmtInsertHistory.setString(2, sn);
+                                        pstmtInsertHistory.setString(3, location);
+                                        pstmtInsertHistory.setLong(4, batch);
+                                        pstmtInsertHistory.setLong(5, goodsReceivedBatch);
+                                        pstmtInsertHistory.setLong(6, transactionNo);
+                                        pstmtInsertHistory.setString(7, request.getWO());
+                                        pstmtInsertHistory.executeUpdate();
+                                    }
+                                }
+                            }
+                        }
+                    }
+	                
+	                
 	            }
 	            
-	            
-	            psDeleteAllErrors.setString(1, request.getWO());
-	            psDeleteAllErrors.executeUpdate();  
+	            logger.info("Deleting all errors for WO: " + request.getWO());
+                psDeleteAllErrors.setString(1, request.getWO());
+                int rowsDeleted = psDeleteAllErrors.executeUpdate();
+                logger.info("Number of records deleted for WO " + request.getWO() + ": " + rowsDeleted);
 	            
 	         
 	            if (!hasContract) {
@@ -177,14 +261,17 @@ public class Creation_Sales_Data {
 	        }
 	        
 	    } catch (SQLException e) {
-	        executed = e.toString();
-	        Creation_Sales_Controller.addError(executed);
-	        logger.severe(executed);
-	    } 
+            executed = "SQL Error in markTransaction: " + e.getMessage();
+            Creation_Sales_Controller.addError(executed);
+            logger.severe("SQL Error in markTransaction: " + e.getMessage());
+        } catch (Exception e) {
+            executed = "Unexpected Error in markTransaction: " + e.getMessage();
+            Creation_Sales_Controller.addError(executed);
+            logger.severe("Unexpected error occurred in markTransaction: " + e.getMessage());
+        }
 	    
 	    return executed;
 	}
-	
 	
 	public ArrayList<INT7_SND> getWorkOrder() throws Exception {
 	    executed = "OK";
