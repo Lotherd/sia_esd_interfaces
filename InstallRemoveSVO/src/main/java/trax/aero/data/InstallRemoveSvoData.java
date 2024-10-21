@@ -349,16 +349,34 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 						Inbound.setRemovalReason("");
 					}
 					
+					//For Removal (NLA/REMOVE or NLA/INSPECT) If SN is blank but SN_SAP is not null, SN_SAP to be appended to Removal Reason needs to be sent to the SAP as Removal Reason
+					if(( Inbound.getPnSn().isEmpty() ||Inbound.getPnSn() == null ) &&
+							(Inbound.getEsnNo() != null && !Inbound.getEsnNo().isEmpty() ) &&
+						 (rs1.getString(9).contains("REMOV") || rs1.getString(9).contains("INSPECT"))	) {
+						Inbound.setRemovalReason(Inbound.getRemovalReason() + " " +Inbound.getEsnNo());
+					}
+					
+					
 					if(rs1.getString(11) != null && !rs1.getString(11).isEmpty()) {
-						if(rs1.getString(11).length() > 8) { 
-							Inbound.setNotes(rs1.getString(11).substring(0, 8));
+						if( rs1.getString(9).contains("INSTAL") ) {
+							Inbound.setNotes(rs1.getString(11) + " " +Inbound.getEsnNo());
 						}else {
 							Inbound.setNotes(rs1.getString(11));
+						}
+						
+						if(System.getProperty("SAP_NOTES") != null && Inbound.getNotes().length() > Integer.valueOf( System.getProperty("SAP_NOTES"))) {
+							Inbound.setNotes(Inbound.getNotes().substring(0,Integer.valueOf( System.getProperty("SAP_NOTES"))));							
+						}else if(Inbound.getNotes().length() > 8) { 
+							Inbound.setNotes(Inbound.getNotes().substring(0, 8));
+						}else {
+							Inbound.setNotes(Inbound.getNotes());
 						}
 					}
 					else {
 						Inbound.setNotes("");
 					}
+					
+					
 					
 					if(rs1.getString(12) != null && !rs1.getString(12).isEmpty()) {
 						Inbound.setCustomer(rs1.getString(12));
