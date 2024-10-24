@@ -109,11 +109,23 @@ public class ManHours_Item_Data {
 	    String sqlDate = "UPDATE WO SET INTERFACE_ESD_TRANSFERRED_DATE = SYSDATE WHERE WO = ?";
 	    
 	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-	            + "VALUES (?, 'ERROR', 'I31', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'ManHours_Item I_31', sysdate, sysdate)";
+	            + "VALUES (?, 'ERROR', 'I14_18', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'ManHours_Item I_14_18', sysdate, sysdate)";
 	    
 	    String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ? ";
 	    
-	    String sqlunMark = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = null WHERE WO = ? and TASK_CARD = ?";
+	    String sqlunMark = "UPDATE WO_TASK_CARD " +
+                "SET INTERFACE_SAP_TRANSFERRED_FLAG = " +
+                "CASE " +
+                "    WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'R' THEN NULL " +
+                "    WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' THEN 'R' " +
+                "END, " +
+                "INTERFACE_STEP = " +
+                "CASE " +
+                "    WHEN INTERFACE_STEP = '1' THEN NULL " +
+                "    WHEN INTERFACE_STEP = 'D' THEN '1' " +
+                "END " +
+                "WHERE WO = ? " +
+                "AND TASK_CARD = ?";
 	    
 	    
 	    
