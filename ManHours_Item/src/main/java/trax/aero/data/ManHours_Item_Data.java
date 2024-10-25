@@ -127,11 +127,19 @@ public class ManHours_Item_Data {
                 "WHERE WO = ? " +
                 "AND TASK_CARD = ?";
 	    
+	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = CASE WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' THEN 'R' END, "
+	    		+ "INTERFACE_STEP = CASE WHEN INTERFACE_STEP = 'D' THEN '1' END WHERE WO = ? AND TASK_CARD = ?";
+
 	    
+	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = CASE WHEN INVOICED_FLAG = 'Y' THEN null END, CHECKED = CASE WHEN CHECKED = 'Y' THEN null END"
+	    		+ " WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR'";
+
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlDate);
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
+	    	 PreparedStatement pstmt2 = con.prepareStatement(updateWoTaskCardSql);
+	    	 PreparedStatement pstmt3 = con.prepareStatement(updateWoActualsSql);
 	         PreparedStatement ps1 = con.prepareStatement(sqlunMark)){
 	        
 	    	for(Operation_TRAX o : request.getOperation()) {
@@ -139,6 +147,14 @@ public class ManHours_Item_Data {
 	            if(request.getRFO() != null && !request.getRFO().isEmpty()) {
 	                pstmt1.setString(1, request.getWO_number());
 	                pstmt1.executeUpdate();
+	                
+	                pstmt2.setString(1, request.getWO_number());
+	                pstmt2.setString(2, o.getTASK_CARD());
+	                pstmt2.executeUpdate();
+	                
+	                pstmt3.setString(1, request.getWO_number());
+	                pstmt3.setString(2, o.getTASK_CARD());
+	                pstmt3.executeUpdate();
 	            }
 	            
 	            String errorCode = request.getError_code();
