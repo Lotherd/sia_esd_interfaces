@@ -151,7 +151,7 @@ public class Creation_Sales_Data {
 	                hasContract = (contractNumber != null && !contractNumber.isEmpty());
 	            }
 	            
-	            if (request.getRfoNO() != null && !request.getRfoNO().isEmpty()) {
+	            if (request.getRfoNO() != null && !request.getRfoNO().isEmpty() && request.getExceptionId() != null && request.getExceptionId().equalsIgnoreCase("53")) {
 	                pstmt1.setString(2, request.getWO());
 	                pstmt1.setString(1, request.getRfoNO());
 	                pstmt1.executeUpdate();
