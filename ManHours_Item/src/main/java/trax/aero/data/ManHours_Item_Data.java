@@ -40,6 +40,7 @@ import trax.aero.pojo.OpsLineEmail;
 import trax.aero.utils.DataSourceClient;
 import trax.aero.utils.ErrorType;
 
+
 public class ManHours_Item_Data {
 	
 	EntityManagerFactory factory;
@@ -127,12 +128,10 @@ public class ManHours_Item_Data {
                 "WHERE WO = ? " +
                 "AND TASK_CARD = ?";
 	    
-	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = CASE WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' THEN 'R' END, "
-	    		+ "INTERFACE_STEP = CASE WHEN INTERFACE_STEP = 'D' THEN '1' END WHERE WO = ? AND TASK_CARD = ?";
+	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = CASE WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' THEN 'R' END, INTERFACE_STEP = CASE WHEN INTERFACE_STEP = 'D' THEN '1' END WHERE WO = ? AND TASK_CARD = ?";
 
 	    
-	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = CASE WHEN INVOICED_FLAG = 'Y' THEN null END, CHECKED = CASE WHEN CHECKED = 'Y' THEN null END"
-	    		+ " WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR'";
+	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = CASE WHEN INVOICED_FLAG = 'Y' THEN 'N' END, CHECKED = CASE WHEN CHECKED = 'Y' THEN 'N' END WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR'";
 
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlDate);
@@ -331,8 +330,9 @@ public class ManHours_Item_Data {
 	    String sqlMark = "UPDATE WO_TASK_CARD " +
                 "SET INTERFACE_SAP_TRANSFERRED_FLAG = " +
                 "    CASE " +
-                "        WHEN INTERFACE_STEP IS NULL THEN 'R' " +
-                "        WHEN INTERFACE_STEP = '1' THEN 'Y' " +
+                "        WHEN INTERFACE_SAP_TRANSFERRED_FLAG IS NULL THEN 'R' " +
+                "        WHEN INTERFACE_SAP_TRANSFERRED_FLAG = '3' THEN 'R' " +
+                "        WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'R' THEN 'Y' " +
                 "    END, " +
                 "    INTERFACE_STEP = " +
                 "    CASE " +
