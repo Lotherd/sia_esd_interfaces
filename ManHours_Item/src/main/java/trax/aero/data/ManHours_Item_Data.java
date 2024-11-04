@@ -128,10 +128,12 @@ public class ManHours_Item_Data {
                 "WHERE WO = ? " +
                 "AND TASK_CARD = ?";
 	    
-	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = CASE WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' THEN 'R' END, INTERFACE_STEP = CASE WHEN INTERFACE_STEP = 'D' THEN '1' END WHERE WO = ? AND TASK_CARD = ?";
+	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = 'R', INTERFACE_STEP = '1' " +
+                "WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D'";
 
 	    
-	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = CASE WHEN INVOICED_FLAG = 'Y' THEN 'N' END, CHECKED = CASE WHEN CHECKED = 'Y' THEN 'N' END WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR'";
+	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N', CHECKED = 'N' " +
+                "WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR' AND INVOICED_FLAG = 'Y' AND CHECKED = 'Y' ";
 
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlDate);
