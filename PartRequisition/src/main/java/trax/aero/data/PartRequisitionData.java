@@ -520,32 +520,13 @@ public class PartRequisitionData implements IPartRequisitionData {
 	
 	private String getEmail(MT_TRAX_RCV_I21_4121_RES reqs) {
 	    System.out.println("Finding Email");
-	    String wo = null;
-	    try {
-	        // First query to get WO from ORDER_DETAIL table
-	        String sql0 = "SELECT WO FROM ORDER_DETAIL WHERE ORDER_NUMBER = ?";
-	        Query query0 = em.createNativeQuery(sql0);
-	        query0.setParameter(1, reqs.getTrax_repair_order());
-	        wo = (String) query0.getSingleResult();
-	    } catch (NoResultException e) {
-	        // Return null if WO is not found
-	        return null;
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	        return null;
-	    }
-
-	    if (wo == null || wo.isEmpty()) {
-	        return null;
-	    }
-
 	    String createdBy = null;
 	    try {
-	        // Second query to get CREATED_BY from WO table
-	        String sql1 = "SELECT CREATED_BY FROM WO WHERE WO = ?";
-	        Query query1 = em.createNativeQuery(sql1);
-	        query1.setParameter(1, wo);
-	        createdBy = (String) query1.getSingleResult();
+	        // First query to get CREATED_BY from ORDER_HEADER table
+	        String sql0 = "SELECT CREATED_BY FROM ORDER_HEADER WHERE ORDER_NUMBER = ?";
+	        Query query0 = em.createNativeQuery(sql0);
+	        query0.setParameter(1, reqs.getTrax_repair_order());
+	        createdBy = (String) query0.getSingleResult();
 	    } catch (NoResultException e) {
 	        // Return null if CREATED_BY is not found
 	        return null;
@@ -558,7 +539,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 	        return null;
 	    }
 
-	    // Third query to get the email using CREATED_BY
+	    // Query to get the email using AUTHORIZATION_BY
 	    String email = null;
 	    try {
 	        String sql2 = "SELECT PKG_LDAP_AUTHENTICATION.GF_OPEN_ITEM(rm.mail_email, 'FROM') AS EMAIL " +
@@ -580,6 +561,7 @@ public class PartRequisitionData implements IPartRequisitionData {
 	        return null;
 	    }
 	}
+
 
 	
 }
