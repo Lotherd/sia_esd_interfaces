@@ -162,8 +162,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				pnInventoryDetail = getPnInventoryDetail(input,picklistHeader);
 						
 			
-				if( picklistDistributionDIS.getQty().doubleValue() > pnInventoryDetail.getQtyAvailable().doubleValue() ) {
-					throw new Exception("QTY requested is more than QTY available");
+				if( picklistDistributionDIS.getQty().doubleValue() > pnInventoryDetail.getQtyReserved().doubleValue() ) {
+					throw new Exception("QTY requested is more than QTY reserved");
 				}
 				
 				pnInventoryDetail.setModifiedBy("TRAX_IFACE");
