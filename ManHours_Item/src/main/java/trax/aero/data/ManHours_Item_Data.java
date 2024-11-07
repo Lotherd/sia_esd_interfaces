@@ -134,14 +134,19 @@ public class ManHours_Item_Data {
 	    
 	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N', CHECKED = 'N' " +
                 "WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR' AND INVOICED_FLAG = 'Y' AND CHECKED = 'Y' ";
+	    
+	    String selectTransaction = "select wo_actual_transaction from WO_ACTUALS where wo = ? and  task_card = ? and trasaction_category = 'LABOR' ";
 
+	    String updateWOActualsTEMP ="UPDATE wo_actuals_material_temp set checked = 'N', INVOICED_FLAG = 'N' where WO = ? and wo_actual_transaction = ? ";
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlDate);
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 	    	 PreparedStatement pstmt2 = con.prepareStatement(updateWoTaskCardSql);
 	    	 PreparedStatement pstmt3 = con.prepareStatement(updateWoActualsSql);
-	         PreparedStatement ps1 = con.prepareStatement(sqlunMark)){
+	         PreparedStatement ps1 = con.prepareStatement(sqlunMark);
+	    	 PreparedStatement ps2 = con.prepareStatement(selectTransaction);
+	    	 PreparedStatement ps3 = con.prepareStatement(updateWOActualsTEMP)){
 	        
 	    	for(Operation_TRAX o : request.getOperation()) {
 	        if (request != null) {
@@ -156,6 +161,19 @@ public class ManHours_Item_Data {
 	                pstmt3.setString(1, request.getWO_number());
 	                pstmt3.setString(2, o.getTASK_CARD());
 	                pstmt3.executeUpdate();
+	                
+	                ps2.setString(1, request.getWO_number());
+	                ps2.setString(2, o.getTASK_CARD());
+	                ResultSet rs = ps2.executeQuery();
+	                
+	                while (rs.next()) {
+	                    String transaction = rs.getString("wo_actual_transaction");
+	                    if (transaction != null && !transaction.isEmpty()) {
+	                        ps3.setString(1, request.getWO_number());
+	                        ps3.setString(2, transaction);
+	                        ps3.executeUpdate();
+	                    }
+	                }
 	            }
 	            
 	            String errorCode = request.getError_code();
