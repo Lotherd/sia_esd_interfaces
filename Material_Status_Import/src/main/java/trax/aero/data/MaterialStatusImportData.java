@@ -202,7 +202,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				picklistDistributionREQ.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
-				setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
+				PnInventoryHistory pih = setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
 
 				
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
@@ -813,7 +813,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				blob = em.createQuery("SELECT b FROM BlobTable b where b.id.blobNo = :bl and b.blobDescription = :des and b.customDescription = :cus", BlobTable.class)
 						.setParameter("bl", woTaskCard.getBlobNo().longValue())
 						.setParameter("des",fileName )
-						.setParameter("cus","SHAREPOINT" )
+						.setParameter("cus","MAT_DOCS" )
 						.getSingleResult();
 				
 			}
@@ -844,14 +844,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			}
 			
 			
-			blob.setDocType("SHAREPOINT");
+			blob.setDocType("MAT_DOCS");
 			
 			
 			blob.setModifiedBy("TRAX_IFACE");
 			blob.setModifiedDate(new Date());
 			blob.setBlobItem(file);
 			blob.setBlobDescription(fileName);
-			blob.setCustomDescription("SHAREPOINT");
+			blob.setCustomDescription("MAT_DOCS");
 			
 			
 			
