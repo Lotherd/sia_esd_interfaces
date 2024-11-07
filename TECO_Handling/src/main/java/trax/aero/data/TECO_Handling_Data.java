@@ -106,297 +106,297 @@ public class TECO_Handling_Data {
 	
 private static Map<String, Integer> attemptCounts = new HashMap<>();
 	
-	public String markTransaction(INT15_TRAX request) {
-	    String executed = "OK";
-	    
-	    
-	    
-	    String sqlUpdate = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE WHERE WO = ?";
-	    String revert = "UPDATE WO SET STATUS = ? WHERE wo = ? ";
-	    String STATUS = "SELECT STATUS FROM WO WHERE WO = ? ";
-	    String sqlPrevStatus  = "SELECT WA1.STATUS " +
-                "FROM WO_AUDIT WA1 " +
-                "WHERE WA1.WO = ? " +
-                "AND WA1.MODIFIED_DATE < ( " +
-                "    SELECT MAX(WA2.MODIFIED_DATE) " +
-                "    FROM WO_AUDIT WA2 " +
-                "    WHERE WA2.WO = ? " +
-                ") " +
-                "AND WA1.STATUS != ( " +
-                "    SELECT WA3.STATUS " +
-                "    FROM WO_AUDIT WA3 " +
-                "    WHERE WA3.WO = ? " +
-                "    ORDER BY WA3.MODIFIED_DATE DESC " +
-                "    FETCH FIRST 1 ROWS ONLY " +
-                ") " +
-                "ORDER BY WA1.MODIFIED_DATE DESC " +
-                "FETCH FIRST 1 ROWS ONLY";
-	    
-	    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-	            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I15', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'TECO_Handling I_15', sysdate, sysdate FROM dual";
-	    
-	    String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ? ";
-	     
-	    String sqlMark2 = "UPDATE WO SET INTERFACE_TECO_FLAG = CASE " +
-	            "WHEN STATUS IN ('CLOSED') THEN 'D' " +
-	            "WHEN STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL THEN 'Y' " +
-	            "END " +
-	            "WHERE WO = ? " +
-	            "AND ((STATUS IN ('CLOSED', 'CANCEL')) OR (STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL)) ";
-	    
-	   String sqlMARK2 = "UPDATE PN_INVENTORY_HISTORY ATH " +
-	             "SET ATH.INTERFACE_TECO_FLAG = (" +
-	             "    SELECT CASE " +
-	             "        WHEN W.STATUS IN ('CLOSED') THEN 'D' " +
-	             "        WHEN W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL THEN 'Y' " +
-	             "    END " +
-	             "    FROM WO W " +
-	             "    WHERE W.WO = ATH.WO " +
-	             "    AND W.WO = ? " +
-	             "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
-	             ") " +
-	             "WHERE EXISTS (" +
-	             "    SELECT 1 " +
-	             "    FROM WO W " +
-	             "    WHERE W.WO = ATH.WO " +
-	             "    AND W.WO = ? " +
-	             "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
-	             ")";
-	    
-	    String sqlMark3 = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG_TECO = NULL WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ? ";
-	    
-	    
-	    String svocheck = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
-	    
-	    String sqlHistoryMark = "UPDATE PN_INVENTORY_HISTORY SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ? ";
-	    
-	    String sqlMArk2 = "UPDATE WO_TASK_CARD " +
-	    	    "SET SVO_SENT = 'Y' " +
-	    	    "WHERE WO = ? " +
-	    	    "AND TASK_CARD = ? " +
-	    	    "AND NOT EXISTS ( " +
-	    	    "    SELECT 1 " +
-	    	    "    FROM PN_INVENTORY_HISTORY " +
-	    	    "    WHERE WO = WO_TASK_CARD.WO " +
-	    	    "    AND TASK_CARD = WO_TASK_CARD.TASK_CARD " +
-	    	    "    AND (SVO_SENT IS NULL OR SVO_SENT <> 'Y') " +
-	    	    ")";
-	    
-	    String sqlmarksvo = "UPDATE WO SET SVO_USED = NULL WHERE WO = ? AND NOT EXISTS (SELECT 1 FROM WO_TASK_CARD WHERE WO = WO.WO AND SVO_SENT <> 'Y') ";
+public String markTransaction(INT15_TRAX request) {
+	String executed = "OK";
+	
+	
+	
+	String updateInventoryHistorySQL  = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE WHERE WO = ?";
+	String revertWOStatusSQL  = "UPDATE WO SET STATUS = ? WHERE wo = ? ";
+	String selectCurrentWOStatusSQL  = "SELECT STATUS FROM WO WHERE WO = ? ";
+	String selectPreviousWOStatusSQL   = "SELECT WA1.STATUS " +
+			"FROM WO_AUDIT WA1 " +
+			"WHERE WA1.WO = ? " +
+			"AND WA1.MODIFIED_DATE < ( " +
+			"    SELECT MAX(WA2.MODIFIED_DATE) " +
+			"    FROM WO_AUDIT WA2 " +
+			"    WHERE WA2.WO = ? " +
+			") " +
+			"AND WA1.STATUS != ( " +
+			"    SELECT WA3.STATUS " +
+			"    FROM WO_AUDIT WA3 " +
+			"    WHERE WA3.WO = ? " +
+			"    ORDER BY WA3.MODIFIED_DATE DESC " +
+			"    FETCH FIRST 1 ROWS ONLY " +
+			") " +
+			"ORDER BY WA1.MODIFIED_DATE DESC " +
+			"FETCH FIRST 1 ROWS ONLY";
+	
+	String insertErrorSQL  = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+			+ "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I15', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'TECO_Handling I_15', sysdate, sysdate FROM dual";
+	
+	String deleteErrorSQL  = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ? ";
+	 
+	String updateWOForTecoSQL  = "UPDATE WO SET INTERFACE_TECO_FLAG = CASE " +
+			"WHEN STATUS IN ('CLOSED') THEN 'D' " +
+			"WHEN STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL THEN 'Y' " +
+			"END " +
+			"WHERE WO = ? " +
+			"AND ((STATUS IN ('CLOSED', 'CANCEL')) OR (STATUS = 'OPEN' AND REOPEN_REASON IS NOT NULL)) ";
+	
+   String updateInventoryHistoryForTecoSQL  = "UPDATE PN_INVENTORY_HISTORY ATH " +
+			 "SET ATH.INTERFACE_TECO_FLAG = (" +
+			 "    SELECT CASE " +
+			 "        WHEN W.STATUS IN ('CLOSED') THEN 'D' " +
+			 "        WHEN W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL THEN 'Y' " +
+			 "    END " +
+			 "    FROM WO W " +
+			 "    WHERE W.WO = ATH.WO " +
+			 "    AND W.WO = ? " +
+			 "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
+			 ") " +
+			 "WHERE EXISTS (" +
+			 "    SELECT 1 " +
+			 "    FROM WO W " +
+			 "    WHERE W.WO = ATH.WO " +
+			 "    AND W.WO = ? " +
+			 "    AND ((W.STATUS IN ('CLOSED', 'CANCEL')) OR (W.STATUS = 'OPEN' AND W.REOPEN_REASON IS NOT NULL))" +
+			 ")";
+	
+	String resetTecoTransferFlagSQL  = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG_TECO = NULL WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ? ";
+	
+	
+	String checkSvoExistenceSQL  = "SELECT SVO_NO FROM PN_INVENTORY_HISTORY WHERE WO = ? AND TASK_CARD = ? "; 
+	
+	String markSvoAsSentSQL  = "UPDATE PN_INVENTORY_HISTORY SET SVO_SENT = 'Y' WHERE WO = ? AND TASK_CARD = ? AND SVO_NO = ? ";
+	
+	String updateTaskCardSvoSentSQL = "UPDATE WO_TASK_CARD " +
+			"SET SVO_SENT = 'Y' " +
+			"WHERE WO = ? " +
+			"AND TASK_CARD = ? " +
+			"AND NOT EXISTS ( " +
+			"    SELECT 1 " +
+			"    FROM PN_INVENTORY_HISTORY " +
+			"    WHERE WO = WO_TASK_CARD.WO " +
+			"    AND TASK_CARD = WO_TASK_CARD.TASK_CARD " +
+			"    AND (SVO_SENT IS NULL OR SVO_SENT <> 'Y') " +
+			")";
+	
+	String resetSvoUsedFlagSQL  = "UPDATE WO SET SVO_USED = NULL WHERE WO = ? AND NOT EXISTS (SELECT 1 FROM WO_TASK_CARD WHERE WO = WO.WO AND SVO_SENT <> 'Y') ";
 
-	    try {
-	        if (con == null) {
-	            logger.severe("Database connection is null");
-	            return "Database connection is null";
-	        }
-	        
-	        PreparedStatement pstmt1 = con.prepareStatement(sqlUpdate);
-	        PreparedStatement pstmt2 = con.prepareStatement(revert);
-	        PreparedStatement Status = con.prepareStatement(STATUS);
-	        PreparedStatement psStatus = con.prepareStatement(sqlPrevStatus);
-	        PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
-	        PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
-	        PreparedStatement pstmt4 = con.prepareStatement(sqlMark2);
-	        PreparedStatement pstmt41 = con.prepareStatement(sqlMARK2);
-	        PreparedStatement pstmt5 = con.prepareStatement(sqlMark3);
-	        PreparedStatement svoch = con.prepareStatement(svocheck);
-	        PreparedStatement svomark = con.prepareStatement(sqlMArk2);
-	        PreparedStatement svomark2 = con.prepareStatement(sqlmarksvo);
-	        PreparedStatement svosent = con.prepareStatement(sqlHistoryMark);
+	try {
+		if (con == null) {
+			logger.severe("Database connection is null");
+			return "Database connection is null";
+		}
+		
+		PreparedStatement updateInventoryHistoryStmt  = con.prepareStatement(updateInventoryHistorySQL );
+		PreparedStatement revertWOStatusStmt  = con.prepareStatement(revertWOStatusSQL);
+		PreparedStatement selectCurrentWOStatusStmt  = con.prepareStatement(selectCurrentWOStatusSQL );
+		PreparedStatement selectPreviousWOStatusStmt  = con.prepareStatement(selectPreviousWOStatusSQL );
+		PreparedStatement insertErrorStmt  = con.prepareStatement(insertErrorSQL );
+		PreparedStatement deleteErrorStmt  = con.prepareStatement(deleteErrorSQL );
+		PreparedStatement updateWOForTecoStmt  = con.prepareStatement(updateWOForTecoSQL);
+		PreparedStatement updateInventoryHistoryForTecoStmt  = con.prepareStatement(updateInventoryHistoryForTecoSQL );
+		PreparedStatement resetTecoTransferFlagStmt  = con.prepareStatement(resetTecoTransferFlagSQL );
+		PreparedStatement checkSvoExistenceStmt  = con.prepareStatement(checkSvoExistenceSQL );
+		PreparedStatement updateTaskCardSvoSentStmt  = con.prepareStatement(updateTaskCardSvoSentSQL);
+		PreparedStatement resetSvoUsedFlagStmt  = con.prepareStatement(resetSvoUsedFlagSQL );
+		PreparedStatement markSvoAsSentStmt  = con.prepareStatement(markSvoAsSentSQL );
 
-	        if (request != null) {
-	            String exceptionId = request.getExceptionId();
-	            String exceptionDetail = request.getExceptionDetail() != null ? request.getExceptionDetail().trim().toLowerCase() : "";
+		if (request != null) {
+			String exceptionId = request.getExceptionId();
+			String exceptionDetail = request.getExceptionDetail() != null ? request.getExceptionDetail().trim().toLowerCase() : "";
 
-	            logger.info("Checking condition for exceptionId: " + exceptionId + " and exceptionDetail: " + request.getExceptionDetail());
-	            
-	            if ("51".equalsIgnoreCase(exceptionId) && exceptionDetail.toLowerCase().contains("order is already in teco status, notification is completed")) {
-	                logger.info("Skipping processing for exceptionId 51 with detail: " + exceptionDetail);
-	                return executed;  
-	            }
-	            if (exceptionId != null && exceptionId.equalsIgnoreCase("53")) {
-	                String wo = request.getWO();
+			logger.info("Checking condition for exceptionId: " + exceptionId + " and exceptionDetail: " + request.getExceptionDetail());
+			
+			if ("51".equalsIgnoreCase(exceptionId) && exceptionDetail.toLowerCase().contains("order is already in teco status, notification is completed")) {
+				logger.info("Skipping processing for exceptionId 51 with detail: " + exceptionDetail);
+				return executed;  
+			}
+			if (exceptionId != null && exceptionId.equalsIgnoreCase("53")) {
+				String wo = request.getWO();
 
-	                if (wo != null && !wo.isEmpty()) {
-	                    pstmt1.setString(1, wo);
-	                    pstmt1.executeUpdate();
-	                    
-	                    svoch.setString(1, request.getWO());
-	                    svoch.setString(2, request.getTC_number());
-		                ResultSet rs = svoch.executeQuery();
-		                
-		                String SVO = null;
-		                if (rs.next()) {
-		                	SVO = rs.getString("SVO_NO");
-		                }else {
-		                	SVO = null;
-		                }
-		                
-		                if(SVO != null && !SVO.isEmpty()){
-		                	
-		                	svosent.setString(1, wo);
-		                	svosent.setString(2, request.getTC_number());
-		                	svosent.setString(3, request.getRFO_NO());
-		                	svosent.executeUpdate();
-		                	
-		                	svomark.setString(1, wo);
-		                	svomark.setString(2, request.getTC_number());
-		                	svomark.executeUpdate();
-		                	
-		                	
-		                	svomark2.setString(1, wo);
-		                	svomark2.executeUpdate();
-		                	
-		                }
-	                    
-	                }
-	                
-	                psDeleteError.setString(1, request.getWO());
-	                psDeleteError.setString(2, request.getRFO_NO());
-	                psDeleteError.executeUpdate();
-	            } else if (exceptionId != null && !exceptionId.equalsIgnoreCase("53")) {
-	                if (exceptionDetail.contains("is locked") || exceptionDetail.contains("already being processed")) {
-	                    logger.info("Handling locked or already being processed condition for exceptionId: " + exceptionId);
-	                    executed = "WO: " + request.getWO() + ", SVO/RFO: " + request.getRFO_NO() + ", Error Code: " + exceptionId + ", Remarks: " + exceptionDetail;
+				if (wo != null && !wo.isEmpty()) {
+					updateInventoryHistoryStmt.setString(1, wo);
+					updateInventoryHistoryStmt.executeUpdate();
+					
+					checkSvoExistenceStmt.setString(1, request.getWO());
+					checkSvoExistenceStmt.setString(2, request.getTC_number());
+					ResultSet rs = checkSvoExistenceStmt.executeQuery();
+					
+					String SVO = null;
+					if (rs.next()) {
+						SVO = rs.getString("SVO_NO");
+					}else {
+						SVO = null;
+					}
+					
+					if(SVO != null && !SVO.isEmpty()){
+						
+						markSvoAsSentStmt.setString(1, wo);
+						markSvoAsSentStmt.setString(2, request.getTC_number());
+						markSvoAsSentStmt.setString(3, request.getRFO_NO());
+						markSvoAsSentStmt.executeUpdate();
+						
+						updateTaskCardSvoSentStmt.setString(1, wo);
+						updateTaskCardSvoSentStmt.setString(2, request.getTC_number());
+						updateTaskCardSvoSentStmt.executeUpdate();
+						
+						
+						resetSvoUsedFlagStmt.setString(1, wo);
+						resetSvoUsedFlagStmt.executeUpdate();
+						
+					}
+					
+				}
+				
+				deleteErrorStmt.setString(1, request.getWO());
+				deleteErrorStmt.setString(2, request.getRFO_NO());
+				deleteErrorStmt.executeUpdate();
+			} else if (exceptionId != null && !exceptionId.equalsIgnoreCase("53")) {
+				if (exceptionDetail.contains("is locked") || exceptionDetail.contains("already being processed")) {
+					logger.info("Handling locked or already being processed condition for exceptionId: " + exceptionId);
+					executed = "WO: " + request.getWO() + ", SVO/RFO: " + request.getRFO_NO() + ", Error Code: " + exceptionId + ", Remarks: " + exceptionDetail;
 
-	                    psInsertError.setString(1, request.getWO());
-	                    psInsertError.setString(2, request.getRFO_NO());
-	                    psInsertError.setString(3, request.getExceptionId());
-	                    psInsertError.setString(4, request.getExceptionDetail());
-	                    psInsertError.executeUpdate();
-	                    
-	                    String key = request.getWO() + "-" + request.getRFO_NO();
-	                    int attempt = attemptCounts.getOrDefault(key, 0);
+					insertErrorStmt.setString(1, request.getWO());
+					insertErrorStmt.setString(2, request.getRFO_NO());
+					insertErrorStmt.setString(3, request.getExceptionId());
+					insertErrorStmt.setString(4, request.getExceptionDetail());
+					insertErrorStmt.executeUpdate();
+					
+					String key = request.getWO() + "-" + request.getRFO_NO();
+					int attempt = attemptCounts.getOrDefault(key, 0);
 
-	                    if (attempt < 3) {
-	                        attempt++;
-	                        attemptCounts.put(key, attempt);
+					if (attempt < 3) {
+						attempt++;
+						attemptCounts.put(key, attempt);
 
-	                        try {
-	                            Thread.sleep(300000);
-	                            
-	                            String Flag = request.getFlag();
-	                            
-	                            if(Flag.equalsIgnoreCase("N")) {
-	                            pstmt4.setString(1, request.getWO());
-	                            pstmt4.executeUpdate();
-	                           
-	                            } else if (Flag.equalsIgnoreCase("Y")) {
-	                            	pstmt5.setString(1, request.getWO());
-	                            	pstmt5.setString(2, request.getTC_number());
-	                            	pstmt5.setString(3, request.getRFO_NO());
-		                            pstmt5.executeUpdate();
-	                            }
-	                            
-	                            if (attempt >= 3) {
-	                                executed = "Failed after 3 attempts: Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
-	                                TECO_Handling_Controller.addError(executed);
-	                                logger.severe(executed);
-	                            }
-	                        } catch (InterruptedException ie) {
-	                            Thread.currentThread().interrupt();
-	                            executed = "Thread was interrupted: " + ie.toString();
-	                            TECO_Handling_Controller.addError(executed);
-	                            logger.severe(executed);
-	                            return executed;
-	                        } catch (SQLException e) {
-	                            executed = "SQL Exception: " + e.toString();
-	                            TECO_Handling_Controller.addError(executed);
-	                            logger.severe(executed);
-	                            return executed;
-	                        }
-	                    } else {
-	                        executed = "Failed after 3 attempts: Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
-	                        TECO_Handling_Controller.addError(executed);
-	                        logger.severe(executed);
-	                    }
-	                } else {
-	                    logger.info("Handling general error condition for exceptionId: " + exceptionId);
-	                    executed = "WO: " + request.getWO() + ", SVO/RFO: " + request.getRFO_NO() + ", Error Code: " + exceptionId + ", Remarks: " + exceptionDetail;
-	                    
-	                    psInsertError.setString(1, request.getWO());
-	                    psInsertError.setString(2, request.getRFO_NO());
-	                    psInsertError.setString(3, request.getExceptionId());
-	                    psInsertError.setString(4, request.getExceptionDetail());
-	                    psInsertError.executeUpdate();
-	                    
-	                 
-	                    
-	                    String Flag = request.getFlag();
-	                    
-	                    
-	                    if(Flag.equalsIgnoreCase("N")) {
-                            pstmt4.setString(1, request.getWO());
-                            pstmt4.executeUpdate();
-                           
-                            } else if (Flag.equalsIgnoreCase("Y")) {
-                            	pstmt5.setString(1, request.getWO());
-                            	pstmt5.setString(2, request.getTC_number());
-                            	pstmt5.setString(3, request.getRFO_NO());
-	                            pstmt5.executeUpdate();
-                            }
-	                    
-	                    if(Flag.equalsIgnoreCase("N")) {
-	                    pstmt4.setString(1, request.getWO());
-                        pstmt4.executeUpdate();
-	                    }else if (Flag.equalsIgnoreCase("Y")) {
-	                    	pstmt41.setString(1, request.getWO());
-	                    	pstmt41.setString(2, request.getWO());
-	                        pstmt41.executeUpdate();
-	                    }
-	                    
-	                    Status.setString(1, request.getWO());
-	                    ResultSet rs1 = Status.executeQuery();
-	                    
-	                    psStatus.setString(1, request.getWO());
-	                    psStatus.setString(2, request.getWO());
-	                    psStatus.setString(3, request.getWO());
-	                    ResultSet rs = psStatus.executeQuery();
-	                    
-	                    
-	                    String currentStatus = "";
-	                    String prevStatus = "GENERATION";
-	                  
-	                    if (rs1.next()) {
-	                        currentStatus = rs1.getString("STATUS");
-	                    }
-	                    
-	                    if (rs.next()) {
-	                        String statusFromAudit = rs.getString("STATUS");
-	                        
-	                        if (!currentStatus.equals(statusFromAudit)) {
-	                            prevStatus = statusFromAudit;
-	                        }
-	                    }
-	                    
-	                    pstmt2.setString(1, prevStatus);
-	                    pstmt2.setString(2, request.getWO());
-	                    pstmt2.executeUpdate();
-	                    
-	                   
-	                }
-	            } else {
-	                psDeleteError.setString(1, request.getWO());
-	                psDeleteError.setString(2, request.getRFO_NO());
-	                psDeleteError.executeUpdate();
-	            }
-	        } else {
-	            logger.severe("Request object is null");
-	            executed = "Request object is null";
-	        }
+						try {
+							Thread.sleep(300000);
+							
+							String Flag = request.getFlag();
+							
+							if(Flag.equalsIgnoreCase("N")) {
+								updateWOForTecoStmt.setString(1, request.getWO());
+								updateWOForTecoStmt.executeUpdate();
+						   
+							} else if (Flag.equalsIgnoreCase("Y")) {
+								resetTecoTransferFlagStmt.setString(1, request.getWO());
+								resetTecoTransferFlagStmt.setString(2, request.getTC_number());
+								resetTecoTransferFlagStmt.setString(3, request.getRFO_NO());
+								resetTecoTransferFlagStmt.executeUpdate();
+							}
+							
+							if (attempt >= 3) {
+								executed = "Failed after 3 attempts: Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
+								TECO_Handling_Controller.addError(executed);
+								logger.severe(executed);
+							}
+						} catch (InterruptedException ie) {
+							Thread.currentThread().interrupt();
+							executed = "Thread was interrupted: " + ie.toString();
+							TECO_Handling_Controller.addError(executed);
+							logger.severe(executed);
+							return executed;
+						} catch (SQLException e) {
+							executed = "SQL Exception: " + e.toString();
+							TECO_Handling_Controller.addError(executed);
+							logger.severe(executed);
+							return executed;
+						}
+					} else {
+						executed = "Failed after 3 attempts: Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
+						TECO_Handling_Controller.addError(executed);
+						logger.severe(executed);
+					}
+				} else {
+					logger.info("Handling general error condition for exceptionId: " + exceptionId);
+					executed = "WO: " + request.getWO() + ", SVO/RFO: " + request.getRFO_NO() + ", Error Code: " + exceptionId + ", Remarks: " + exceptionDetail;
+					
+					insertErrorStmt.setString(1, request.getWO());
+					insertErrorStmt.setString(2, request.getRFO_NO());
+					insertErrorStmt.setString(3, request.getExceptionId());
+					insertErrorStmt.setString(4, request.getExceptionDetail());
+					insertErrorStmt.executeUpdate();
+					
+				 
+					
+					String Flag = request.getFlag();
+					
+					
+					if(Flag.equalsIgnoreCase("N")) {
+						updateWOForTecoStmt.setString(1, request.getWO());
+						updateWOForTecoStmt.executeUpdate();
+					   
+						} else if (Flag.equalsIgnoreCase("Y")) {
+							resetTecoTransferFlagStmt.setString(1, request.getWO());
+							resetTecoTransferFlagStmt.setString(2, request.getTC_number());
+							resetTecoTransferFlagStmt.setString(3, request.getRFO_NO());
+							resetTecoTransferFlagStmt.executeUpdate();
+						}
+					
+					if(Flag.equalsIgnoreCase("N")) {
+						updateWOForTecoStmt.setString(1, request.getWO());
+						updateWOForTecoStmt.executeUpdate();
+					}else if (Flag.equalsIgnoreCase("Y")) {
+						updateInventoryHistoryForTecoStmt.setString(1, request.getWO());
+						updateInventoryHistoryForTecoStmt.setString(2, request.getWO());
+						updateInventoryHistoryForTecoStmt.executeUpdate();
+					}
+					
+					selectCurrentWOStatusStmt.setString(1, request.getWO());
+					ResultSet rs1 = selectCurrentWOStatusStmt.executeQuery();
+					
+					selectPreviousWOStatusStmt.setString(1, request.getWO());
+					selectPreviousWOStatusStmt.setString(2, request.getWO());
+					selectPreviousWOStatusStmt.setString(3, request.getWO());
+					ResultSet rs = selectPreviousWOStatusStmt.executeQuery();
+					
+					
+					String currentStatus = "";
+					String prevStatus = "GENERATION";
+				  
+					if (rs1.next()) {
+						currentStatus = rs1.getString("STATUS");
+					}
+					
+					if (rs.next()) {
+						String statusFromAudit = rs.getString("STATUS");
+						
+						if (!currentStatus.equals(statusFromAudit)) {
+							prevStatus = statusFromAudit;
+						}
+					}
+					
+					revertWOStatusStmt.setString(1, prevStatus);
+					revertWOStatusStmt.setString(2, request.getWO());
+					revertWOStatusStmt.executeUpdate();
+					
+				   
+				}
+			} else {
+				deleteErrorStmt.setString(1, request.getWO());
+				deleteErrorStmt.setString(2, request.getRFO_NO());
+				deleteErrorStmt.executeUpdate();
+			}
+		} else {
+			logger.severe("Request object is null");
+			executed = "Request object is null";
+		}
 
-	    } catch (SQLException e) {
-	        executed = "SQL Exception: " + e.toString();
-	        TECO_Handling_Controller.addError(executed);
-	        logger.severe(executed);
-	    } catch (Exception e) {
-	        executed = "General Exception: " + e.toString();
-	        TECO_Handling_Controller.addError(executed);
-	        logger.severe(executed);
-	    }
-
-	    return executed;
+	} catch (SQLException e) {
+		executed = "SQL Exception: " + e.toString();
+		TECO_Handling_Controller.addError(executed);
+		logger.severe(executed);
+	} catch (Exception e) {
+		executed = "General Exception: " + e.toString();
+		TECO_Handling_Controller.addError(executed);
+		logger.severe(executed);
 	}
+
+	return executed;
+}
 
 	
 	public ArrayList<INT15_SND> getSVO() throws Exception {
