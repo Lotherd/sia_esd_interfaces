@@ -282,7 +282,7 @@ public class ManHours_Item_Data {
 	    	    "        AND w.rfo_no IS NOT NULL " +
 	    	    "        AND wti.ops_no IS NOT NULL " +
 	    	    "        AND wt.status = 'CLOSED' " +
-	    	    "        AND ((wt.interface_sap_transferred_flag IS NULL OR wt.interface_sap_transferred_flag = '3')OR (wt.interface_sap_transferred_flag = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y' AND WA.trasaction_category = 'LABOR'))" ;
+	    	    "        AND ((wt.interface_sap_transferred_flag IS NULL OR wt.interface_sap_transferred_flag = '3')OR (wt.interface_sap_transferred_flag = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y' AND WA.trasaction_category = 'LABOR')) AND ROWNUM = 1 " ;
 
 	    String sqlAction = "SELECT CASE WHEN wt.non_routine = 'Y' THEN (" +
                 "SELECT DISTINCT LISTAGG(single_record, ' | ') WITHIN GROUP (ORDER BY rn) AS single_string " +
@@ -348,8 +348,7 @@ public class ManHours_Item_Data {
                 "        WHEN INTERFACE_STEP = '1' THEN 'D' " +
                 "    END " +
                 "WHERE WO = ? " +
-                "  AND TASK_CARD = ? " +
-                "  AND (INTERFACE_STEP IS NULL OR INTERFACE_STEP = '1')";
+                "  AND TASK_CARD = ? ";
 	    
 	   // String sqlMark2 = "UPDATE WO_ACTUALS SET INTERFACE_ESD_TRANSFERRED_FLAG = 'Y' WHERE WO = ?";
 	    try (
