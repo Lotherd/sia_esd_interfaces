@@ -203,7 +203,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
 				PnInventoryHistory pih = setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
-
+				picklistDistributionDIS.setPn(pih.getPn());
+				picklistDistributionREQ.setPn(pih.getPn());
+				
+				picklistDistributionDIS.setBatch(new BigDecimal(pih.getId().getBatch()));
+				picklistDistributionREQ.setBatch(new BigDecimal(pih.getId().getBatch()));
+				picklistHeader.setLocation(pih.getToLocation());
+				picklistHeader.setBin(pih.getToBin());
+				
 				
 				logger.info("UPDATING pnInventoryDetail: " + input.getPN());
 				
