@@ -132,12 +132,12 @@ public class ManHours_Item_Data {
                 "WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D'";
 
 	    
-	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N', CHECKED = 'N' " +
-                "WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR' AND INVOICED_FLAG = 'Y' AND CHECKED = 'Y' ";
+	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N' " +
+                "WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR' AND INVOICED_FLAG = 'Y' ";
 	    
 	    String selectTransaction = "select wo_actual_transaction from WO_ACTUALS where wo = ? and  task_card = ? and trasaction_category = 'LABOR' ";
 
-	    String updateWOActualsTEMP ="UPDATE wo_actuals_material_temp set checked = 'N', INVOICED_FLAG = 'N' where WO = ? and wo_actual_transaction = ? ";
+	    String updateWOActualsTEMP ="UPDATE wo_actuals_material_temp set INVOICED_FLAG = 'N' where WO = ? and wo_actual_transaction = ? ";
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlDate);
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
@@ -259,8 +259,8 @@ public class ManHours_Item_Data {
 
 	    ArrayList<INT14_18_SND> list = new ArrayList<>();
 	    Set<String> processedCombinations = new HashSet<>();
-	    String sqlManHRIT =  "WITH ranked_data AS ( " +
-	    	    "    SELECT " +
+	    String sqlManHRIT =  
+	    	    "    SELECT DISTINCT " +
 	    	    "        w.wo, " +
 	    	    "        w.rfo_no, " +
 	    	    "        wti.ops_no, " +
@@ -268,12 +268,7 @@ public class ManHours_Item_Data {
 	    	    "        wt.task_card_category, " +
 	    	    "        wt.task_card_description, " +
 	    	    "        wt.non_routine, " +
-	    	    "        (select sum(billed_hours)from wo_actuals where wo = w.wo and task_card = wt.task_card) as hours, " +
-	    	    "        wa.wo_actual_transaction, " +
-	    	    "        RANK() OVER ( " +
-	    	    "            PARTITION BY wt.task_card " +
-	    	    "            ORDER BY wa.wo_actual_transaction DESC " +
-	    	    "        ) AS rnk " +
+	    	    "        (select sum(billed_hours)from wo_actuals where wo = w.wo and task_card = wt.task_card) as hours " +
 	    	    "    FROM " +
 	    	    "        wo w " +
 	    	    "    JOIN " +
@@ -287,14 +282,7 @@ public class ManHours_Item_Data {
 	    	    "        AND w.rfo_no IS NOT NULL " +
 	    	    "        AND wti.ops_no IS NOT NULL " +
 	    	    "        AND wt.status = 'CLOSED' " +
-	    	    "        AND ((wt.interface_sap_transferred_flag IS NULL OR wt.interface_sap_transferred_flag = '3')OR (wt.interface_sap_transferred_flag = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y'))" +
-	    	    ") " +
-	    	    "SELECT " +
-	    	    "    * " +
-	    	    "FROM " +
-	    	    "    ranked_data " +
-	    	    "WHERE " +
-	    	    "    rnk = 1";
+	    	    "        AND ((wt.interface_sap_transferred_flag IS NULL OR wt.interface_sap_transferred_flag = '3')OR (wt.interface_sap_transferred_flag = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y' AND WA.trasaction_category = 'LABOR')) AND ROWNUM = 1 " ;
 
 	    String sqlAction = "SELECT CASE WHEN wt.non_routine = 'Y' THEN (" +
                 "SELECT DISTINCT LISTAGG(single_record, ' | ') WITHIN GROUP (ORDER BY rn) AS single_string " +
@@ -345,7 +333,7 @@ public class ManHours_Item_Data {
    
 
 
-	    String sqlmarking = "SELECT INVOICED_FLAG FROM WO_ACTUALS WHERE WO = ? AND TASK_CARD = ?"; 
+	    String sqlmarking = "SELECT INVOICED_FLAG FROM WO_ACTUALS WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR' "; 
 
 	    String sqlMark = "UPDATE WO_TASK_CARD " +
                 "SET INTERFACE_SAP_TRANSFERRED_FLAG = " +
@@ -360,19 +348,9 @@ public class ManHours_Item_Data {
                 "        WHEN INTERFACE_STEP = '1' THEN 'D' " +
                 "    END " +
                 "WHERE WO = ? " +
-                "  AND TASK_CARD = ? " +
-                "  AND (INTERFACE_STEP IS NULL OR INTERFACE_STEP = '1')";
+                "  AND TASK_CARD = ? ";
 	    
 	   // String sqlMark2 = "UPDATE WO_ACTUALS SET INTERFACE_ESD_TRANSFERRED_FLAG = 'Y' WHERE WO = ?";
-
-	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	        sqlManHRIT = "SELECT * FROM (" + sqlManHRIT;
-	    }
-
-	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	        sqlManHRIT = sqlManHRIT + " ) WHERE ROWNUM <= ?";
-	    }
-
 	    try (
 	        PreparedStatement pstmt1 = con.prepareStatement(sqlManHRIT);
 	        PreparedStatement pstmt2 = con.prepareStatement(sqlAction);
@@ -380,9 +358,6 @@ public class ManHours_Item_Data {
 	        PreparedStatement pstmt4 = con.prepareStatement(sqlmarking);
 	    	//PreparedStatement pstmt5 = con.prepareStatement(sqlMark2);
 	    ) {
-	        if (MaxRecord != null && !MaxRecord.isEmpty()) {
-	            pstmt1.setString(1, MaxRecord);
-	        }
 
 	        try (ResultSet rs1 = pstmt1.executeQuery()) {
 	            String currentWO = null;

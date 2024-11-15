@@ -425,7 +425,7 @@ public class Import_TC_MHR_Data {
 	               
 	                    logger.info("Status of the WO: " + rs1.getString(10));
 	                    status = rs1.getString(10);
-	                    if ("CANCEL".equals(rs1.getString(1))) {
+	                    if ("CANCEL".equals(rs1.getString(10))) {
 	                        deletionIndicator = "X";
 	                    }
 	           
@@ -443,6 +443,8 @@ public class Import_TC_MHR_Data {
 	                    }
 	                    if (rs8 != null && !rs8.isClosed()) rs8.close();
 	                }
+	                
+	                logger.info("Status of the WO: " + rs1.getString(10) + " Indicator: " + deletionIndicator);
 
 	                operation.setDeletionIndicator(deletionIndicator);
 
