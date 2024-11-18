@@ -543,7 +543,7 @@ public class MaterialData implements IMaterialData {
 							.setParameter("pick", Long.valueOf(c.getTrax_PicklistNumber()))
 							.setParameter("line", Long.valueOf(c.getTrax_PicklistLine()))
 							.setParameter("tra", "REQUIRE")
-							.getResultList();
+							.getSingleResult();
 					require.setInterfaceSyncFlag("S");
 					insertData(require);
 					
@@ -552,7 +552,7 @@ public class MaterialData implements IMaterialData {
 								.setParameter("pick", Long.valueOf(c.getTrax_PicklistNumber()))
 								.setParameter("line", Long.valueOf(c.getTrax_PicklistLine()))
 								.setParameter("tra", "DISTRIBU")
-								.getResultList();
+								.getSingleResult();
 						
 						req.setInterfaceSyncFlag("S");
 						insertData(req);
@@ -629,7 +629,7 @@ public class MaterialData implements IMaterialData {
 				.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 				.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 				.setParameter("tra", "REQUIRE")
-				.getResultList();
+				.getSingleResult();
 				//require.setInterfaceSyncFlag(null);
 				require.setInterfaceSyncDate(null);
 				require.setInterfaceModifiedDate(new Date());
@@ -644,7 +644,7 @@ public class MaterialData implements IMaterialData {
 							.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 							.setParameter("tra", "DISTRIBU")
-							.getResultList();
+							.getSingleResult();
 					if(reqs.getEXCEPTION_ID() != null && reqs.getEXCEPTION_ID().equalsIgnoreCase("53")) {
 						req.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
 						req.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
@@ -703,7 +703,7 @@ public class MaterialData implements IMaterialData {
 				.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 				.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 				.setParameter("tra", "REQUIRE")
-				.getResultList();
+				.getSingleResult();
 				//require.setInterfaceSyncFlag(null);
 				require.setInterfaceSyncDate(new Date());
 				require.setInterfaceSyncFlag("Y");
@@ -714,7 +714,7 @@ public class MaterialData implements IMaterialData {
 							.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 							.setParameter("tra", "DISTRIBU")
-							.getResultList();
+							.getSingleResult();
 					req.setInterfaceSyncDate(new Date());
 					req.setInterfaceSyncFlag("Y");
 					insertData(req);
