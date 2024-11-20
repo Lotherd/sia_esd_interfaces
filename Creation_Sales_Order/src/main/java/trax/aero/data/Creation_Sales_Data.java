@@ -128,6 +128,7 @@ public class Creation_Sales_Data {
 	    
 	    String sqlInitialLoad = "SELECT PN, PN_SN FROM WO_SHOP_DETAIL WHERE WO = ?";
         String sqlInitialLoad2 = "SELECT LOCATION FROM WO WHERE WO = ?";
+        String initialLoadCheck = "SELECT COUNT(*) FROM PN_INVENTORY_HISTORY WHERE PN = ? AND SN = ? AND TRANSACTION_TYPE = 'INITIAL_LOAD' ";
 
 	    
 	    try (PreparedStatement pstmt1 = con.prepareStatement(sqlUpdateWO);
@@ -137,7 +138,8 @@ public class Creation_Sales_Data {
 	         PreparedStatement psDeleteErrorWithContract = con.prepareStatement(sqlDeleteErrorWithContract);
 	         PreparedStatement psCheckContract = con.prepareStatement(sqlCheckContract);
 	    	 PreparedStatement psInitialLoad = con.prepareStatement(sqlInitialLoad);
-	         PreparedStatement psInitialLoad2 = con.prepareStatement(sqlInitialLoad2)) {
+	         PreparedStatement psInitialLoad2 = con.prepareStatement(sqlInitialLoad2);
+	    	 PreparedStatement psInitialLoadcheck = con.prepareStatement(initialLoadCheck)	) {
 	        
 	        if (request != null) {
 	            
@@ -160,65 +162,79 @@ public class Creation_Sales_Data {
                     psInitialLoad.setString(1, request.getWO());
                     try (ResultSet rsInitialLoad = psInitialLoad.executeQuery()) {
                         if (rsInitialLoad.next()) {
-                            String pn = rsInitialLoad.getString("PN");
+                        	String pn = rsInitialLoad.getString("PN");
                             String sn = rsInitialLoad.getString("PN_SN");
+                        	 // Execute the initial load check
+                            psInitialLoadcheck.setString(1, pn);
+                            psInitialLoadcheck.setString(2, sn);
 
-                            psInitialLoad2.setString(1, request.getWO());
-                            try (ResultSet rsInitialLoad2 = psInitialLoad2.executeQuery()) {
-                                if (rsInitialLoad2.next()) {
-                                    String location = rsInitialLoad2.getString("LOCATION");
+                            try (ResultSet rsCheck = psInitialLoadcheck.executeQuery()) {
+                                int count = 0;
+                                if (rsCheck.next()) {
+                                    count = rsCheck.getInt(1);
+                                }
 
-                                    BigDecimal initialBatchVal = getTransactionNo("BATCH");
-                                    if (initialBatchVal == null) {
-                                        executed = "Failed to retrieve initial batch for WO: " + request.getWO();
-                                        Creation_Sales_Controller.addError(executed);
-                                        logger.severe("Batch retrieval failed for WO: " + request.getWO());
-                                        return executed;
-                                    }
-                                    long initialBatch = initialBatchVal.longValue();
-                                    long goodsReceivedBatch = initialBatch;
-                                    long batch = initialBatch;
+                                if (count == 1) {
+                                    // Do nothing if record exists
+                                    logger.info("Record already exists in PN_INVENTORY_HISTORY for PN: " + pn + ", SN: " + sn);
+                                } else {
+                                    // Proceed with the rest of the code
+                                    psInitialLoad2.setString(1, request.getWO());
+                                    try (ResultSet rsInitialLoad2 = psInitialLoad2.executeQuery()) {
+                                        if (rsInitialLoad2.next()) {
+                                            String location = rsInitialLoad2.getString("LOCATION");
 
-                                    logger.info("Inserting into pn_inventory_detail for PN: " + pn + ", SN: " + sn);
-                                    String insertInventoryDetail = "INSERT INTO pn_inventory_detail (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, QTY_AVAILABLE, GL_COMPANY) VALUES (?, ?, ?, ?, ?, ?, 'SIAEC')";
-                                    try (PreparedStatement pstmtInsertDetail = con.prepareStatement(insertInventoryDetail)) {
-                                        pstmtInsertDetail.setString(1, pn);
-                                        pstmtInsertDetail.setString(2, sn);
-                                        pstmtInsertDetail.setString(3, location);
-                                        pstmtInsertDetail.setLong(4, batch);
-                                        pstmtInsertDetail.setLong(5, goodsReceivedBatch);
-                                        pstmtInsertDetail.setInt(6, 10); // Cantidad disponible
-                                        pstmtInsertDetail.executeUpdate();
-                                    }
+                                            BigDecimal initialBatchVal = getTransactionNo("BATCH");
+                                            if (initialBatchVal == null) {
+                                                executed = "Failed to retrieve initial batch for WO: " + request.getWO();
+                                                Creation_Sales_Controller.addError(executed);
+                                                logger.severe("Batch retrieval failed for WO: " + request.getWO());
+                                                return executed;
+                                            }
+                                            long initialBatch = initialBatchVal.longValue();
+                                            long goodsReceivedBatch = initialBatch;
+                                            long batch = initialBatch;
 
-                                    BigDecimal transactionVal = getTransactionNo("PNINVHIS");
-                                    if (transactionVal == null) {
-                                        executed = "Failed to retrieve transaction number for WO: " + request.getWO();
-                                        Creation_Sales_Controller.addError(executed);
-                                        logger.severe("Transaction number retrieval failed for WO: " + request.getWO());
-                                        return executed;
-                                    }
-                                    long transactionNo = transactionVal.longValue();
+                                            logger.info("Inserting into pn_inventory_detail for PN: " + pn + ", SN: " + sn);
+                                            String insertInventoryDetail = "INSERT INTO pn_inventory_detail (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, QTY_AVAILABLE, GL_COMPANY, CREATED_BY, CREATED_DATE) VALUES (?, ?, ?, ?, ?, ?, 'SIAEC', 'TRAXIFACE', sysdate)";
+                                            try (PreparedStatement pstmtInsertDetail = con.prepareStatement(insertInventoryDetail)) {
+                                                pstmtInsertDetail.setString(1, pn);
+                                                pstmtInsertDetail.setString(2, sn);
+                                                pstmtInsertDetail.setString(3, location);
+                                                pstmtInsertDetail.setLong(4, batch);
+                                                pstmtInsertDetail.setLong(5, goodsReceivedBatch);
+                                                pstmtInsertDetail.setInt(6, 10); // Quantity available
+                                                pstmtInsertDetail.executeUpdate();
+                                            }
 
-                                    logger.info("Inserting into pn_inventory_history for PN: " + pn + ", SN: " + sn);
-                                    String insertInventoryHistory = "INSERT INTO pn_inventory_history (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, TRANSACTION_NO, WO, TRANSACTION_TYPE, TRANSACTION_DATE, GL_COMPANY) VALUES (?, ?, ?, ?, ?, ?, ?, 'INITIAL_LOAD', SYSDATE, 'SIAEC')";
-                                    try (PreparedStatement pstmtInsertHistory = con.prepareStatement(insertInventoryHistory)) {
-                                        pstmtInsertHistory.setString(1, pn);
-                                        pstmtInsertHistory.setString(2, sn);
-                                        pstmtInsertHistory.setString(3, location);
-                                        pstmtInsertHistory.setLong(4, batch);
-                                        pstmtInsertHistory.setLong(5, goodsReceivedBatch);
-                                        pstmtInsertHistory.setLong(6, transactionNo);
-                                        pstmtInsertHistory.setString(7, request.getWO());
-                                        pstmtInsertHistory.executeUpdate();
+                                            BigDecimal transactionVal = getTransactionNo("PNINVHIS");
+                                            if (transactionVal == null) {
+                                                executed = "Failed to retrieve transaction number for WO: " + request.getWO();
+                                                Creation_Sales_Controller.addError(executed);
+                                                logger.severe("Transaction number retrieval failed for WO: " + request.getWO());
+                                                return executed;
+                                            }
+                                            long transactionNo = transactionVal.longValue();
+
+                                            logger.info("Inserting into pn_inventory_history for PN: " + pn + ", SN: " + sn);
+                                            String insertInventoryHistory = "INSERT INTO pn_inventory_history (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, TRANSACTION_NO, WO, TRANSACTION_TYPE, TRANSACTION_DATE, GL_COMPANY, CREATED_BY, CREATED_DATE) VALUES (?, ?, ?, ?, ?, ?, ?, 'INITIAL_LOAD', SYSDATE, 'SIAEC', 'TRAXIFACE', sysdate)";
+                                            try (PreparedStatement pstmtInsertHistory = con.prepareStatement(insertInventoryHistory)) {
+                                                pstmtInsertHistory.setString(1, pn);
+                                                pstmtInsertHistory.setString(2, sn);
+                                                pstmtInsertHistory.setString(3, location);
+                                                pstmtInsertHistory.setLong(4, batch);
+                                                pstmtInsertHistory.setLong(5, goodsReceivedBatch);
+                                                pstmtInsertHistory.setLong(6, transactionNo);
+                                                pstmtInsertHistory.setString(7, request.getWO());
+                                                pstmtInsertHistory.executeUpdate();
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-	                
-	                
-	            }
+                }
 	            
 	            logger.info("Deleting all errors for WO: " + request.getWO());
                 psDeleteAllErrors.setString(1, request.getWO());

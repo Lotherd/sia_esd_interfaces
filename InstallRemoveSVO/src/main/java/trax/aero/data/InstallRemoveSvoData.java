@@ -119,10 +119,16 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		//setting up variables
 		exceuted = "OK";
 		
+		
+		
 		String sqlDate =
 		"UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'X', PN_INVENTORY_HISTORY.SVO_NO = ? WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
 		
+		String retry = 
+				"UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'R', PN_INVENTORY_HISTORY.MADE_AS_CCS = null WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
+		
 		PreparedStatement pstmt2 = null; 
+		PreparedStatement pstmt1 = null; 
 
 		try 
 		{
@@ -134,6 +140,14 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 				pstmt2.setString(2, request.getTransaction());
 				
 				pstmt2.executeQuery();
+				
+				
+				
+				if(request.getExceptionId() == "51") {
+					pstmt1 = con.prepareStatement(retry);
+					pstmt1.setString(1, request.getTransaction());
+					pstmt2.executeQuery();
+				}
 				
 				
 			
@@ -207,16 +221,16 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
                 "                   WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
                 "                   AND Z.PN = A3.PN) " +
-                "    AND (A3.INTERFACE_TRANSFER_FLAG = 'S' OR (A3.INTERFACE_TRANSFER_FLAG IS NULL AND A3.STATE_OF_PART = 'SERVICEABLE' ) )) " +
+                "    AND (A3.INTERFACE_TRANSFER_FLAG IN ('S', 'R')  OR (A3.INTERFACE_TRANSFER_FLAG IS NULL AND A3.STATE_OF_PART = 'SERVICEABLE' ) )) " +
                 "   OR " +
                 "   (PM.CATEGORY IN ('B', 'C', 'D') " +
                 "    AND EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
                 "               WHERE LTRIM(Z.CUSTOMER, '0') = LTRIM(A1.CUSTOMER, '0') " +
                 "               AND Z.PN = A3.PN) " +
-                "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL) " +
+                "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL OR A3.INTERFACE_TRANSFER_FLAG = 'R' ) " +
                 "   OR " +
                 "   (PM.CATEGORY = 'A' " +
-                "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL)" +
+                "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL OR A3.INTERFACE_TRANSFER_FLAG = 'R' )" +
                 ")";
 
 
@@ -457,25 +471,36 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 	}
 	
 	public void logError(String error) {
-		
-		InterfaceAudit ia = null;
-		ia = new InterfaceAudit();
-		ia.setTransaction(getSeqNoInterfaceAudit().longValue());
-		ia.setTransactionType("ERROR");
-		ia.setTransactionObject("I19");
-		ia.setTransactionDate(new Date());
-		ia.setCreatedBy("TRAX_IFACE");
-		ia.setModifiedBy("TRAX_IFACE");
-		ia.setCreatedDate(new Date());
-		ia.setModifiedDate(new Date());
-		ia.setExceptionId(new BigDecimal(-2000));
-		ia.setExceptionByTrax("Y");
-		ia.setExceptionDetail("Interface error encountered in Install Remove SVO");
-		ia.setExceptionStackTrace(error);
-		ia.setExceptionClassTrax("InstallRemoveSVO_I19");	
-		
-		insertData(ia);
+	    logError(error, null);
 	}
+
+	public void logError(String error, I19_Response response) {
+	    InterfaceAudit ia = null;
+	    ia = new InterfaceAudit();
+	    ia.setTransaction(getSeqNoInterfaceAudit().longValue());
+	    ia.setTransactionType("ERROR");
+	    ia.setTransactionObject("I19");
+	    ia.setTransactionDate(new Date());
+	    ia.setCreatedBy("TRAX_IFACE");
+	    ia.setModifiedBy("TRAX_IFACE");
+	    ia.setCreatedDate(new Date());
+	    ia.setModifiedDate(new Date());
+	    if (response != null) {
+	        ia.setExceptionId(new BigDecimal(response.getExceptionId()));
+	        ia.setExceptionDetail(response.getExceptionDetail());
+	        ia.setOrderNumber(new BigDecimal(response.getWo()));
+	        ia.setEo(response.getTransaction());
+	    } else {
+	        ia.setExceptionId(new BigDecimal(-2000));
+	        ia.setExceptionDetail("Interface error encountered in Install Remove SVO");
+	    }
+	    ia.setExceptionByTrax("Y");
+	    ia.setExceptionStackTrace(error);
+	    ia.setExceptionClassTrax("InstallRemoveSVO_I19");
+
+	    insertData(ia);
+	}
+
 	
 	
 	public void setFailed(I19_Response response) throws Exception

@@ -485,35 +485,62 @@ public class MaterialData implements IMaterialData {
 	
 
 	private boolean CheckToQty(PicklistDistribution detail) {
-		try
-		{
-			PicklistDistribution dis = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-					.setParameter("pick", detail.getId().getPicklist())
-					.setParameter("line", detail.getId().getPicklistLine())
-					.setParameter("tra", "DISTRIBU")
-					.getSingleResult();
-			
-			
-			BigDecimal sum = new BigDecimal(0);
-			if(dis.getPicklistDistributionRecs()!= null) {
-				for(PicklistDistributionRec rec  :dis.getPicklistDistributionRecs()) {
-					if(rec.getCustToQty() !=null ) {
-						sum = sum.add(rec.getCustToQty());
-					}
-				}
-			}
-			logger.info("TO QTY: " + sum.toString() +" PICKED QTY: " +dis.getQtyPicked().toString());
-			if(sum.equals(dis.getQtyPicked())) {
-				return true;
-			}
-		}
-		catch (Exception e) 
-		{
-			e.printStackTrace();
-			
-		}
-		return false;
+	    try {
+	        List<PicklistDistribution> disList = em.createQuery(
+	                "SELECT p FROM PicklistDistribution p WHERE p.id.picklist = :pick AND p.id.picklistLine = :line AND p.id.transaction = :tra", 
+	                PicklistDistribution.class)
+	            .setParameter("pick", detail.getId().getPicklist())
+	            .setParameter("line", detail.getId().getPicklistLine())
+	            .setParameter("tra", "DISTRIBU")
+	            .getResultList();
+
+	        if (disList.isEmpty()) {
+	            // No matching records found
+	            logger.warning("No PicklistDistribution found for picklist: " + detail.getId().getPicklist()
+	                    + ", picklistLine: " + detail.getId().getPicklistLine()
+	                    + ", transaction: 'DISTRIBU'");
+	            return false;
+	        }
+
+	        // Process each PicklistDistribution in the list
+	        for (PicklistDistribution dis : disList) {
+	            BigDecimal sum = BigDecimal.ZERO;
+	            if (dis.getPicklistDistributionRecs() != null) {
+	                for (PicklistDistributionRec rec : dis.getPicklistDistributionRecs()) {
+	                    if (rec.getCustToQty() != null) {
+	                        sum = sum.add(rec.getCustToQty());
+	                    }
+	                }
+	            }
+	            logger.info("TO QTY: " + sum.toString() + " PICKED QTY: " + dis.getQtyPicked().toString());
+	            if (sum.compareTo(dis.getQtyPicked()) == 0) {
+	                return true;
+	            }
+	        }
+	        // If none of the records met the condition, return false
+	        return false;
+
+	    } catch (Exception e) {
+	        logger.severe("Error in CheckToQty: " + e.getMessage());
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
+
+
+	private boolean processPicklistDistribution(PicklistDistribution dis) {
+	    BigDecimal sum = BigDecimal.ZERO;
+	    if (dis.getPicklistDistributionRecs() != null) {
+	        for (PicklistDistributionRec rec : dis.getPicklistDistributionRecs()) {
+	            if (rec.getCustToQty() != null) {
+	                sum = sum.add(rec.getCustToQty());
+	            }
+	        }
+	    }
+	    logger.info("TO QTY: " + sum.toString() + " PICKED QTY: " + dis.getQtyPicked().toString());
+	    return sum.equals(dis.getQtyPicked());
+	}
+
 
 
 
@@ -533,40 +560,50 @@ public class MaterialData implements IMaterialData {
 	}
 
 	private void markSent(MT_TRAX_SND_I10_4110 data) {
-		try {
-			
-			for(Order o : data.getOrder()) {
-				for(OrderComponent c: o.getOrderComponent()) {
-					
-					
-					PicklistDistribution require = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-							.setParameter("pick", Long.valueOf(c.getTrax_PicklistNumber()))
-							.setParameter("line", Long.valueOf(c.getTrax_PicklistLine()))
-							.setParameter("tra", "REQUIRE")
-							.getResultList();
-					require.setInterfaceSyncFlag("S");
-					insertData(require);
-					
-					try {
-						PicklistDistribution req = (PicklistDistribution) em.createQuery("SELECT p FROM PicklistDistribution p where p.id.picklist =:pick AND p.id.picklistLine =:line AND p.id.transaction =:tra")
-								.setParameter("pick", Long.valueOf(c.getTrax_PicklistNumber()))
-								.setParameter("line", Long.valueOf(c.getTrax_PicklistLine()))
-								.setParameter("tra", "DISTRIBU")
-								.getResultList();
-						
-						req.setInterfaceSyncFlag("S");
-						insertData(req);
-						
-					}catch(Exception e) {
-						logger.info(e.getMessage());
-					}	
-				}
-			}	
-			
-		}catch(Exception e) {
-			logger.info(e.getMessage());
-		}		
+	    try {
+	        for (Order o : data.getOrder()) {
+	            for (OrderComponent c : o.getOrderComponent()) {
+
+	                // Fetch the PicklistDistribution for transaction type "REQUIRE"
+	                List<PicklistDistribution> requireList = em.createQuery(
+	                        "SELECT p FROM PicklistDistribution p WHERE p.id.picklist = :pick AND p.id.picklistLine = :line AND p.id.transaction = :tra",
+	                        PicklistDistribution.class)
+	                        .setParameter("pick", Long.valueOf(c.getTrax_PicklistNumber()))
+	                        .setParameter("line", Long.valueOf(c.getTrax_PicklistLine()))
+	                        .setParameter("tra", "REQUIRE")
+	                        .getResultList();
+
+	                for (PicklistDistribution require : requireList) {
+	                    require.setInterfaceSyncFlag("S");
+	                    insertData(require);
+	                }
+
+	                try {
+	                    // Fetch the PicklistDistribution for transaction type "DISTRIBU"
+	                    List<PicklistDistribution> reqList = em.createQuery(
+	                            "SELECT p FROM PicklistDistribution p WHERE p.id.picklist = :pick AND p.id.picklistLine = :line AND p.id.transaction = :tra",
+	                            PicklistDistribution.class)
+	                            .setParameter("pick", Long.valueOf(c.getTrax_PicklistNumber()))
+	                            .setParameter("line", Long.valueOf(c.getTrax_PicklistLine()))
+	                            .setParameter("tra", "DISTRIBU")
+	                            .getResultList();
+
+	                    for (PicklistDistribution req : reqList) {
+	                        req.setInterfaceSyncFlag("S");
+	                        insertData(req);
+	                    }
+
+	                } catch (Exception e) {
+	                    logger.info(e.getMessage());
+	                }
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        logger.info(e.getMessage());
+	    }
 	}
+
 	
 	
 	private void markSentFailed(MT_TRAX_SND_I10_4110 data) {
@@ -629,7 +666,7 @@ public class MaterialData implements IMaterialData {
 				.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 				.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 				.setParameter("tra", "REQUIRE")
-				.getResultList();
+				.getSingleResult();
 				//require.setInterfaceSyncFlag(null);
 				require.setInterfaceSyncDate(null);
 				require.setInterfaceModifiedDate(new Date());
@@ -644,7 +681,7 @@ public class MaterialData implements IMaterialData {
 							.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 							.setParameter("tra", "DISTRIBU")
-							.getResultList();
+							.getSingleResult();
 					if(reqs.getEXCEPTION_ID() != null && reqs.getEXCEPTION_ID().equalsIgnoreCase("53")) {
 						req.setExternalCustRes(oc.getEXTERNAL_CUST_RES());
 						req.setExternalCustResItem(oc.getEXTERNAL_CUST_RES_ITEM());
@@ -703,7 +740,7 @@ public class MaterialData implements IMaterialData {
 				.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 				.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 				.setParameter("tra", "REQUIRE")
-				.getResultList();
+				.getSingleResult();
 				//require.setInterfaceSyncFlag(null);
 				require.setInterfaceSyncDate(new Date());
 				require.setInterfaceSyncFlag("Y");
@@ -714,7 +751,7 @@ public class MaterialData implements IMaterialData {
 							.setParameter("pick", Long.valueOf(oc.getPICKLIST()))
 							.setParameter("line", Long.valueOf(oc.getPICKLIST_LINE()))
 							.setParameter("tra", "DISTRIBU")
-							.getResultList();
+							.getSingleResult();
 					req.setInterfaceSyncDate(new Date());
 					req.setInterfaceSyncFlag("Y");
 					insertData(req);

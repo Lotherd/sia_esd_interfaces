@@ -97,11 +97,11 @@ public class CreationBatch_Data {
 	public String markTransaction(INT30_TRAX request) {
 		executed = "OK";
 		
-		String sqlselect = "SELECT  PN, WO, TASK_CARD FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL AND PN = ?";
+		String sqlselect = "SELECT  PN, WO, TASK_CARD, TRANSACTION_NO FROM PN_INVENTORY_HISTORY WHERE INTERFACE_TRANSFER_FLAG = 'D' AND INTERFACE_TRANSFER_DATE IS NULL AND PN = ?";
 		
-		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'S' WHERE PN = ? AND WO = ? AND TASK_CARD = ? AND INTERFACE_TRANSFER_FLAG = 'D' ";
+		String update = "UPDATE PN_INVENTORY_HISTORY SET LEGACY_BATCH = ?, INTERFACE_TRANSFER_DATE = SYSDATE, INTERFACE_TRANSFER_FLAG = 'S' WHERE PN = ? AND WO = ? AND TASK_CARD = ? AND TRANSACTION_NO = ? AND INTERFACE_TRANSFER_FLAG = 'D' ";
 		
-		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE LEGACY_BATCH = ? AND PN = ? AND WO = ? AND TASK_CARD = ?  AND INTERFACE_TRANSFER_FLAG = 'D' ";
+		String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, INTERFACE_TRANSFER_FLAG = NULL WHERE LEGACY_BATCH = ? AND PN = ? AND WO = ? AND TASK_CARD = ?  AND TRANSACTION_NO = ? AND INTERFACE_TRANSFER_FLAG = 'D' ";
 		
 		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
 	             + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I30', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'Creation_Batch I_30', sysdate, sysdate FROM dual";
@@ -124,6 +124,7 @@ public class CreationBatch_Data {
 					//String pn = rs1.getString(2);
 					String wo = rs1.getString(2);
 					String tc = rs1.getString(3);
+					String transaction = rs1.getString(4);
 					
 					if (request.getEXCEPTION_ID().equalsIgnoreCase("53")) {
 						
@@ -131,6 +132,7 @@ public class CreationBatch_Data {
 						pstmt2.setString(2, request.getPN());
 						pstmt2.setString(3, wo);
 						pstmt2.setString(4, tc);
+						pstmt2.setString(5, transaction);
 						pstmt2.executeUpdate();
 						
 						psDeleteError.setString(1, request.getLEGACY_BATCH());
@@ -150,6 +152,7 @@ public class CreationBatch_Data {
 	                    pstmt3.setString(2, request.getPN());
 	                    pstmt3.setString(3, wo);
 	                    pstmt3.setString(4, tc);
+	                    pstmt3.setString(5, transaction);
 	                    pstmt3.executeUpdate();
 					}
 				} else {
