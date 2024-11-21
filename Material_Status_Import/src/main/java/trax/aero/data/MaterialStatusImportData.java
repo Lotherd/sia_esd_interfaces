@@ -186,7 +186,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				for( Transfer_order to: input.getTransfer_order()) {
 					setCustTo(picklistDistributionDIS,to);
 					setCustTo(picklistDistributionREQ,to);
-					qtySum.add(to.getTRANSFER_ORDER_QUANTITY());
+					qtySum = qtySum.add(to.getTRANSFER_ORDER_QUANTITY());
 				}
 				picklistDistributionREQ.setQtyPicked(qtySum);
 				picklistDistributionDIS.setQtyPicked(qtySum);
