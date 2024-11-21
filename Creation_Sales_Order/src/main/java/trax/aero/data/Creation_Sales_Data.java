@@ -260,7 +260,7 @@ public class Creation_Sales_Data {
 	                Creation_Sales_Controller.addError(executed);
 	                
 	                String exceptionDetail = request.getExceptionDetail();
-	                if (request.getExceptionDetail() == null || request.getExceptionDetail() == "") {
+	                if (exceptionDetail == null || exceptionDetail.trim().isEmpty()) {
 	                    exceptionDetail = "Interface error returned from SAP";
 	                }
 
