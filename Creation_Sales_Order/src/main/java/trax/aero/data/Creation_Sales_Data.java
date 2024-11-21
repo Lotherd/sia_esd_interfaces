@@ -258,11 +258,16 @@ public class Creation_Sales_Data {
 	            } else if (request.getExceptionId() != null && !request.getExceptionId().equalsIgnoreCase("53")) {
 	                executed = "WO: " + request.getWO() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 	                Creation_Sales_Controller.addError(executed);
+	                
+	                String exceptionDetail = request.getExceptionDetail();
+	                if (exceptionDetail == null || exceptionDetail.trim().isEmpty()) {
+	                    exceptionDetail = "Interface error returned from SAP";
+	                }
 
 	              
 	                psInsertError.setString(1, request.getWO());
 	                psInsertError.setString(2, request.getExceptionId());
-	                psInsertError.setString(3, request.getExceptionDetail());
+	                psInsertError.setString(3, exceptionDetail);
 	                psInsertError.executeUpdate();
 
 	                pstmt2.setString(1, request.getWO());

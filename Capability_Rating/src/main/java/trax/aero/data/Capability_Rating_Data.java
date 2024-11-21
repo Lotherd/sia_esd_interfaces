@@ -163,6 +163,108 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                 em.merge(auth);
             }
             
+            System.out.println("CHECKING TASK_CARD EFFECTIVITY FOR PN_TYPE: " + element.getClcfNo() + " into the Trax DataBase");
+            try {
+                String pnType = element.getClcfNo();
+                String partNo = element.getPartNo();
+
+                // Query to get distinct task_cards from TASK_CARD_PN_EFFECTIVITY joined with pn_master where pn_type = ?
+                String queryStr = "SELECT DISTINCT te.task_card " +
+                                  "FROM TASK_CARD_PN_EFFECTIVITY te " +
+                                  "JOIN pn_master pm ON te.pn = pm.pn " +
+                                  "WHERE pm.pn_type = ?";
+                Query query = em.createNativeQuery(queryStr);
+                query.setParameter(1, pnType);
+                List<String> taskCards = query.getResultList();
+                System.out.println("Found task cards: " + taskCards);
+
+                for (String taskCard : taskCards) {
+                    // Check if the combination of task_card and partNo already exists
+                    String checkQueryStr = "SELECT COUNT(*) FROM TASK_CARD_PN_EFFECTIVITY WHERE task_card = ? AND pn = ?";
+                    Query checkQuery = em.createNativeQuery(checkQueryStr);
+                    checkQuery.setParameter(1, taskCard);
+                    checkQuery.setParameter(2, partNo);
+                    long count = ((Number) checkQuery.getSingleResult()).longValue();
+
+                    if (count == 0) {
+                        System.out.println("Inserting into TASK_CARD_PN_EFFECTIVITY and TASK_CARD_PN_EFF_REV for task_card: " + taskCard + " and PN: " + partNo);
+                        // Insert into TASK_CARD_PN_EFFECTIVITY
+                        String insertEffectivity = "INSERT INTO TASK_CARD_PN_EFFECTIVITY (TASK_CARD, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, \"SELECT\", PN) " +
+                                                   "VALUES (?, 'TRAXIFACE', SYSDATE, 'TRAXIFACE', SYSDATE, 'Y', ?)";
+                        Query insertEffectivityQuery = em.createNativeQuery(insertEffectivity);
+                        insertEffectivityQuery.setParameter(1, taskCard);
+                        insertEffectivityQuery.setParameter(2, partNo);
+                        insertEffectivityQuery.executeUpdate();
+
+                        // Insert into TASK_CARD_PN_EFF_REV
+                        String insertEffectivityRev = "INSERT INTO TASK_CARD_PN_EFF_REV (TASK_CARD, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, \"SELECT\", PN, REVISION) " +
+                                                      "VALUES (?, 'TRAXIFACE', SYSDATE, 'TRAXIFACE', SYSDATE, 'Y', ?, 1)";
+                        Query insertEffectivityRevQuery = em.createNativeQuery(insertEffectivityRev);
+                        insertEffectivityRevQuery.setParameter(1, taskCard);
+                        insertEffectivityRevQuery.setParameter(2, partNo);
+                        insertEffectivityRevQuery.executeUpdate();
+                        System.out.println("Successfully inserted records for task_card: " + taskCard);
+                    } else {
+                        System.out.println("Task Card " + taskCard + " and PN " + partNo + " already exist. Skipping insertion.");
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error occurred while checking or inserting/updating TASK_CARD_PN_EFFECTIVITY");
+                e.printStackTrace();
+            }
+            
+            
+            System.out.println("CHECKING EC EFFECTIVITY FOR PN_TYPE: " + element.getClcfNo() + " into the Trax DataBase");
+            try {
+                String pnType = element.getClcfNo();
+                String partNo = element.getPartNo();
+
+                // Query to get distinct task_cards from TASK_CARD_PN_EFFECTIVITY joined with pn_master where pn_type = ?
+                String queryStr = "SELECT DISTINCT te.eo " +
+                                  "FROM ENGINEERING_CONTROL te " +
+                                  "JOIN pn_master pm ON te.pn = pm.pn " +
+                                  "WHERE pm.pn_type = ?";
+                Query query = em.createNativeQuery(queryStr);
+                query.setParameter(1, pnType);
+                List<String> EC = query.getResultList();
+                System.out.println("Found EC: " + EC);
+
+                for (String EO : EC) {
+                    // Check if the combination of task_card and partNo already exists
+                    String checkQueryStr = "SELECT COUNT(*) FROM ENGINEERING_CONTROL WHERE eo = ? AND pn = ?";
+                    Query checkQuery = em.createNativeQuery(checkQueryStr);
+                    checkQuery.setParameter(1, EO);
+                    checkQuery.setParameter(2, partNo);
+                    long count = ((Number) checkQuery.getSingleResult()).longValue();
+
+                    if (count == 0) {
+                        System.out.println("Inserting into ENGINEERING_CONTROL and ENGINEERING_CONTROL_RV for EC: " + EO + " and PN: " + partNo);
+                        // Insert into TASK_CARD_PN_EFFECTIVITY
+                        String insertEffectivity = "INSERT INTO ENGINEERING_CONTROL (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, PN, EO_EFFECTIVITY_CATEGORY, AC_TYPE, AC_SERIES, \"SELECT\", CONTROL_OVERRIDE) " +
+                                                   "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', 'Y', 'N')";
+                        Query insertEffectivityQuery = em.createNativeQuery(insertEffectivity);
+                        insertEffectivityQuery.setParameter(1, EO);
+                        insertEffectivityQuery.setParameter(2, partNo);
+                        insertEffectivityQuery.executeUpdate();
+
+                        // Insert into TASK_CARD_PN_EFF_REV
+                        String insertEffectivityRev = "INSERT INTO ENGINEERING_CONTROL_RV (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, PN, EO_EFFECTIVITY_CATEGORY, AC_TYPE, AC_SERIES, REVISION, \"SELECT\", CONTROL_OVERRIDE ) " +
+                                                      "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', ?, 'Y', 'N')";
+                        Query insertEffectivityRevQuery = em.createNativeQuery(insertEffectivityRev);
+                        insertEffectivityRevQuery.setParameter(1, EO);
+                        insertEffectivityRevQuery.setParameter(2, partNo);
+                        insertEffectivityRevQuery.executeUpdate();
+                        System.out.println("Successfully inserted records for EC: " + EO);
+                    } else {
+                        System.out.println("EC " + EO + " and PN " + partNo + " already exist. Skipping insertion.");
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Error occurred while checking or inserting/updating ENGINEERING_CONTROL");
+                e.printStackTrace();
+            }
+
+            
             System.out.println("CHECKING PN_TYPE: " + element.getClcfNo() + " into the Trax DataBase");
 	        try {
 	            String checkPnTypeStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'PNTYPE' AND SYSTEM_CODE = ?";
