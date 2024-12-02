@@ -178,13 +178,19 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                 List<String> taskCards = query.getResultList();
                 System.out.println("Found task cards: " + taskCards);
 
+                if (taskCards.isEmpty()) {
+                    System.out.println("No task cards found for PN_TYPE: " + pnType);
+                }
+
                 for (String taskCard : taskCards) {
                     // Check if the combination of task_card and partNo already exists
+                    System.out.println("Checking if Task Card and PartNo combination already exists for task_card: " + taskCard + " and partNo: " + partNo);
                     String checkQueryStr = "SELECT COUNT(*) FROM TASK_CARD_PN_EFFECTIVITY WHERE task_card = ? AND pn = ?";
                     Query checkQuery = em.createNativeQuery(checkQueryStr);
                     checkQuery.setParameter(1, taskCard);
                     checkQuery.setParameter(2, partNo);
                     long count = ((Number) checkQuery.getSingleResult()).longValue();
+                    System.out.println("Count result: " + count);
 
                     if (count == 0) {
                         System.out.println("Inserting into TASK_CARD_PN_EFFECTIVITY and TASK_CARD_PN_EFF_REV for task_card: " + taskCard + " and PN: " + partNo);
@@ -195,15 +201,44 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                         insertEffectivityQuery.setParameter(1, taskCard);
                         insertEffectivityQuery.setParameter(2, partNo);
                         insertEffectivityQuery.executeUpdate();
+                        System.out.println("Inserted into TASK_CARD_PN_EFFECTIVITY for task_card: " + taskCard);
 
-                        // Insert into TASK_CARD_PN_EFF_REV
-                        String insertEffectivityRev = "INSERT INTO TASK_CARD_PN_EFF_REV (TASK_CARD, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, \"SELECT\", PN, REVISION) " +
-                                                      "VALUES (?, 'TRAXIFACE', SYSDATE, 'TRAXIFACE', SYSDATE, 'Y', ?, 1)";
-                        Query insertEffectivityRevQuery = em.createNativeQuery(insertEffectivityRev);
-                        insertEffectivityRevQuery.setParameter(1, taskCard);
-                        insertEffectivityRevQuery.setParameter(2, partNo);
-                        insertEffectivityRevQuery.executeUpdate();
-                        System.out.println("Successfully inserted records for task_card: " + taskCard);
+                        // Insert into TASK_CARD_REV
+                        String insertRev = "INSERT INTO TASK_CARD_REV (TASK_CARD, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, REVISON) " +
+                                           "VALUES (?, 'TRAXIFACE', SYSDATE, 'TRAXIFACE', SYSDATE, SYSDATE)";
+                        Query insertRevQuery = em.createNativeQuery(insertRev);
+                        insertRevQuery.setParameter(1, taskCard);
+                        insertRevQuery.executeUpdate();
+                        System.out.println("Inserted into TASK_CARD_REV for task_card: " + taskCard);
+
+                     // Insert or Update TASK_CARD_PN_EFF_REV
+                        String checkEffectivityRevStr = "SELECT COUNT(*) FROM TASK_CARD_PN_EFF_REV WHERE TASK_CARD = ? AND PN = ?";
+                        Query checkEffectivityRevQuery = em.createNativeQuery(checkEffectivityRevStr);
+                        checkEffectivityRevQuery.setParameter(1, taskCard);
+                        checkEffectivityRevQuery.setParameter(2, partNo);
+                        long effectivityRevCount = ((Number) checkEffectivityRevQuery.getSingleResult()).longValue();
+
+                        if (effectivityRevCount == 0) {
+                            String insertEffectivityRev = "INSERT INTO TASK_CARD_PN_EFF_REV (TASK_CARD, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, \"SELECT\", PN, REVISION) " +
+                                                          "SELECT ?, 'TRAXIFACE', SYSDATE, 'TRAXIFACE', SYSDATE, 'Y', ?, (SELECT REVISON FROM TASK_CARD_REV WHERE TASK_CARD = ? AND MODIFIED_BY = 'TRAXIFACE' ORDER BY MODIFIED_DATE DESC " +
+                                                          "FETCH FIRST 1 ROWS ONLY) FROM DUAL WHERE EXISTS ( SELECT 1 FROM TASK_CARD_REV WHERE TASK_CARD = ? AND MODIFIED_BY = 'TRAXIFACE')";
+                            Query insertEffectivityRevQuery = em.createNativeQuery(insertEffectivityRev);
+                            insertEffectivityRevQuery.setParameter(1, taskCard);
+                            insertEffectivityRevQuery.setParameter(2, partNo);
+                            insertEffectivityRevQuery.setParameter(3, taskCard);
+                            insertEffectivityRevQuery.setParameter(4, taskCard);
+                            insertEffectivityRevQuery.executeUpdate();
+                            System.out.println("Inserted into TASK_CARD_PN_EFF_REV for task_card: " + taskCard);
+                        } else {
+                            String updateEffectivityRev = "UPDATE TASK_CARD_PN_EFF_REV SET MODIFIED_BY = 'TRAXIFACE', MODIFIED_DATE = SYSDATE, \"SELECT\" = 'Y', REVISION = (SELECT REVISON FROM TASK_CARD_REV WHERE TASK_CARD = ? AND MODIFIED_BY = 'TRAXIFACE' ORDER BY MODIFIED_DATE DESC FETCH FIRST 1 ROWS ONLY) " +
+                                                          "WHERE TASK_CARD = ? AND PN = ?";
+                            Query updateEffectivityRevQuery = em.createNativeQuery(updateEffectivityRev);
+                            updateEffectivityRevQuery.setParameter(1, taskCard);
+                            updateEffectivityRevQuery.setParameter(2, taskCard);
+                            updateEffectivityRevQuery.setParameter(3, partNo);
+                            updateEffectivityRevQuery.executeUpdate();
+                            System.out.println("Updated TASK_CARD_PN_EFF_REV for task_card: " + taskCard);
+                        }
                     } else {
                         System.out.println("Task Card " + taskCard + " and PN " + partNo + " already exist. Skipping insertion.");
                     }
@@ -212,7 +247,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                 System.out.println("Error occurred while checking or inserting/updating TASK_CARD_PN_EFFECTIVITY");
                 e.printStackTrace();
             }
-            
+
             
             System.out.println("CHECKING EC EFFECTIVITY FOR PN_TYPE: " + element.getClcfNo() + " into the Trax DataBase");
             try {
@@ -246,10 +281,16 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                         insertEffectivityQuery.setParameter(1, EO);
                         insertEffectivityQuery.setParameter(2, partNo);
                         insertEffectivityQuery.executeUpdate();
+                        
+                        String insertRev = "INSERT INTO ENGINEERING_ORDER_RV (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, REVISION ) " +
+                                "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, 1)";
+                        Query insertRevQuery = em.createNativeQuery(insertRev);
+                        insertRevQuery.setParameter(1, EO);
+                        insertRevQuery.executeUpdate();
 
                         // Insert into TASK_CARD_PN_EFF_REV
                         String insertEffectivityRev = "INSERT INTO ENGINEERING_CONTROL_RV (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, PN, EO_EFFECTIVITY_CATEGORY, AC_TYPE, AC_SERIES, REVISION, \"SELECT\", CONTROL_OVERRIDE ) " +
-                                                      "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', ?, 'Y', 'N')";
+                                                      "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', 1, 'Y', 'N')";
                         Query insertEffectivityRevQuery = em.createNativeQuery(insertEffectivityRev);
                         insertEffectivityRevQuery.setParameter(1, EO);
                         insertEffectivityRevQuery.setParameter(2, partNo);

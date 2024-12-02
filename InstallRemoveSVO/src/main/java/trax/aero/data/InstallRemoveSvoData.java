@@ -201,7 +201,8 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "END AS QTY, " +
                 "A3.WO AS WO, " +
                 "A3.TASK_CARD AS TASK_CARD, " +
-                "A3.TRANSACTION_NO AS TRANSACTION " +
+                "A3.TRANSACTION_NO AS TRANSACTION, " +
+                "A3.SN_SAP " +
                 "FROM PN_INVENTORY_HISTORY A3 " +
                 "JOIN PN_INVENTORY_DETAIL A5 ON A5.BATCH = A3.BATCH " +
                 "JOIN WO A1 ON A1.WO = A3.WO " +
@@ -365,9 +366,8 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					
 					//For Removal (NLA/REMOVE or NLA/INSPECT) If SN is blank but SN_SAP is not null, SN_SAP to be appended to Removal Reason needs to be sent to the SAP as Removal Reason
 					if(( Inbound.getPnSn().isEmpty() ||Inbound.getPnSn() == null ) &&
-							(Inbound.getEsnNo() != null && !Inbound.getEsnNo().isEmpty() ) &&
 						 (rs1.getString(9).contains("REMOV") || rs1.getString(9).contains("INSPECT"))	) {
-						Inbound.setRemovalReason(Inbound.getRemovalReason() + " " +Inbound.getEsnNo());
+						Inbound.setRemovalReason(Inbound.getRemovalReason() + " " +rs1.getString(19));
 					}
 					
 					
@@ -401,9 +401,6 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					
 					if(rs1.getString(13) != null && !rs1.getString(13).isEmpty()) {
 						Inbound.setRfoNo(rs1.getString(13));
-					}
-					else if(rs1.getString(19) != null && !rs1.getString(19).isEmpty()) {
-						Inbound.setRfoNo(rs1.getString(19));
 					}else {
 						Inbound.setRfoNo("");
 					}

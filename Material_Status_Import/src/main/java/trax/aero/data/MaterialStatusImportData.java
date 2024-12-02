@@ -159,8 +159,10 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					}
 					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
 						
-			}					
-			List<PnInventoryDetail> pnInventoryDetails = getPnInventoryDetail(input, picklistHeader); // Get list of inventory details
+			}		
+			
+			pnInventoryDetail = getPnInventoryDetail(input,picklistHeader);
+			List<PnInventoryDetail> pnInventoryDetails = getPnInventoryDetails(input, picklistHeader); // Get list of inventory details
 	        double totalQtyReserved = pnInventoryDetails.stream().mapToDouble(p -> p.getQtyReserved().doubleValue()).sum(); // Calculate sum of qty_reserved
 						
 			
@@ -309,15 +311,35 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		}
 		insertData(rec);
 	}
+	
+	private PnInventoryDetail getPnInventoryDetail(MaterialStatusImportMaster input, PicklistHeader pick) {
+		try {
+			PnInventoryDetail pnInventoryDetail = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
+					+ " and p.createdBy != :create ", PnInventoryDetail.class)
+					.setParameter("par", input.getPN())
+					.setParameter("loc", pick.getLocation())
+					.setParameter("create", "ISSUEIFACE")
+					.getSingleResult();
+			logger.info("Found PnInventoryDetail");
+			return pnInventoryDetail;
+		}catch (Exception e) {
+			List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null "
+					+ " and p.createdBy != :create order by p.qtyAvailable desc")
+					.setParameter("par", input.getPN())
+					.setParameter("create", "ISSUEIFACE")
+					.getResultList();
+			logger.info("pnInventoryDetails SIZE " +pnInventoryDetails.size());
+			return pnInventoryDetails.get(0);
+		}
+	}
 
 
 
-	private List<PnInventoryDetail> getPnInventoryDetail(MaterialStatusImportMaster input, PicklistHeader pick) { // Changed return type to List
+	private List<PnInventoryDetail> getPnInventoryDetails(MaterialStatusImportMaster input, PicklistHeader pick) { // Changed return type to List
 	    try {
-	        List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null and p.location = :loc"
+	        List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null "
 	                + " and p.createdBy != :create ", PnInventoryDetail.class)
 	                .setParameter("par", input.getPN())
-	                .setParameter("loc", pick.getLocation())
 	                .setParameter("create", "ISSUEIFACE")
 	                .getResultList();
 	        logger.info("Found PnInventoryDetail list of size: " + pnInventoryDetails.size());
