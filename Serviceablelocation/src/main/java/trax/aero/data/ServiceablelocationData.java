@@ -105,7 +105,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 			"LEFT JOIN  wo_authority_approval wap on  wap.wo = w.wo\r\n" + 
 			"INNER JOIN  AUTHORITY_FORM_AUDIT afa on  afa.wo = wsd.wo and afa.pn = wsd.pn AND wap.authority  = afa.authority_form\r\n" + 
 			"where \r\n" + 
-			"w.rfo_no is not null  and w.interface_esd_date is null \r\n" + 
+			"w.rfo_no is not null and w.nh_wo = null and w.interface_esd_date is null \r\n" + 
 			"and s.party = '1P' and afa.printed_status ='ISSUED' \r\n" + 
 			"and w.status = 'POSTCOMPLT' and   w.AUTHORITY_SELECTED = 'ARC'\r\n" + 
 			"and afa.created_date = (select MAX(afa2.created_date) from AUTHORITY_FORM_AUDIT afa2 where afa.wo = afa2.wo and afa.pn = afa2.pn )";
