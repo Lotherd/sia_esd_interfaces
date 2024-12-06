@@ -183,7 +183,6 @@ public class Creation_Sales_Data {
                                     try (ResultSet rsInitialLoad2 = psInitialLoad2.executeQuery()) {
                                         if (rsInitialLoad2.next()) {
                                             String location = rsInitialLoad2.getString("LOCATION");
-
                                             BigDecimal initialBatchVal = getTransactionNo("BATCH");
                                             if (initialBatchVal == null) {
                                                 executed = "Failed to retrieve initial batch for WO: " + request.getWO();

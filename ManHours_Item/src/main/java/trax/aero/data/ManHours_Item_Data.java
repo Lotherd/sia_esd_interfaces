@@ -182,7 +182,7 @@ public class ManHours_Item_Data {
 	            	     request.getRemarks().toLowerCase().contains("already being processed".toLowerCase()))) {
 	                executed = "Request SAP Order Number: " + request.getRFO() + ", Error Code: " + errorCode + ", Remarks: " + request.getRemarks() + ", WO: " + request.getWO_number();
 	                ManHours_Item_Controller.addError(executed);
-	                
+	               
 	                psDeleteError.setString(1, request.getWO_number());
 	                psDeleteError.executeUpdate();
 	                
