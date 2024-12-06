@@ -195,7 +195,7 @@ public class Creation_Sales_Data {
                                             long batch = initialBatch;
 
                                             logger.info("Inserting into pn_inventory_detail for PN: " + pn + ", SN: " + sn);
-                                            String insertInventoryDetail = "INSERT INTO pn_inventory_detail (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, QTY_AVAILABLE, GL_COMPANY, CREATED_BY, CREATED_DATE) VALUES (?, ?, ?, ?, ?, ?, 'SIAEC', 'TRAXIFACE', sysdate)";
+                                            String insertInventoryDetail = "INSERT INTO pn_inventory_detail (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, QTY_AVAILABLE, GL_COMPANY, CREATED_BY, CREATED_DATE, CONDITION) VALUES (?, ?, ?, ?, ?, ?, 'SIAEC', 'TRAXIFACE', sysdate, 'U/S')";
                                             try (PreparedStatement pstmtInsertDetail = con.prepareStatement(insertInventoryDetail)) {
                                                 pstmtInsertDetail.setString(1, pn);
                                                 pstmtInsertDetail.setString(2, sn);
@@ -216,7 +216,7 @@ public class Creation_Sales_Data {
                                             long transactionNo = transactionVal.longValue();
 
                                             logger.info("Inserting into pn_inventory_history for PN: " + pn + ", SN: " + sn);
-                                            String insertInventoryHistory = "INSERT INTO pn_inventory_history (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, TRANSACTION_NO, WO, TRANSACTION_TYPE, TRANSACTION_DATE, GL_COMPANY, CREATED_BY, CREATED_DATE) VALUES (?, ?, ?, ?, ?, ?, ?, 'INITIAL_LOAD', SYSDATE, 'SIAEC', 'TRAXIFACE', sysdate)";
+                                            String insertInventoryHistory = "INSERT INTO pn_inventory_history (PN, SN, LOCATION, BATCH, GOODS_RCVD_BATCH, TRANSACTION_NO, WO, TRANSACTION_TYPE, TRANSACTION_DATE, GL_COMPANY, CREATED_BY, CREATED_DATE, CONDITION) VALUES (?, ?, ?, ?, ?, ?, ?, 'INITIAL_LOAD', SYSDATE, 'SIAEC', 'TRAXIFACE', sysdate, 'U/S')";
                                             try (PreparedStatement pstmtInsertHistory = con.prepareStatement(insertInventoryHistory)) {
                                                 pstmtInsertHistory.setString(1, pn);
                                                 pstmtInsertHistory.setString(2, sn);

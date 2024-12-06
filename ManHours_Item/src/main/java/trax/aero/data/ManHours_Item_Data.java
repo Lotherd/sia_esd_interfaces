@@ -158,22 +158,22 @@ public class ManHours_Item_Data {
 	                pstmt2.setString(2, o.getTASK_CARD());
 	                pstmt2.executeUpdate();
 	                
-	                pstmt3.setString(1, request.getWO_number());
-	                pstmt3.setString(2, o.getTASK_CARD());
-	                pstmt3.executeUpdate();
+	               // pstmt3.setString(1, request.getWO_number());
+	              //  pstmt3.setString(2, o.getTASK_CARD());
+	               // pstmt3.executeUpdate();
 	                
-	                ps2.setString(1, request.getWO_number());
-	                ps2.setString(2, o.getTASK_CARD());
-	                ResultSet rs = ps2.executeQuery();
+	                //ps2.setString(1, request.getWO_number());
+	                //ps2.setString(2, o.getTASK_CARD());
+	                //ResultSet rs = ps2.executeQuery();
 	                
-	                while (rs.next()) {
+	                /*while (rs.next()) {
 	                    String transaction = rs.getString("wo_actual_transaction");
 	                    if (transaction != null && !transaction.isEmpty()) {
 	                        ps3.setString(1, request.getWO_number());
 	                        ps3.setString(2, transaction);
 	                        ps3.executeUpdate();
 	                    }
-	                }
+	                }*/
 	            }
 	            
 	            String errorCode = request.getError_code();
