@@ -202,7 +202,7 @@ public class Creation_Sales_Data {
                                                 pstmtInsertDetail.setString(3, location);
                                                 pstmtInsertDetail.setLong(4, batch);
                                                 pstmtInsertDetail.setLong(5, goodsReceivedBatch);
-                                                pstmtInsertDetail.setInt(6, 10); // Quantity available
+                                                pstmtInsertDetail.setInt(6, 1); // Quantity available
                                                 pstmtInsertDetail.executeUpdate();
                                             }
 
@@ -226,6 +226,20 @@ public class Creation_Sales_Data {
                                                 pstmtInsertHistory.setLong(6, transactionNo);
                                                 pstmtInsertHistory.setString(7, request.getWO());
                                                 pstmtInsertHistory.executeUpdate();
+                                                
+                                            
+                                            }
+                                            
+                                            logger.info("Updating wo_shop_detail for WO: " + request.getWO() + ", PN: " + pn);
+                                            String updateWOshop = "update wo_shop_detail set BATCH = ? where wo = ? and pn = ? and PN_SN = ? ";
+                                            try (PreparedStatement pstmtupdateBatch = con.prepareStatement(updateWOshop)) {
+                                            	pstmtupdateBatch.setLong(1, goodsReceivedBatch);
+                                            	pstmtupdateBatch.setString(2, request.getWO());
+                                            	pstmtupdateBatch.setString(3, pn);
+                                            	pstmtupdateBatch.setString(4, sn);
+                                            	pstmtupdateBatch.executeUpdate();
+                                                
+                                            
                                             }
                                         }
                                     }

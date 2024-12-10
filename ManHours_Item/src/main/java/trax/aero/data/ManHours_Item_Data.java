@@ -130,6 +130,8 @@ public class ManHours_Item_Data {
 	    
 	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = 'R', INTERFACE_STEP = '1' " +
                 "WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D'";
+	    
+	    String UpdateWOTaskCardSql2 = "UPDATE WO_TASK_CARD SET INTERFACE_STEP = '2' WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'R' AND INTERFACE_STEP = '1' ";
 
 	    
 	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N' " +
@@ -143,6 +145,7 @@ public class ManHours_Item_Data {
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 	    	 PreparedStatement pstmt2 = con.prepareStatement(updateWoTaskCardSql);
+	    	 PreparedStatement pstmt4 = con.prepareStatement(updateWoTaskCardSql);
 	    	 PreparedStatement pstmt3 = con.prepareStatement(updateWoActualsSql);
 	         PreparedStatement ps1 = con.prepareStatement(sqlunMark);
 	    	 PreparedStatement ps2 = con.prepareStatement(selectTransaction);
@@ -157,6 +160,10 @@ public class ManHours_Item_Data {
 	                pstmt2.setString(1, request.getWO_number());
 	                pstmt2.setString(2, o.getTASK_CARD());
 	                pstmt2.executeUpdate();
+	                
+	                pstmt4.setString(1, request.getWO_number());
+	                pstmt4.setString(2, o.getTASK_CARD());
+	                pstmt4.executeUpdate();
 	                
 	               // pstmt3.setString(1, request.getWO_number());
 	              //  pstmt3.setString(2, o.getTASK_CARD());
