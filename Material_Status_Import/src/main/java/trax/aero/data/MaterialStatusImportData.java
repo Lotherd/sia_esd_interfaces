@@ -107,7 +107,6 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		//setting up variables
 		PnInventoryDetail pnInventoryDetail = null;
 		PicklistHeader picklistHeader = null;
-		PicklistDistribution picklistDistributionDIS = null;
 		PicklistDistribution picklistDistributionREQ = null;
 		
 		WoTaskCard woTaskCard = null;
@@ -138,13 +137,11 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			if(input.getPICKLIST() != null && input.getPICKLIST_LINE() != null &&
 				!input.getPICKLIST().isEmpty() && !input.getPICKLIST_LINE().isEmpty()) {
 					picklistHeader = getPicklistHeader(input);
-					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",null);
 					picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null);
 			}else if(!input.getPICKLIST().equalsIgnoreCase("0000000000") && !input.getPICKLIST_LINE().equalsIgnoreCase("0000")){
 						
 					picklistHeader = getPicklistHeaderRev(input);
 					picklistDistributionREQ = getPicklistDistribution(picklistHeader, input,"REQUIRE",null );
-					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
 						
 			}else {
 						
@@ -157,27 +154,19 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					if(picklistDistributionREQ == null) {
 						throw new Exception ("picklistDistribution REQ is null");
 					}
-					picklistDistributionDIS = getPicklistDistribution(picklistHeader, input,"DISTRIBU",picklistDistributionREQ);
 						
-			}		
-			
+			}					
 			pnInventoryDetail = getPnInventoryDetail(input,picklistHeader);
 			List<PnInventoryDetail> pnInventoryDetails = getPnInventoryDetails(input, picklistHeader); // Get list of inventory details
 	        double totalQtyReserved = pnInventoryDetails.stream().mapToDouble(p -> p.getQtyReserved().doubleValue()).sum(); // Calculate sum of qty_reserved
-						
+	        		
 			
-				if( picklistDistributionDIS.getQty().doubleValue() > totalQtyReserved ) {
-					throw new Exception("QTY requested is more than QTY reserved");
+				if( picklistDistributionREQ.getQty().doubleValue() > totalQtyReserved ) {
+					throw new Exception("QTY requested is more than QTY reserved " + totalQtyReserved);
 				}
 				
-				pnInventoryDetail.setModifiedBy("TRAX_IFACE");
-				pnInventoryDetail.setModifiedDate(new Date());
 				
-				picklistDistributionDIS.setModifiedBy("TRAX_IFACE");
-				picklistDistributionDIS.setModifiedDate(new Date());
 								
-				picklistDistributionDIS.setModifiedBy("TRAX_IFACE");
-				picklistDistributionDIS.setModifiedDate(new Date());
 				
 				picklistDistributionREQ.setModifiedBy("TRAX_IFACE");
 				picklistDistributionREQ.setModifiedDate(new Date());
@@ -185,33 +174,100 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				picklistHeader.setModifiedBy("TRAX_IFACE");
 				picklistHeader.setModifiedDate(new Date());
 				
-				//LOCATION TRANSFER
-				BigDecimal qtySum = new BigDecimal(0);
-				for( Transfer_order to: input.getTransfer_order()) {
-					setCustTo(picklistDistributionDIS,to);
-					setCustTo(picklistDistributionREQ,to);
-					qtySum = qtySum.add(to.getTRANSFER_ORDER_QUANTITY());
-				}
-				picklistDistributionREQ.setQtyPicked(qtySum);
-				picklistDistributionDIS.setQtyPicked(qtySum);
+				
+				
 				try {
 					picklistHeader.setLocation(getWo(woTaskCard).getLocation());
 				}catch (Exception e) {
 
-				}	pnInventoryDetail.setLegacyBatch(input.getTransfer_order().get(0).getLEGACY_BATCH());
+				}	
+				pnInventoryDetail.setLegacyBatch(input.getTransfer_order().get(0).getLEGACY_BATCH());
 
-				picklistDistributionDIS.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
-				picklistDistributionDIS.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
 				picklistDistributionREQ.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
 				picklistDistributionREQ.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
 				
-				PnInventoryHistory pih = setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionDIS, "BIN/TRANSFER");
-				picklistDistributionDIS.setPn(pih.getPn());
-				picklistDistributionREQ.setPn(pih.getPn());
+				PnInventoryHistory pih = setPnInevtoryHistory(pnInventoryDetail, input, picklistDistributionREQ, "BIN/TRANSFER");
 				
-				picklistDistributionDIS.setBatch(new BigDecimal(pih.getId().getBatch()));
-				picklistDistributionREQ.setBatch(new BigDecimal(pih.getId().getBatch()));
+				
+				for(PicklistDistribution picklist : picklistHeader.getPicklistDistributions()) {
+					
+					if(picklist.getId().getTransaction().equalsIgnoreCase("DISTRIBU")) {
+						
+						//Main PN attached to Picklist
+						if(picklist.getBatch() != null && input.getPN().equalsIgnoreCase(picklist.getPn()) ) {					
+							PnInventoryDetail pnInvDet = em.find(PnInventoryDetail.class, picklist.getBatch().longValue());
+							if(pnInvDet != null  ) {
+								pnInvDet.setQtyReserved(pnInvDet.getQtyReserved().subtract( picklist.getQtyPicked()));
+								if (pnInvDet.getQtyReserved().compareTo(BigDecimal.ZERO) < 0) {
+									pnInvDet.setQtyReserved(BigDecimal.ZERO);
+								}
+								pnInvDet.setModifiedBy("TRAX_IFACE");
+								pnInvDet.setModifiedDate(new Date());
+							}
+							logger.info("UPDATING pnInventoryDetail: " + input.getPN() + " " + pnInvDet.getBatch());
+							insertData(pnInvDet);
+						}else { // Altertive PN provided totalQtyReserved
+							
+							double totalQtyPick = picklist.getQtyPicked().doubleValue();
+							
+							for(PnInventoryDetail pnInvDet: pnInventoryDetails) {
+								if(! pnInvDet.getLocation().equalsIgnoreCase(location) ) {
+									
+									double qty_Reserve = 0;
+									if (pnInvDet.getQtyReserved() != null)
+									{
+										qty_Reserve = pnInvDet.getQtyReserved().doubleValue();
+									}
+									if (totalQtyPick >= qty_Reserve)
+									{	
+										totalQtyPick = totalQtyPick - qty_Reserve;
+										qty_Reserve = 0;
+									} else
+									{
+										qty_Reserve = qty_Reserve - totalQtyPick;
+										totalQtyPick = 0;
+									}
+									pnInvDet.setQtyReserved(new BigDecimal( qty_Reserve));
+									
+									if (pnInvDet.getQtyReserved().compareTo(BigDecimal.ZERO) < 0) {
+										pnInvDet.setQtyReserved(BigDecimal.ZERO);
+									}
+									pnInvDet.setModifiedBy("TRAX_IFACE");
+									pnInvDet.setModifiedDate(new Date());
+									logger.info("UPDATING pnInventoryDetail: " + input.getPN() + " " + pnInvDet.getBatch());
+									insertData(pnInvDet);
+								}
+								
+																	
+							}
+							
+							
+							
+						}
+						
+						picklist.setExternalCustTo(input.getTransfer_order().get(0).getTRASNFER_ORDER_NUMBER());
+						picklist.setExternalCustToQty(input.getTransfer_order().get(0).getTRANSFER_ORDER_QUANTITY());
+						picklist.setModifiedBy("TRAX_IFACE");
+						picklist.setModifiedDate(new Date());
+						
+						//LOCATION TRANSFER
+						for( Transfer_order to: input.getTransfer_order()) {
+							if(picklist.getQtyPicked().compareTo(to.getTRANSFER_ORDER_QUANTITY()) == 0) {
+								setCustTo(picklist,to);
+							}
+						}		
+						logger.info("UPDATING picklistDistribution Distribution Line: " + picklist.getId().getDistributionLine());
+						insertData(picklist);
+					}
+					
+				}
+				
+				//picklistDistributionDIS.setPn(pih.getPn());
+				//picklistDistributionREQ.setPn(pih.getPn());
+				
+				//picklistDistributionDIS.setBatch(new BigDecimal(pih.getId().getBatch()));
+				//picklistDistributionREQ.setBatch(new BigDecimal(pih.getId().getBatch()));
 				picklistHeader.setLocation(pih.getToLocation());
 				picklistHeader.setBin(pih.getToBin());
 				
@@ -221,11 +277,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				insertData(pnInventoryDetail);
 				
 						
-				insertData(picklistHeader);
 				logger.info("UPDATING picklistDistribution: " + picklistHeader.getPicklist());
-				insertData(picklistDistributionDIS);
 				insertData(picklistDistributionREQ);
-				
 				insertData(picklistHeader);
 				
 				
@@ -285,10 +338,11 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 	private void setCustTo(PicklistDistribution picklistDistributionDIS, Transfer_order to) {
 		PicklistDistributionRec rec = null;
 		try {
-			 rec = em.createQuery("SELECT p FROM PicklistDistributionRec p WHERE p.id.picklist = :pic AND p.id.picklistLine = :res AND p.id.transaction = :act and p.id.custTo = :cus", PicklistDistributionRec.class)
+			 rec = em.createQuery("SELECT p FROM PicklistDistributionRec p WHERE p.id.picklist = :pic AND p.id.picklistLine = :res AND p.id.transaction = :act and p.id.custTo = :cus and p.id.distributionLine = :line", PicklistDistributionRec.class)
 					.setParameter("pic", picklistDistributionDIS.getId().getPicklist())
 					.setParameter("res",picklistDistributionDIS.getId().getPicklistLine())
 					.setParameter("act",picklistDistributionDIS.getId().getTransaction())
+					.setParameter("line",picklistDistributionDIS.getId().getDistributionLine())
 					.setParameter("cus",to.getTRASNFER_ORDER_NUMBER().longValue())
 					.getSingleResult();
 		}catch (Exception e) {
@@ -338,7 +392,7 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 	private List<PnInventoryDetail> getPnInventoryDetails(MaterialStatusImportMaster input, PicklistHeader pick) { // Changed return type to List
 	    try {
 	        List<PnInventoryDetail> pnInventoryDetails = em.createQuery("SELECT p FROM PnInventoryDetail p where p.pn = :par and p.sn is null "
-	                + " and p.createdBy != :create ", PnInventoryDetail.class)
+	                + " and p.createdBy != :create ")
 	                .setParameter("par", input.getPN())
 	                .setParameter("create", "ISSUEIFACE")
 	                .getResultList();
@@ -984,15 +1038,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 		
 		stockTransfer.setCreatedDate(pnInventoryDetail.getCreatedDate());
 		stockTransfer.setCreatedBy(pnInventoryDetail.getCreatedBy());
-			
 		
-		BigDecimal qtyAvail = pnInventoryDetail.getQtyAvailable();
-		if(pick.getCreatedBy().equalsIgnoreCase("TRAX_IFACE")) {
-			pnInventoryDetail.setQtyAvailable(qtyAvail.subtract( ( pick.getQtyPicked())));
-			if(pnInventoryDetail.getQtyAvailable().compareTo(BigDecimal.ZERO) > 0) {
-				pnInventoryDetail.setQtyAvailable(BigDecimal.ZERO);
-			}
-		}
+		
 		stockTransfer.setQtyReserved(( pick.getQtyPicked()));
 			
 		//stockTransfer.setQtyAvailable(new BigDecimal(0));
