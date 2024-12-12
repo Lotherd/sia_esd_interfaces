@@ -131,7 +131,7 @@ public class ManHours_Item_Data {
 	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = 'R', INTERFACE_STEP = '1' " +
                 "WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D'";
 	    
-	    String UpdateWOTaskCardSql2 = "UPDATE WO_TASK_CARD SET INTERFACE_STEP = '2' WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'R' AND INTERFACE_STEP = '1' ";
+	    String UpdateWOTaskCardSql2 = "UPDATE WO_TASK_CARD SET INTERFACE_STEP = '2' WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D' ";
 
 	    
 	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N' " +
@@ -145,7 +145,7 @@ public class ManHours_Item_Data {
 	         PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 	    	 PreparedStatement pstmt2 = con.prepareStatement(updateWoTaskCardSql);
-	    	 PreparedStatement pstmt4 = con.prepareStatement(updateWoTaskCardSql);
+	    	 PreparedStatement pstmt4 = con.prepareStatement(UpdateWOTaskCardSql2);
 	    	 PreparedStatement pstmt3 = con.prepareStatement(updateWoActualsSql);
 	         PreparedStatement ps1 = con.prepareStatement(sqlunMark);
 	    	 PreparedStatement ps2 = con.prepareStatement(selectTransaction);
@@ -153,13 +153,14 @@ public class ManHours_Item_Data {
 	        
 	    	for(Operation_TRAX o : request.getOperation()) {
 	        if (request != null) {
-	            if(request.getRFO() != null && !request.getRFO().isEmpty()) {
+	        	
+	            if(request.getRFO() != null && !request.getRFO().isEmpty() && !request.getError_code().equalsIgnoreCase("51") ) {
 	                pstmt1.setString(1, request.getWO_number());
 	                pstmt1.executeUpdate();
 	                
-	                pstmt2.setString(1, request.getWO_number());
-	                pstmt2.setString(2, o.getTASK_CARD());
-	                pstmt2.executeUpdate();
+	               // pstmt2.setString(1, request.getWO_number());
+	               // pstmt2.setString(2, o.getTASK_CARD());
+	                //pstmt2.executeUpdate();
 	                
 	                pstmt4.setString(1, request.getWO_number());
 	                pstmt4.setString(2, o.getTASK_CARD());
@@ -185,7 +186,7 @@ public class ManHours_Item_Data {
 	            
 	            String errorCode = request.getError_code();
 	            if (errorCode != null && !errorCode.equalsIgnoreCase("53") &&
-	            	    (request.getRemarks().toLowerCase().contains("is locked by".toLowerCase()) ||
+	            	    (request.getRemarks().toLowerCase().contains("is locked".toLowerCase()) ||
 	            	     request.getRemarks().toLowerCase().contains("already being processed".toLowerCase()))) {
 	                executed = "Request SAP Order Number: " + request.getRFO() + ", Error Code: " + errorCode + ", Remarks: " + request.getRemarks() + ", WO: " + request.getWO_number();
 	                ManHours_Item_Controller.addError(executed);
