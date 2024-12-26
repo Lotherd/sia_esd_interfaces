@@ -289,6 +289,40 @@ public class Creation_Equipment_Data {
 		      if (pstmt1 != null && !pstmt1.isClosed()) pstmt1.close();
 		}
 		
+		 
+		 try {
+		        String sqlPendingTransactions = "SELECT WO FROM WO WHERE STATUS = 'CONF SLOT' AND INTERFACE_ESD_TRANSFERRED_FLAG = 'D' AND SYSDATE - INTERFACE_ESD_TRANSFERRED_DATE > 10 / (24 * 60)";
+		        
+		        try (PreparedStatement ps = con.prepareStatement(sqlPendingTransactions);
+		             ResultSet rs = ps.executeQuery()) {
+
+		            while (rs.next()) {
+		                String wo = rs.getString("WO");
+		                logger.warning("Fallback triggered for WO: " + wo);
+
+		                String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
+		                        + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I05', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', '51', 'Y', '10 minutes of no response from SAP', 'Creation_Sales I_07', sysdate, sysdate FROM dual";
+		                
+		                try (PreparedStatement psError = con.prepareStatement(sqlInsertError)) {
+		                    psError.setString(1, wo);
+		                    psError.executeUpdate();
+		                }
+
+		                String sqlUpdateWO = "UPDATE WO SET STATUS = 'RSRV SLOT', INTERFACE_ESD_TRANSFERRED_FLAG = null, INTERFACE_ESD_TRANSFERRED_DATE = null WHERE WO = ?";
+		                
+		                try (PreparedStatement psUpdate = con.prepareStatement(sqlUpdateWO)) {
+		                    psUpdate.setString(1, wo);
+		                    psUpdate.executeUpdate();
+		                }
+
+		                logger.info("Fallback completed for WO: " + wo);
+		            }
+		        }
+		    } catch (Exception e) {
+		        logger.severe("Error during inline fallback task: " + e.getMessage());
+		        Creation_Equipment_Controller.addError(e.getMessage());
+		    }
+		 
 		return list;
 	} 
 	
