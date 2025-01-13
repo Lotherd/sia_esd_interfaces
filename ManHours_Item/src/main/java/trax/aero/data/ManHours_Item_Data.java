@@ -333,7 +333,7 @@ public class ManHours_Item_Data {
                 "    wo_task_card_item_wrk_acmplshd) WHERE rn = 1) wka ON wti.wo = wka.wo AND " +
                 "    wti.task_card = wka.task_card AND wti.task_card_item = wka.task_card_item AND " +
                 "    wti.inspected_by = wka.created_by " +
-                "LEFT JOIN employee_control ec ON ec.employee = wka.created_by " +
+                "JOIN employee_control ec ON ec.employee = wka.created_by " +
                 "WHERE wti.wo = ? AND wti.task_card = ? AND wt.non_routine = 'N' AND wa.employee IS NOT NULL " +
                 "AND wa.transaction_date = (SELECT MAX(transaction_date) FROM wo_actuals wa2 WHERE wa2.wo = wti.wo) " +
                 "FETCH FIRST 1 ROW ONLY) END AS single_string FROM wo_task_card wt WHERE wt.wo = ? AND " +
