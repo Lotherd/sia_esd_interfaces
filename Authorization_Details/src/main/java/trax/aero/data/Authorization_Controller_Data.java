@@ -205,10 +205,14 @@ public class Authorization_Controller_Data {
                                       .setParameter("acType", recordItemName)
                                       .getSingleResult();
                     
+                    EmployeeSkillPK pk = new EmployeeSkillPK();
                     // Skill exists, so update it
-                    employeeSkill.setModifiedBy("TRAX_IFACE");
+                    employeeSkill.setModifiedBy("IFACE_ESD");
                     employeeSkill.setModifiedDate(new Date());
                     employeeSkill.setLicense(e.getAuthorizationNumber());
+                    pk.setAcSeries(techControl != null ? techControl : "N/A"); // Use techControl if found, otherwise "N/A"
+                    employeeSkill.setPntype(recordItemName != null ? recordItemName : "N/A");
+                    employeeSkill.setEngine(techControl != null ? techControl : "N/A");
 
                     try {
                         DateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
