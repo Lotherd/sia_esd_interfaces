@@ -79,17 +79,29 @@ public class Run implements Runnable{
 			Actual_Hours_Controller.sendEmailRequest(ArrayReq);
 		}
 	}
+	
+	private void processEarliestWorkRecords() {
+		try {
+			data.processEarliestWorkRecords();
+			//logger.info("Earliest work records processed successfully.");
+		} catch (Exception e) {
+			logger.severe("Error processing earliest work records: " + e.getMessage());
+			throw new RuntimeException(e);
+		}
+	}
 
 	public void run() {
     try {
-      if (data.lockAvailable("I31")) {
-        data.lockTable("I31");
-        process();
-        data.unlockTable("I31");
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    	if (data.lockAvailable("I31")) {
+			data.lockTable("I31");
+			processEarliestWorkRecords(); // Run new functionality first
+			process();
+			data.unlockTable("I31");
+		}
+	} catch (Exception e) {
+		logger.severe("Error in Run execution: " + e.getMessage());
+		e.printStackTrace();
+	}
   }
 
 }

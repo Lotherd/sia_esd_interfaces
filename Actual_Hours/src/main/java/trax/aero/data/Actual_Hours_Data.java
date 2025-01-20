@@ -135,6 +135,75 @@ public class Actual_Hours_Data {
 		return executed;
 	}*/
 	
+	public void processEarliestWorkRecords() {
+	    String selectQuery = "SELECT wo, task_card, start_date\n" +
+	            "FROM (\n" +
+	            "    SELECT wo, task_card, start_date,\n" +
+	            "           ROW_NUMBER() OVER (PARTITION BY wo, task_card ORDER BY start_date ASC) AS rn\n" +
+	            "    FROM wo_task_card_work_in_progress\n" +
+	            ")\n" +
+	            "WHERE rn = 1";
+
+	    String insertQuery = "MERGE INTO WO_TASK_CARD_AFTER_WORK tgt " +
+	            "USING (SELECT ? AS wo, ? AS task_card, ? AS start_date FROM dual) src " +
+	            "ON (tgt.wo = src.wo AND tgt.task_card = src.task_card AND tgt.start_date = src.start_date) " +
+	            "WHEN NOT MATCHED THEN " +
+	            "INSERT (wo, task_card, start_date) VALUES (src.wo, src.task_card, src.start_date)";
+
+	    PreparedStatement selectStmt = null;
+	    PreparedStatement insertStmt = null;
+	    ResultSet rs = null;
+	    int insertedCount = 0;
+
+	    try {
+	        if (con == null || con.isClosed()) {
+	            try {
+	                con = DataSourceClient.getConnection();
+	                logger.info("Database connection established.");
+	            } catch (Exception e) {
+	                logger.severe("Failed to establish database connection: " + e.getMessage());
+	                throw new RuntimeException("Database connection error", e);
+	            }
+	        }
+
+	        selectStmt = con.prepareStatement(selectQuery);
+	        rs = selectStmt.executeQuery();
+
+	        insertStmt = con.prepareStatement(insertQuery);
+
+	        while (rs.next()) {
+	            String wo = rs.getString("wo");
+	            String taskCard = rs.getString("task_card");
+	            Date startDate = rs.getDate("start_date");
+
+	            insertStmt.setString(1, wo);
+	            insertStmt.setString(2, taskCard);
+	            insertStmt.setDate(3, new java.sql.Date(startDate.getTime()));
+
+	            try {
+	                insertStmt.executeUpdate();
+	                insertedCount++;
+	            } catch (SQLException e) {
+	                logger.warning("Record already exists or failed to insert: wo=" + wo + ", task_card=" + taskCard + ", start_date=" + startDate);
+	            }
+	        }
+
+	       // logger.info("Finished processing earliest work records. Total inserted records: " + insertedCount);
+
+	    } catch (SQLException e) {
+	        logger.severe("Error processing earliest work records: " + e.getMessage());
+	    } finally {
+	        try {
+	            if (rs != null && !rs.isClosed()) rs.close();
+	            if (selectStmt != null && !selectStmt.isClosed()) selectStmt.close();
+	            if (insertStmt != null && !insertStmt.isClosed()) insertStmt.close();
+	        } catch (SQLException e) {
+	            logger.severe("Error closing resources: " + e.getMessage());
+	        }
+	    }
+	}
+
+
 	
 	public ArrayList<INT31_SND> getActualHours() throws Exception{
 		executed = "OK";
@@ -155,13 +224,13 @@ public class Actual_Hours_Data {
 		ArrayList<OrderSND> orlist = new ArrayList<OrderSND>();
 		
 		String sqlActualHR = "SELECT DISTINCT W.RFO_NO, WTI.OPS_NO, WA.EMPLOYEE, ABS(WA.HOURS * 60 + WA.MINUTES) AS TOTAL_MINUTES, \r\n" +
-							 "TO_CHAR(TO_DATE(TO_CHAR(WA.TRANSACTION_DATE, 'DDMMYY') || LPAD(TO_CHAR(WA.END_HOUR), 2, '0') || LPAD(TO_CHAR(WA.END_MINUTE), 2, '0'), 'DDMMYYHH24MISS') \r\n" +
-							 "- NUMTODSINTERVAL(ABS(WA.HOURS * 60 + WA.MINUTES), 'MINUTE'), 'DDMMYY') AS START_DATE, LPAD(TO_CHAR(WA.START_HOUR), 2, '0') || LPAD(TO_CHAR(WA.START_MINUTE), 2, '0') || '00' AS START_TIME, \r\n" +
+							 "TO_CHAR(WTW.START_DATE, 'DDMMYY') AS START_DATE, LPAD(TO_CHAR(WA.START_HOUR), 2, '0') || LPAD(TO_CHAR(WA.START_MINUTE), 2, '0') || '00' AS START_TIME, \r\n" +
 							 "TO_CHAR(WA.TRANSACTION_DATE, 'DDMMYY') AS END_DATE, LPAD(TO_CHAR(WA.END_HOUR), 2, '0') || LPAD(TO_CHAR(WA.END_MINUTE), 2, '0') || '00' AS END_TIME, \r\n" +
 							 "WA.WO_ACTUAL_TRANSACTION, WA.SKILL, CASE WHEN WT.STATUS = 'CLOSED' THEN 'X' ELSE '' END AS STATUS_INDICATOR, \r\n" +
 							 "W.WO, WA.TASK_CARD FROM WO W INNER JOIN WO_ACTUALS WA ON W.WO = WA.WO INNER JOIN WO_TASK_CARD WT ON \r\n" + 
 							 "WA.WO = WT.WO AND WA.TASK_CARD = WT.TASK_CARD INNER JOIN WO_TASK_CARD_ITEM WTI ON \r\n" +
-							 "WA.WO = WTI.WO AND WA.TASK_CARD = WTI.TASK_CARD WHERE W.RFO_NO IS NOT NULL AND WTI.OPS_NO IS NOT NULL AND WA.INTERFACE_ESD_TRANSFERRED_FLAG IS NULL \r\n" +
+							 "WA.WO = WTI.WO AND WA.TASK_CARD = WTI.TASK_CARD INNER JOIN WO_TASK_CARD_AFTER_WORK WTW ON \r\n" +
+							 "WA.WO = WTW.WO AND WA.TASK_CARD = WTW.TASK_CARD WHERE W.RFO_NO IS NOT NULL AND WTI.OPS_NO IS NOT NULL AND WA.INTERFACE_ESD_TRANSFERRED_FLAG IS NULL \r\n" +
 							 "AND WA.INTERFACE_ESD_TRANSFERRED_DATE IS NULL AND WA.TRANSACTION_DATE IS NOT NULL";
 		
 		String sqlSkill = "SELECT DISTINCT WA.EMPLOYEE, CASE WHEN RM.MECHANIC_STAMP = 'INSPECTOR' THEN 'TECNT' ELSE 'ENGNT' END AS ACTIVITY_TYPE \r\n" +
