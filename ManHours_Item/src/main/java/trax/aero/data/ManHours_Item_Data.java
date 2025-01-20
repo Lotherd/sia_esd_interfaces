@@ -115,10 +115,10 @@ public class ManHours_Item_Data {
 	    String sqlDeleteError = "DELETE FROM interface_audit WHERE TRANSACTION = ? ";
 	    
 	    String sqlunMark = "UPDATE WO_TASK_CARD " +
-                "SET INTERFACE_SAP_TRANSFERRED_FLAG = " +
+                "SET INTERFACE_14_TRANSFERRED_FLAG = " +
                 "CASE " +
-                "    WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'R' THEN NULL " +
-                "    WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' THEN 'R' " +
+                "    WHEN INTERFACE_14_TRANSFERRED_FLAG = 'R' THEN NULL " +
+                "    WHEN INTERFACE_14_TRANSFERRED_FLAG = 'Y' THEN 'R' " +
                 "END, " +
                 "INTERFACE_STEP = " +
                 "CASE " +
@@ -128,10 +128,10 @@ public class ManHours_Item_Data {
                 "WHERE WO = ? " +
                 "AND TASK_CARD = ?";
 	    
-	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_SAP_TRANSFERRED_FLAG = 'R', INTERFACE_STEP = '1' " +
-                "WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D'";
+	    String updateWoTaskCardSql = "UPDATE WO_TASK_CARD SET INTERFACE_14_TRANSFERRED_FLAG = 'R', INTERFACE_STEP = '1' " +
+                "WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_14_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D'";
 	    
-	    String UpdateWOTaskCardSql2 = "UPDATE WO_TASK_CARD SET INTERFACE_STEP = '2' WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_SAP_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D' ";
+	    String UpdateWOTaskCardSql2 = "UPDATE WO_TASK_CARD SET INTERFACE_STEP = '2' WHERE WO = ? AND TASK_CARD = ? AND INTERFACE_14_TRANSFERRED_FLAG = 'Y' AND INTERFACE_STEP = 'D' ";
 
 	    
 	    String updateWoActualsSql = "UPDATE WO_ACTUALS SET INVOICED_FLAG = 'N' " +
@@ -290,7 +290,7 @@ public class ManHours_Item_Data {
 	    	    "        AND w.rfo_no IS NOT NULL " +
 	    	    "        AND wti.ops_no IS NOT NULL " +
 	    	    "        AND wt.status = 'CLOSED' " +
-	    	    "        AND ((wt.interface_sap_transferred_flag IS NULL OR wt.interface_sap_transferred_flag = '3')OR (wt.interface_sap_transferred_flag = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y' AND WA.trasaction_category = 'LABOR')) AND ROWNUM = 1 " ;
+	    	    "        AND ((wt.INTERFACE_14_TRANSFERRED_FLAG IS NULL)OR (wt.INTERFACE_14_TRANSFERRED_FLAG = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y' AND WA.trasaction_category = 'LABOR')) AND ROWNUM = 1 " ;
 
 	    String sqlAction = "SELECT CASE WHEN wt.non_routine = 'Y' THEN (" +
                 "SELECT DISTINCT LISTAGG(single_record, ' | ') WITHIN GROUP (ORDER BY rn) AS single_string " +
@@ -344,11 +344,11 @@ public class ManHours_Item_Data {
 	    String sqlmarking = "SELECT INVOICED_FLAG FROM WO_ACTUALS WHERE WO = ? AND TASK_CARD = ? AND TRASACTION_CATEGORY = 'LABOR' "; 
 
 	    String sqlMark = "UPDATE WO_TASK_CARD " +
-                "SET INTERFACE_SAP_TRANSFERRED_FLAG = " +
+                "SET INTERFACE_14_TRANSFERRED_FLAG = " +
                 "    CASE " +
-                "        WHEN INTERFACE_SAP_TRANSFERRED_FLAG IS NULL THEN 'R' " +
-                "        WHEN INTERFACE_SAP_TRANSFERRED_FLAG = '3' THEN 'R' " +
-                "        WHEN INTERFACE_SAP_TRANSFERRED_FLAG = 'R' THEN 'Y' " +
+                "        WHEN INTERFACE_14_TRANSFERRED_FLAG IS NULL THEN 'R' " +
+                "        WHEN INTERFACE_14_TRANSFERRED_FLAG = '3' THEN 'R' " +
+                "        WHEN INTERFACE_14_TRANSFERRED_FLAG = 'R' THEN 'Y' " +
                 "    END, " +
                 "    INTERFACE_STEP = " +
                 "    CASE " +
