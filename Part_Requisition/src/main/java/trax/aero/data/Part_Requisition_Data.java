@@ -161,7 +161,7 @@ public class Part_Requisition_Data {
 					
 					String errorCode = request.getExceptionId();
 					if (errorCode != null && !errorCode.equalsIgnoreCase("53") &&
-		            	    (request.getExceptionDetail().toLowerCase().contains("is locked by".toLowerCase()) ||
+		            	    (request.getExceptionDetail().toLowerCase().contains("is locked".toLowerCase()) ||
 		            	     request.getExceptionDetail().toLowerCase().contains("already being processed".toLowerCase()))) {
 						executed = "Request PR number: " + c.getPRnumber() + ", Error Code: " + c.getPRitem() + ", Error Code: " + request.getExceptionId() + ", Remarks: " + request.getExceptionDetail();
 						Part_Requisition_Controller.addError(executed);
@@ -233,7 +233,7 @@ public class Part_Requisition_Data {
 	
 	public ArrayList<INT13_SND> getRequisiton() throws Exception {
 	    executed = "OK";
-	    
+
 	    if (this.con == null || this.con.isClosed()) {
 	        try {
 	            this.con = DataSourceClient.getConnection(); 
@@ -245,7 +245,7 @@ public class Part_Requisition_Data {
 	            throw new IllegalStateException("Error trying to re-connect to the database.", e);
 	        }
 	    }
-	    
+
 	    ArrayList<INT13_SND> list = new ArrayList<INT13_SND>();
 	    String sqlRequisition ="SELECT DISTINCT RD.REQUISITION, RD.REQUISITION_LINE, RD.PN, WS.PN_SN, RD.QTY_REQUIRE, R.WO, R.TASK_CARD, W.LOCATION, \r\n" +
 	                           "W.RFO_NO, (SELECT WTI.OPS_NO FROM WO_TASK_CARD_ITEM WTI WHERE WTI.WO = R.WO AND WTI.TASK_CARD = R.TASK_CARD FETCH FIRST ROW ONLY) AS OPS_NO, \r\n" + 
@@ -253,118 +253,83 @@ public class Part_Requisition_Data {
 	                           "INNER JOIN WO W ON W.WO = R.WO INNER JOIN WO_TASK_CARD WT ON WT.WO = R.WO AND WT.TASK_CARD = R.TASK_CARD \r\n" +
 	                           "INNER JOIN WO_TASK_CARD_ITEM WTI ON WTI.WO = R.WO AND WT.TASK_CARD = R.TASK_CARD INNER JOIN WO_SHOP_DETAIL WS ON WS.WO = W.WO \r\n" + 
 	                           "WHERE RD.STATUS = 'OPEN' AND RD.INTERFACE_TRANSFERRED_DATE_ESD IS NULL AND W.RFO_NO IS NOT NULL AND RAISE_PR ='Y'";
-	    
+
 	    String sqlMark = "UPDATE REQUISITION_DETAIL SET INTERFACE_TRANSFERRED_DATE_ESD = SYSDATE WHERE REQUISITION = ? AND REQUISITION_LINE =?";
-	    
+
 	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
 	        sqlRequisition = "SELECT * FROM (" + sqlRequisition;
 	    }
-	    
+
 	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
 	        sqlRequisition = sqlRequisition + " ) WHERE ROWNUM <= ?";
 	    }
-	    
+
 	    PreparedStatement pstmt1 = null;
 	    ResultSet rs1 = null;
 	    PreparedStatement pstmt2 = null;
-	    ResultSet rs2 = null;
-	    
+
 	    try {
 	        pstmt1 = con.prepareStatement(sqlRequisition);
 	        pstmt2 = con.prepareStatement(sqlMark);
-	        
+
 	        if (MaxRecord != null && !MaxRecord.isEmpty()) {
 	            pstmt1.setString(1, MaxRecord);
 	        }
 
 	        rs1 = pstmt1.executeQuery();
-	        
+
 	        INT13_SND req = null;
 	        OrderSND Inbound = null;
 	        ArrayList<OrderComponentSND> oclist = null;
-	        
+
 	        if (rs1 != null) {
 	            while (rs1.next()) {
-	                if (req == null) {
-	                    req = new INT13_SND();
-	                    ArrayList<OrderSND> orlist = new ArrayList<OrderSND>();
-	                    req.setOrder(orlist);
-	                    
+	        
+	                String currentOrderNo = rs1.getString(9); // RFO_NO
+	                if (Inbound == null || !Inbound.getOrderNO().equals(currentOrderNo)) {
 	                    Inbound = new OrderSND();
 	                    oclist = new ArrayList<OrderComponentSND>();
 	                    Inbound.setComponents(oclist);
-	                    req.getOrder().add(Inbound);
+	                    Inbound.setOrderNO(currentOrderNo != null ? currentOrderNo : ""); 
+
+	                    if (req == null) {
+	                        req = new INT13_SND();
+	                        ArrayList<OrderSND> orlist = new ArrayList<OrderSND>();
+	                        req.setOrder(orlist);
+	                    }
+
+	                    req.getOrder().add(Inbound); 
 	                }
-	                
+
+	             
 	                OrderComponentSND InboundC = new OrderComponentSND();
-	                
-	                if (rs1.getString(9) != null && !rs1.getNString(9).isEmpty()) {
-	                    Inbound.setOrderNO(rs1.getString(9));
-	                } else {
-	                    Inbound.setOrderNO("");
-	                }
-	                
 	                InboundC.setWO_location(rs1.getString(8));
-	                
-	                if (rs1.getString(1) != null && !rs1.getNString(1).isEmpty()) {
-	                    InboundC.setRequisition(rs1.getString(1));
-	                } else {
-	                    InboundC.setRequisition("");
-	                }
-	                
-	                if (rs1.getString(2) != null && !rs1.getNString(2).isEmpty()) {
-	                    InboundC.setRequisitionLine(rs1.getString(2));
-	                } else {
-	                    InboundC.setRequisitionLine("");
-	                }
-	                
-	                if (rs1.getString(10) != null) {
-	                    InboundC.setACT(rs1.getString(10));
-	                } else {
-	                    InboundC.setACT("");
-	                }
-	                
+
+	                InboundC.setRequisition(rs1.getString(1) != null ? rs1.getString(1) : "");
+	                InboundC.setRequisitionLine(rs1.getString(2) != null ? rs1.getString(2) : "");
+	                InboundC.setACT(rs1.getString(10) != null ? rs1.getString(10) : "");
 	                InboundC.setGoodsRecipient(rs1.getString(13));
-	                
-	                if (rs1.getString(7) != null && rs1.getNString(7).isEmpty()) {
-	                    InboundC.setTC_number(rs1.getString(7));
-	                } else {
-	                    InboundC.setTC_number(rs1.getString(7));
-	                }
-	                
+	                InboundC.setTC_number(rs1.getString(7) != null ? rs1.getString(7) : "");
 	                InboundC.setMaterialPartNumber(rs1.getString(3));
-	                if (rs1.getString(4) != null && !rs1.getNString(4).isEmpty()) {
-	                    InboundC.setWoSN(rs1.getString(4));
-	                } else {
-	                    InboundC.setWoSN("");
-	                }
+	                InboundC.setWoSN(rs1.getString(4) != null ? rs1.getString(4) : "");
 	                InboundC.setQuantity(rs1.getString(5));
-	                
-	                if (rs1.getString(11) != null && !rs1.getNString(11).isEmpty()) {
-	                    InboundC.setPRnumber(rs1.getString(11));
-	                } else {
-	                    InboundC.setPRnumber("");
-	                }
-	                if (rs1.getString(12) != null && !rs1.getNString(12).isEmpty()) {
-	                    InboundC.setPRitem(rs1.getString(12));
-	                } else {
-	                    InboundC.setPRitem("");
-	                }
-	                
+	                InboundC.setPRnumber(rs1.getString(11) != null ? rs1.getString(11) : "");
+	                InboundC.setPRitem(rs1.getString(12) != null ? rs1.getString(12) : "");
+
+	             
 	                Inbound.getComponents().add(InboundC);
-	                
+
+	           
 	                pstmt2.setString(1, InboundC.getRequisition());
 	                pstmt2.setString(2, InboundC.getRequisitionLine());
 	                pstmt2.executeQuery();
 	            }
 	        }
-	        
+
 	        if (req != null) {
 	            list.add(req);
 	        }
-	        
-	        if (rs1 != null && !rs1.isClosed()) rs1.close();
-	        
+
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	        executed = e.toString();
@@ -376,12 +341,10 @@ public class Part_Requisition_Data {
 	        if (rs1 != null && !rs1.isClosed()) rs1.close();
 	        if (pstmt1 != null && !pstmt1.isClosed()) pstmt1.close();
 	    }
-	    
+
 	    return list;
 	}
 
-
-	
 	
 private String getRecepient(String site) {
 		
