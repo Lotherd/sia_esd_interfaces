@@ -1,17 +1,10 @@
 package trax.aero.application;
 
 import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -35,68 +28,6 @@ import trax.aero.pojo.OrderSND;
 public class Service {
 	
 	Logger logger = LogManager.getLogger("CreationSales");
-	private ScheduledExecutorService scheduler;
-
-	@PostConstruct
-    public void init() {
-        logger.info("Initializing scheduler for fallback task.");
-        scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                checkPendingTransactions();
-            }
-        }, 0, 5, TimeUnit.MINUTES);
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        if (scheduler != null && !scheduler.isShutdown()) {
-            logger.info("Shutting down scheduler.");
-            scheduler.shutdown();
-        }
-    }
-
-    private void checkPendingTransactions() {
-        logger.info("Checking for pending transactions exceeding 10 minutes.");
-        Creation_Sales_Data data = new Creation_Sales_Data();
-        
-        try {
-            String sqlPendingTransactions = "SELECT WO FROM WO WHERE STATUS = 'OPEN' AND INTERFACE_ESD_TRANSFERRED_FLAG IS NULL AND SYSDATE - INTERFACE_ESD_TRANSFERRED_DATE > 10 / (24 * 60)";
-            
-            try (Connection con = data.getCon();
-                 PreparedStatement ps = con.prepareStatement(sqlPendingTransactions);
-                 ResultSet rs = ps.executeQuery()) {
-
-                while (rs.next()) {
-                    String wo = rs.getString("WO");
-                    logger.warning("Fallback triggered for WO: " + wo);
-
-                    String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE) "
-                            + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, 'I07', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', '51', 'Y', 'WO does not have Contract added', 'Creation_Sales I_07', sysdate, sysdate FROM dual";
-                    
-                   
-                    try (PreparedStatement psError = con.prepareStatement(sqlInsertError)) {
-                        psError.setString(1, wo);
-                        psError.executeUpdate();
-                    }
-
-                    String sqlUpdateWO = "UPDATE WO SET STATUS = 'CONF SLOT', INTERFACE_ESD_TRANSFERRED_FLAG = 'D', INTERFACE_ESD_TRANSFERRED_DATE = NULL WHERE WO = ?";
-                    
-                  
-                    try (PreparedStatement psUpdate = con.prepareStatement(sqlUpdateWO)) {
-                        psUpdate.setString(1, wo);
-                        psUpdate.executeUpdate();
-                    }
-
-                    logger.info("Fallback completed for WO: " + wo);
-                }
-            }
-        } catch (Exception e) {
-            logger.severe("Error during fallback task: " + e.getMessage());
-            Creation_Sales_Controller.addError(e.getMessage());
-        }
-    }
 	
 	@GET
 	@Path("/healthCheck")

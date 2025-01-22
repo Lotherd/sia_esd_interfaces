@@ -17,7 +17,8 @@ public class Run implements Runnable{
 	
 	Creation_Equipment_Data data = null;
 	final String url = System.getProperty("CreationEQ_URL");
-	final int MAX_ATTEMPTS = 3;
+	final int MAX_ATTEMPTS = Integer.parseInt(System.getProperty("CreationEQ_MAX_ATTEMPTS", "-1"));
+    final long RETRY_INTERVAL = Long.parseLong(System.getProperty("CreationEQ_RETRY_INTERVAL", "180")) * 1000; // convert seconds to milliseconds
 	Logger logger = LogManager.getLogger("CreationEquipment");
 	
 	public Run() {
@@ -31,8 +32,7 @@ public class Run implements Runnable{
 		
 		try {
 			ArrayReq = data.getWorkOrder();
-			String markSendResult;
-			boolean success = false;
+			
 			
 			if(!ArrayReq.isEmpty()) {
 				for (INT5_SND ArrayRequest : ArrayReq) {
@@ -42,36 +42,54 @@ public class Run implements Runnable{
 				}else {
                     logger.info("RUN INFO: Order list is empty");
                 }
+				
+					boolean success = false;
+                    int attempt = 1;
+
+                    while (MAX_ATTEMPTS == -1 || attempt <= MAX_ATTEMPTS) {
+                    	try {
 				JAXBContext jc = JAXBContext.newInstance(INT5_SND.class);
 				Marshaller marshaller = jc.createMarshaller();
 				marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-				
 				StringWriter sw = new StringWriter();
-				marshaller.marshal(ArrayRequest, sw);
+                marshaller.marshal(ArrayRequest, sw);
+                String xmlContent = sw.toString();
 				
+                logger.info("Attempt " + attempt + " to send Work Order: " + ArrayRequest.getTraxWo());
+                logger.info("XML Content: " + xmlContent);
+                
+                // Send the XML content
+                success = poster.post(ArrayRequest, url);
+                if (success) {
+                    logger.info("POST successful for Work Order: " + ArrayRequest.getTraxWo());
+                    break;
+                }else {
+                    if (attempt == MAX_ATTEMPTS) {
+                        logger.warning("Attempt " + attempt + " failed. Maximum attempts reached. No more retries.");
+                    } else {
+                        logger.warning("Attempt " + attempt + " failed. Retrying in " + (RETRY_INTERVAL / 1000) + " seconds...");
+                        Thread.sleep(RETRY_INTERVAL);
+                    }
+                    attempt++;
+                }
+            } catch (Exception e) {
+                logger.severe("Error during attempt " + attempt + ": " + e.getMessage());
+                if (attempt == MAX_ATTEMPTS) {
+                    logger.severe("Maximum attempts reached. No more retries.");
+                }
+                attempt++;
+            }
+        }
+                    if (!success) {
+                        logger.severe("Unable to send XML to URL " + url);
+                        Creation_Equipment_Controller.addError("Unable to send XML to URL " + url + " after " + (MAX_ATTEMPTS == -1 ? "infinite" : MAX_ATTEMPTS) + " attempts.");
+                    } else {
+                        logger.info("POST status: true to URL: " + url);
+                    }
+                    
+				  }
+            }
 				
-				logger.info("Output: " + sw.toString());
-
-		          for (int i = 0; i < MAX_ATTEMPTS; i++) {
-		        	  success = poster.post(ArrayRequest, url);
-		        	  markSendResult = data.markSendData();
-		        	  if ("OK".equals(markSendResult)) {
-		            success = true;
-		            break;
-		        	  }
-		          }
-		          if (!success) {
-			        	 logger.severe("Unable to send XML "+ "to URL " + url);
-			        	 Creation_Equipment_Controller.addError("Unable to send XML " + "to URL " + url + " MAX_ATTEMPTS: " + MAX_ATTEMPTS);
-			         } else {
-			        	 INT5_TRAX input = null;
-			        	 
-			        	 logger.info("finishing");
-			        	 
-				        logger.info("POST status: " + String.valueOf(success) + " to URL: " + url);
-			         }
-			}
-			}
 			if (!Creation_Equipment_Controller.getError().isEmpty()) {
 				throw new Exception("Issue found");
 			}

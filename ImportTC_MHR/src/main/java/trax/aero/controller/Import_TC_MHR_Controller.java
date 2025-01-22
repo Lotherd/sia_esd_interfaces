@@ -30,7 +30,7 @@ public class Import_TC_MHR_Controller {
     static String port = System.getProperty("fromPort");
     static String toEmail = System.getProperty("ImportTC_MHR_toEmail"); //System.getProperty("ImportTC_MHR_toEmail")
     public Import_TC_MHR_Controller() {
-        factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+        factory = Persistence.createEntityManagerFactory("TraxESD");
         factory.createEntityManager();
     }
     public static void addError(String error) {

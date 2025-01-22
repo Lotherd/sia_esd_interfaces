@@ -18,8 +18,8 @@ public class Run implements Runnable {
     final String url = System.getProperty("PartREQ_URL");
     
     // Default to infinite attempts (-1) and 3 minutes in seconds
-    final int MAX_ATTEMPTS = Integer.parseInt(System.getProperty("MAX_ATTEMPTS", "-1"));
-    final long RETRY_INTERVAL = Long.parseLong(System.getProperty("RETRY_INTERVAL", "180")) * 1000; // convert seconds to milliseconds
+    final int MAX_ATTEMPTS = Integer.parseInt(System.getProperty("PartREQ_MAX_ATTEMPTS", "-1"));
+    final long RETRY_INTERVAL = Long.parseLong(System.getProperty("PartREQ_RETRY_INTERVAL", "180")) * 1000; // convert seconds to milliseconds
     
     Logger logger = LogManager.getLogger("Part_REQ");
 

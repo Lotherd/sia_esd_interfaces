@@ -93,7 +93,7 @@ public class Import_TC_MHR_Data {
 	      Import_TC_MHR_Controller.addError(e.toString());
 	    }
 
-	    factory = Persistence.createEntityManagerFactory("TraxStandaloneDS");
+	    factory = Persistence.createEntityManagerFactory("TraxESD");
 	    em = factory.createEntityManager();
 	  }
 

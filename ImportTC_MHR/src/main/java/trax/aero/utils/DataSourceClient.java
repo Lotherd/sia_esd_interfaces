@@ -22,12 +22,12 @@ public class DataSourceClient {
 	      DataSource ds = null; //(DataSource)ctx.lookup("ManHoursScheduleTraxDS");
 
 	      if (System.getProperty("jboss.server.config.dir") != null) ds =
-	        (DataSource) ctx.lookup("java:/TraxStandaloneDS"); else ds =
-	        (DataSource) ctx.lookup("TraxStandaloneDS");
+	        (DataSource) ctx.lookup("java:/TraxESD"); else ds =
+	        (DataSource) ctx.lookup("TraxESD");
 	      connection = ds.getConnection();
 	    } catch (Exception e) {
 	      logger.severe(
-	        "An error ocurred trying connect to the DataSource: TraxStandaloneDS"
+	        "An error ocurred trying connect to the DataSource: TraxESD"
 	      );
 	      throw new Exception(
 	        "\nGetting error trying to connect to the datasource. " +
