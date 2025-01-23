@@ -674,15 +674,16 @@ public class Unit_Price_RFO_Data {
 	    ArrayList<Operation_SND> orlist = new ArrayList<>();
 	    String lastWO = "";
 
-	    String sqlPRICE = "SELECT DISTINCT W.WO, W.MOD_NO, W.RFO_NO, PDR.LEGACY_BATCH, WA.PN " +
+	    String sqlPRICE = "SELECT DISTINCT W.WO, COALESCE(W.MOD_NO, ParentWO.MOD_NO) AS MOD_NO, W.RFO_NO, PDR.LEGACY_BATCH, WA.PN " +
 	            "FROM WO W " +
+	    		"LEFT JOIN WO ParentWO ON W.NH_WO = ParentWO.WO AND ParentWO.MOD_NO IS NOT NULL " +
 	            "JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
 	            "JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
 	            "JOIN PICKLIST_HEADER PH ON W.WO = PH.WO AND WA.TASK_CARD = PH.TASK_CARD AND PH.STATUS = 'CLOSED' " +
 	            "JOIN PICKLIST_DISTRIBUTION PD ON PH.PICKLIST = PD.PICKLIST AND WA.TASK_CARD = PD.TASK_CARD AND WA.PN = PD.PN " +
 	            "INNER JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
 	            "WHERE W.RFO_NO IS NOT NULL " +
-	            "AND W.MOD_NO IS NOT NULL " +
+	            "AND (W.MOD_NO IS NOT NULL OR ParentWO.MOD_NO IS NOT NULL) " +
 	            "AND WA.GET_PRICE = 'Y' " + 
 	            "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL " +
 	            "AND WA.TRASACTION_CATEGORY = 'MATERIAL' ";
