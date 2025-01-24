@@ -29,7 +29,7 @@ public class EmailSender implements IEmailSender
 	
 	Logger logger = LogManager.getLogger("MaterialDemand_I10");
 	
-	@PersistenceContext(unitName = "TraxESD") private EntityManager em;
+	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
 
 	
 	private String toEmail;
