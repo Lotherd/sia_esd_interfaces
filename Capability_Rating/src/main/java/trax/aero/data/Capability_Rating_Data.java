@@ -74,10 +74,25 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
             System.out.println("Authority: " + element.getAuthorityType() + " or PN: " + element.getPartNo() + " is null or empty");
             return item;
         }
+        
+        String authType = element.getAuthorityType();
+        if (authType.length() > 8) {
+            try {
+                String checkAuthMappingStr = "SELECT AUTHORITY_MODIFIED FROM ESD_AUTHORITY_MAPPING WHERE AUTHORITY_ORIGINAL = ?";
+                Query checkAuthMapping = em.createNativeQuery(checkAuthMappingStr);
+                checkAuthMapping.setParameter(1, authType);
+                String modifiedAuth = (String) checkAuthMapping.getSingleResult();
+                if (modifiedAuth != null) {
+                    authType = modifiedAuth;
+                }
+            } catch (NoResultException ex) {
+                // No mapping found, use original value
+            }
+        }
 
         PartAuthorityESD_PK primaryKey = new PartAuthorityESD_PK();
         primaryKey.setPn(element.getPartNo());
-        primaryKey.setAuthority(element.getAuthorityType());
+        primaryKey.setAuthority(authType);
 
         try {
             // Check the exact PN in PnMaster
@@ -92,7 +107,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                 System.out.println("Matching PNs with ':' suffix in PN_MASTER: " + matchingPNs);
 
                 if (matchingPNs.isEmpty()) {
-                    System.out.println("Authority: " + element.getAuthorityType() + " or PN: " + element.getPartNo() + " does not exist in the Trax DataBase");
+                    System.out.println("Authority: " + authType + " or PN: " + element.getPartNo() + " does not exist in the Trax DataBase");
                     return item;
                 } else {
                     // Use the first matching PN (or handle all if needed)
@@ -358,7 +373,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	        }
 	        
 	        
-	        System.out.println("CHECKING AUTHORITY TRANSCODE: " + element.getAuthorityType() + " into the Trax DataBase");
+	        System.out.println("CHECKING AUTHORITY TRANSCODE: " + authType + " into the Trax DataBase");
 	        try {
 	            String checkAuthStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'AUTHAPPROVAL' AND SYSTEM_CODE = ?";
 	            Query checkAuth = em.createNativeQuery(checkAuthStr);
@@ -383,7 +398,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            e.printStackTrace();
 	        }
 	        
-	        System.out.println("CHECKING EMPLOYEE AUTHORITY TRANSCODE: " + element.getAuthorityType() + " into the Trax DataBase");
+	        System.out.println("CHECKING EMPLOYEE AUTHORITY TRANSCODE: " + authType + " into the Trax DataBase");
 	        try {
 	            String checkEAuthStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'EMPLICAUT' AND SYSTEM_CODE = ?";
 	            Query checkEAuth = em.createNativeQuery(checkEAuthStr);
@@ -419,7 +434,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	        updatePN.executeUpdate();
 	        System.out.println("Successfully updated PN_MASTER");
 	        
-	        System.out.println("INSERTING Authority: " + element.getAuthorityType() + " and PN: " + element.getPartNo() + " into the Trax DataBase");
+	        System.out.println("INSERTING Authority: " + authType + " and PN: " + element.getPartNo() + " into the Trax DataBase");
 	        insertData(auth);
 	        
 	        boolean isActive = (!auth.getAuthorityDate().equalsIgnoreCase("null") && !element.getQltyStatus().equalsIgnoreCase("Terminated"));
