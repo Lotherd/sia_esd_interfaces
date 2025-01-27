@@ -280,7 +280,14 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                 System.out.println("Found EC: " + EC);
 
                 for (String EO : EC) {
-                    // Check if the combination of task_card and partNo already exists
+                	
+                	String checkECorder = "SELECT COUNT(*) FROM ENGINEERING_ORDER WHERE eo = ? ";
+                	Query checkOrder = em.createNativeQuery(checkECorder);
+                	checkOrder.setParameter(1, EO);
+                	long count_order = ((Number) checkOrder.getSingleResult()).longValue();
+                	
+                	if (count_order > 0) {
+                    // Check if the combination of ec and partNo already exists
                     String checkQueryStr = "SELECT COUNT(*) FROM ENGINEERING_CONTROL WHERE eo = ? AND pn = ?";
                     Query checkQuery = em.createNativeQuery(checkQueryStr);
                     checkQuery.setParameter(1, EO);
@@ -289,7 +296,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 
                     if (count == 0) {
                         System.out.println("Inserting into ENGINEERING_CONTROL and ENGINEERING_CONTROL_RV for EC: " + EO + " and PN: " + partNo);
-                        // Insert into TASK_CARD_PN_EFFECTIVITY
+                        // Insert into ENGINEERING_CONTROL
                         String insertEffectivity = "INSERT INTO ENGINEERING_CONTROL (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, PN, EO_EFFECTIVITY_CATEGORY, AC_TYPE, AC_SERIES, \"SELECT\", CONTROL_OVERRIDE) " +
                                                    "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', 'Y', 'N')";
                         Query insertEffectivityQuery = em.createNativeQuery(insertEffectivity);
@@ -298,22 +305,47 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                         insertEffectivityQuery.executeUpdate();
                         
                         String insertRev = "INSERT INTO ENGINEERING_ORDER_RV (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, REVISION ) " +
-                                "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, 1)";
+                                "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, sysdate)";
                         Query insertRevQuery = em.createNativeQuery(insertRev);
                         insertRevQuery.setParameter(1, EO);
                         insertRevQuery.executeUpdate();
+                        
+                     // Insert or Update ENGINEERING_CONTROL_RV
+                        String checkEffectivityRevStr = "SELECT COUNT(*) FROM ENGINEERING_CONTROL_RV WHERE EO = ? AND PN = ?";
+                        Query checkEffectivityRevQuery = em.createNativeQuery(checkEffectivityRevStr);
+                        checkEffectivityRevQuery.setParameter(1, EO);
+                        checkEffectivityRevQuery.setParameter(2, partNo);
+                        long effectivityRevCount = ((Number) checkEffectivityRevQuery.getSingleResult()).longValue();
 
-                        // Insert into TASK_CARD_PN_EFF_REV
-                        String insertEffectivityRev = "INSERT INTO ENGINEERING_CONTROL_RV (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, PN, EO_EFFECTIVITY_CATEGORY, AC_TYPE, AC_SERIES, REVISION, \"SELECT\", CONTROL_OVERRIDE ) " +
-                                                      "VALUES (?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', 1, 'Y', 'N')";
+                        if (effectivityRevCount == 0) {
+                        // Insert into ENGINEERING_CONTROL_RV
+                        String insertEffectivityRev = "INSERT INTO ENGINEERING_CONTROL_RV (EO, CREATED_BY, CREATED_DATE, MODIFIED_BY, MODIFIED_DATE, PN, EO_EFFECTIVITY_CATEGORY, AC_TYPE, AC_SERIES, \"SELECT\", CONTROL_OVERRIDE, REVISION ) " +
+                        		"SELECT ?,'TRAXIFACE', sysdate, 'TRAXIFACE', sysdate, ?, 'PNSHOP', '          ', '          ', 'Y', 'N', (SELECT REVISION FROM ENGINEERING_ORDER_RV WHERE EO = ? " +
+                        		"AND MODIFIED_BY = 'TRAXIFACE' ORDER BY MODIFIED_DATE DESC FETCH FIRST 1 ROWS ONLY) " +
+                        		"FROM DUAL WHERE EXISTS ( SELECT 1 FROM ENGINEERING_ORDER_RV WHERE EO = ? AND MODIFIED_BY = 'TRAXIFACE')";
                         Query insertEffectivityRevQuery = em.createNativeQuery(insertEffectivityRev);
                         insertEffectivityRevQuery.setParameter(1, EO);
                         insertEffectivityRevQuery.setParameter(2, partNo);
+                        insertEffectivityRevQuery.setParameter(3, EO);
+                        insertEffectivityRevQuery.setParameter(4, EO);
                         insertEffectivityRevQuery.executeUpdate();
                         System.out.println("Successfully inserted records for EC: " + EO);
                     } else {
+                    	String updateEffectivityRev = "UPDATE ENGINEERING_CONTROL_RV SET MODIFIED_BY = 'TRAXIFACE', MODIFIED_DATE = SYSDATE, \"SELECT\" = 'Y', REVISION = (SELECT REVISION FROM ENGINEERING_ORDER_RV WHERE EO = ? AND MODIFIED_BY = 'TRAXIFACE' ORDER BY MODIFIED_DATE DESC FETCH FIRST 1 ROWS ONLY) " +
+                                "WHERE EO = ? AND PN = ?";
+                    	Query updateEffectivityRevQuery = em.createNativeQuery(updateEffectivityRev);
+                    	updateEffectivityRevQuery.setParameter(1, EO);
+                    	updateEffectivityRevQuery.setParameter(2, EO);
+                    	updateEffectivityRevQuery.setParameter(3, partNo);
+                    	updateEffectivityRevQuery.executeUpdate();
+                    	System.out.println("Updated TASK_CARD_PN_EFF_REV for  EC: " + EO);
+                    }  
+                    }else {
                         System.out.println("EC " + EO + " and PN " + partNo + " already exist. Skipping insertion.");
                     }
+                	}else {
+                		System.out.println("EC " + EO + " Skipping insertion. EC does not have Engineering Order. ");
+                	}
                 }
             } catch (Exception e) {
                 System.out.println("Error occurred while checking or inserting/updating ENGINEERING_CONTROL");
