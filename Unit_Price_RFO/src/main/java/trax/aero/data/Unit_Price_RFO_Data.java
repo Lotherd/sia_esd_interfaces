@@ -106,13 +106,13 @@ public class Unit_Price_RFO_Data {
 
 		String pridedone2 = "UPDATE wo_actuals_material_temp SET GET_PRICE = 'N' WHERE WO = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL' ";
 	    
-	    String getcurrency = "select distinct currency from CUSTOMER_ORDER_HEADER where order_number = ? ";
+	    String getcurrency = "SELECT DISTINCT CCH.CURRENCY_MATERIAL FROM CUSTOMER_CONTRACT_HEADER CCH, CUSTOMER_ORDER_HEADER COH WHERE COH.ORDER_NUMBER = ? AND COH.CONTRACT_NUMBER = CCH.CONTRACT_NUMBER; ";
 	    
 	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ?, unit_sell = ?, total_sell = ?  where wo = ? and pn = ? ";
 	    
 	    String setpriceSGD = "update wo_actuals set add_bill_currency = ?, add_bill_curr_amount = ? where wo = ? and pn = ? ";
 	    
-	    String exchamgerate = " select distinct exchange_rate from currency_exchange_history where currency = ? ";
+	    String exchamgerate = " select distinct exchange_rate from currency_exchange_history where currency = ? order by currency_date desc fetch first 1 row only ";
 	    
 	    String checkoldprice = "select distinct unit_sell_b from wo_actuals where wo = ? and pn = ? ";
 	    
