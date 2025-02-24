@@ -380,8 +380,8 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 						
 						if(System.getProperty("SAP_NOTES") != null && Inbound.getNotes().length() > Integer.valueOf( System.getProperty("SAP_NOTES"))) {
 							Inbound.setNotes(Inbound.getNotes().substring(0,Integer.valueOf( System.getProperty("SAP_NOTES"))));							
-						}else if(Inbound.getNotes().length() > 8) { 
-							Inbound.setNotes(Inbound.getNotes().substring(0, 8));
+						}else if(Inbound.getNotes().length() > 1000) { 
+							Inbound.setNotes(Inbound.getNotes().substring(0, 1000));
 						}else {
 							Inbound.setNotes(Inbound.getNotes());
 						}
