@@ -154,6 +154,7 @@ public class RunAble implements Runnable {
                         
                         if (!processedEmployees.contains(employeeId)) {
                             
+                        	data.updateEmployeeMaster(employeeId);
                             data.deleteEmployeeControlRecords(employeeId);
                             processedEmployees.add(employeeId);  
                         }
@@ -161,6 +162,7 @@ public class RunAble implements Runnable {
                        
                     }
                     data.insertSkillsToSkillMaster();
+                    
 
                     for (String[] row : allData) {
                         employee = new EmployeeLicense();

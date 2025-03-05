@@ -109,6 +109,8 @@ public class Authorization_Controller_Data {
         return executed;
     }
     
+    
+    
     private void setEmployeeSkillLicense(EmployeeLicense e) {
         /*// Define skill mappings
         Map<String, String> skillMapping = new HashMap<>();
@@ -318,6 +320,52 @@ public class Authorization_Controller_Data {
             }
             logger.severe("Error inserting skills into skill_master: " + ex.getMessage());
             ex.printStackTrace();
+        }
+    }
+    
+    public void updateEmployeeMaster(String employeeId) {
+        EntityTransaction transaction = null;
+        
+        try {
+            logger.info("Attempting to update relation_master for employee: " + employeeId);
+            
+            // Crear una nueva transacción explícitamente
+            transaction = em.getTransaction();
+            transaction.begin();
+            
+            // Ejecutar update directo usando SQL nativo o JPQL
+            int updatedRows = em.createQuery(
+                "UPDATE RelationMaster r SET r.allowIssueTo = 'YES', r.modifiedBy = 'IFACE_ESD', r.modifiedDate = :currentDate " +
+                "WHERE r.id.relationCode = :staffNumber AND r.id.relationTransaction = 'EMPLOYEE'")
+                .setParameter("currentDate", new Date())
+                .setParameter("staffNumber", employeeId)
+                .executeUpdate();
+            
+            transaction.commit();
+            
+            if (updatedRows > 0) {
+                logger.info("Successfully updated allow_issue_to to YES for employee: " + employeeId);
+            } else {
+                logger.info("No employee found with staffNumber: " + employeeId + " in relation_master table. No records updated.");
+            }
+        } catch (Exception ex) {
+            logger.severe("Error updating employee in relation_master: " + ex.getMessage());
+            executed = "Error updating employee in relation_master: " + ex.getMessage();
+            Authorization_Details_Controller.addError(executed);
+            
+            // Hacer rollback sólo si la transacción está activa
+            if (transaction != null && transaction.isActive()) {
+                try {
+                    transaction.rollback();
+                    logger.info("Transaction rolled back for employee: " + employeeId);
+                } catch (Exception rollbackEx) {
+                    logger.severe("Error during transaction rollback: " + rollbackEx.getMessage());
+                }
+            }
+        } finally {
+            // Asegurar que el EntityManager está en un estado limpio
+            em.clear();
+            logger.info("EntityManager cleared after processing employee: " + employeeId);
         }
     }
     
