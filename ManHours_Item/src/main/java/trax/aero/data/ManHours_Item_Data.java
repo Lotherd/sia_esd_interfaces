@@ -290,7 +290,9 @@ public class ManHours_Item_Data {
 	    	    "        AND w.rfo_no IS NOT NULL " +
 	    	    "        AND wti.ops_no IS NOT NULL " +
 	    	    "        AND wt.status = 'CLOSED' " +
-	    	    "        AND ((wt.INTERFACE_14_TRANSFERRED_FLAG IS NULL)OR (wt.INTERFACE_14_TRANSFERRED_FLAG = 'R' AND wt.interface_step = '1' AND WA.INVOICED_FLAG = 'Y' AND WA.trasaction_category = 'LABOR')) AND ROWNUM = 1 " ;
+	    	    "        AND ((wt.INTERFACE_14_TRANSFERRED_FLAG IS NULL)OR (wt.INTERFACE_14_TRANSFERRED_FLAG = 'R' AND wt.interface_step = '1' " +
+	    	    "        AND NOT EXISTS (SELECT 1 FROM WO_ACTUALS WA2 WHERE WA2.WO = W.WO AND WA2.TASK_CARD = WT.TASK_CARD AND (wa2.invoiced_flag IS NULL OR wa2.invoiced_flag != 'Y') " +
+	    	    "		 AND WA.trasaction_category = 'LABOR'))) AND ROWNUM = 1 " ;
 
 	    String sqlAction = "SELECT CASE WHEN wt.non_routine = 'Y' THEN (" +
                 "SELECT DISTINCT LISTAGG(single_record, ' | ') WITHIN GROUP (ORDER BY rn) AS single_string " +
