@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ejb.Stateless;
@@ -23,6 +24,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+import javax.xml.bind.JAXBException;
 
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -93,7 +95,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 	//public InterfaceLockMaster lock;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 
-	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
+	@PersistenceContext(unitName = "TraxStandaloneDSndaloneDS") private EntityManager em;
 	
 	
 	
@@ -113,6 +115,19 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		return con;
 	}
 	
+	public String markSendData() throws JAXBException
+	{
+		I19_Response request = new I19_Response();
+	  try {
+	        markTransaction(request);
+	        logger.info("markTransaction completed successfully.");
+	        return "OK";
+	    } catch (Exception e) {
+	    	logger.log(Level.SEVERE, "Error executing markTransaction", e);
+	    	e.printStackTrace();
+	        return null; 
+	    }
+	}
 	
 	public String markTransaction(I19_Response request) throws Exception
 	{
@@ -233,7 +248,6 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "   (PM.CATEGORY = 'A' " +
                 "    AND A3.INTERFACE_TRANSFER_FLAG IS NULL OR A3.INTERFACE_TRANSFER_FLAG = 'R' )" +
                 ")";
-
 
 		   String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG = 'D' WHERE TRANSACTION_NO = ? ";
 

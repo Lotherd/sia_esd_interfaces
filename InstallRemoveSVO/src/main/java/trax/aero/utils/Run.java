@@ -59,36 +59,78 @@ public class Run implements Runnable {
                             success = poster.post(req, url);
 
                             if (success) {
-                                String body = poster.getBody();
-                                StringReader sr = new StringReader(body);
-                                jc = JAXBContext.newInstance(I19_Response.class);
-                                Unmarshaller unmarshaller = jc.createUnmarshaller();
-                                I19_Response input = (I19_Response) unmarshaller.unmarshal(sr);
+                                try {
+                                    String body = poster.getBody();
+                                    // Log the response body for debugging
+                                    logger.info("Received response body: " + body);
+                                    
+                                    // Check if the response contains valid XML before trying to deserialize
+                                    if (body.trim().startsWith("<?xml")) {
+                                        // Original code for XML processing
+                                        StringReader sr = new StringReader(body);
+                                        jc = JAXBContext.newInstance(I19_Response.class);
+                                        Unmarshaller unmarshaller = jc.createUnmarshaller();
+                                        I19_Response input = (I19_Response) unmarshaller.unmarshal(sr);
 
-                                marshaller = jc.createMarshaller();
-                                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-                                sw = new StringWriter();
-                                marshaller.marshal(input, sw);
-                                logger.info("Input: " + sw.toString());
+                                        marshaller = jc.createMarshaller();
+                                        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+                                        sw = new StringWriter();
+                                        marshaller.marshal(input, sw);
+                                        logger.info("Input: " + sw.toString());
 
-                                if (input.getExceptionId() != null && !input.getExceptionDetail().isEmpty() && input.getExceptionId().equalsIgnoreCase("53")) {
-                                    data.openCon();
-                                    executed = data.markTransaction(input);
-                                    data.printCCS(input);
-                                } else {
-                                    data.setFailed(input);
-                                    logger.severe("Received Response with Exception: " + input.getExceptionDetail() + ", Transaction: " + input.getTransaction() + ", Exception ID: " + input.getExceptionId());
-                                    data.logError("Received Response with Exception: " + input.getExceptionDetail() + ", Transaction: " + input.getTransaction() + ", Exception ID: " + input.getExceptionId());
-                                    InstallRemoveSVOController.addError("Received Response with Exception: " + input.getExceptionDetail() + ", Order Number: " + input.getTransaction() + ", Exception ID: " + input.getExceptionId());
-                                    executed = data.markTransaction(input);
-                                    executed = "Issue found";
+                                        if (input.getExceptionId() != null && !input.getExceptionDetail().isEmpty() && input.getExceptionId().equalsIgnoreCase("53")) {
+                                            data.openCon();
+                                            executed = data.markTransaction(input);
+                                            data.printCCS(input);
+                                        } else {
+                                            data.setFailed(input);
+                                            logger.severe("Received Response with Exception: " + input.getExceptionDetail() + ", Transaction: " + input.getTransaction() + ", Exception ID: " + input.getExceptionId());
+                                            data.logError("Received Response with Exception: " + input.getExceptionDetail() + ", Transaction: " + input.getTransaction() + ", Exception ID: " + input.getExceptionId());
+                                            InstallRemoveSVOController.addError("Received Response with Exception: " + input.getExceptionDetail() + ", Order Number: " + input.getTransaction() + ", Exception ID: " + input.getExceptionId());
+                                            executed = data.markTransaction(input);
+                                            executed = "Issue found";
+                                        }
+                                    } else {
+                                        // If not XML but HTTP status is success (200/202), mark transaction as successful
+                                        //logger.info("Received non-XML response with success HTTP status. Processing as successful response.");
+                                        
+                                        // Create dummy I19_Response object
+                                        I19_Response dummyResponse = new I19_Response();
+                                        dummyResponse.setTransaction(req.getTransaction());
+                                        dummyResponse.setExceptionId("53"); // This seems to be the success code in your system
+                                        
+                                        // Mark the transaction as successful using existing markTransaction method
+                                        data.openCon();
+                                        executed = data.markTransaction(dummyResponse);
+                                        
+                                        if ("OK".equals(executed)) {
+                                            logger.info("Transaction " + req.getTransaction() + " successfully marked as sent.");
+                                            success = true;
+                                            break; // Exit retry loop on success
+                                        } else {
+                                            logger.severe("Failed to mark transaction as sent: " + executed);
+                                            executed = "Issue found";
+                                            throw new Exception("Issue marking transaction as sent");
+                                        }
+                                    }
+
+                                    if (executed == null || !executed.equalsIgnoreCase("OK")) {
+                                        executed = "Issue found";
+                                        throw new Exception("Issue found");
+                                    }
+                                    // If we reached here without exceptions, processing was successful
+                                    break;
+                                } catch (Exception e) {
+                                    // Log the specific exception for better debugging
+                                    logger.severe("Error processing response for transaction " + req.getTransaction() + ": " + e.getMessage());
+                                    if (e.getCause() != null) {
+                                        logger.severe("Caused by: " + e.getCause().getMessage());
+                                    }
+                                    
+                                    // Continue to next attempt
+                                    success = false;
+                                    attempt++;
                                 }
-
-                                if (executed == null || !executed.equalsIgnoreCase("OK")) {
-                                    executed = "Issue found";
-                                    throw new Exception("Issue found");
-                                }
-                                break;
                             } else {
                                 if (attempt == MAX_ATTEMPTS) {
                                     logger.warning("Attempt " + attempt + " failed. Maximum attempts reached. No more retries.");
