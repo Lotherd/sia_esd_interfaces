@@ -95,7 +95,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 	//public InterfaceLockMaster lock;
 	Logger logger = LogManager.getLogger("InstallRemoveSVO_I19");
 
-	@PersistenceContext(unitName = "TraxStandaloneDSndaloneDS") private EntityManager em;
+	@PersistenceContext(unitName = "TraxStandaloneDS") private EntityManager em;
 	
 	
 	
@@ -157,8 +157,8 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 				pstmt2.executeQuery();
 				
 				
-				
-				if(request.getExceptionId() == "51") {
+				logger.info("ExceptionID = " + request.getExceptionId());
+				if(!request.getExceptionId().equalsIgnoreCase("53")) {
 					pstmt1 = con.prepareStatement(retry);
 					pstmt1.setString(1, request.getTransaction());
 					pstmt2.executeQuery();
@@ -381,7 +381,13 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					//For Removal (NLA/REMOVE or NLA/INSPECT) If SN is blank but SN_SAP is not null, SN_SAP to be appended to Removal Reason needs to be sent to the SAP as Removal Reason
 					if(( Inbound.getPnSn().isEmpty() ||Inbound.getPnSn() == null ) &&
 						 (rs1.getString(9).contains("REMOV") || rs1.getString(9).contains("INSPECT"))	) {
-						Inbound.setRemovalReason(Inbound.getRemovalReason() + " " +rs1.getString(19));
+						
+						String removalInfo = rs1.getString(19);
+					    if (removalInfo != null) {
+					        Inbound.setRemovalReason(Inbound.getRemovalReason() + " " + removalInfo);
+					    } else {
+					        Inbound.setRemovalReason(Inbound.getRemovalReason());
+					    }
 					}
 					
 					
