@@ -113,7 +113,7 @@ public class CreationU_RFO_Data {
 	    	 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)) {
 
-	        if (request != null) {
+	        if (request.getTraxWoNumber() != null && !request.getTraxWoNumber().isEmpty() && !request.getErrorCode().equalsIgnoreCase("51")) {
 	            String errorCode = request.getErrorCode();
 	            String traxWoNumber = request.getTraxWoNumber();
 	            String sapSvo = request.getSapSvo();
@@ -123,6 +123,21 @@ public class CreationU_RFO_Data {
 
 	            // Log the request object to inspect its state
 	            logger.info("Request Object: " + request.toString());
+	            
+	            pn.setString(1, request.getTransaction());
+                pn.setString(2, request.getTraxWoNumber());
+                pn.setString(3, request.getTcNumber());
+    			ResultSet rs = pn.executeQuery();
+    			
+    			// Check if a result is returned
+    			String PN = null;
+    			if (rs.next()) {
+    			    PN = rs.getString(1); // Get the first column (PN)
+    			    logger.warning("PN found for transaction: " + transaction + ", PN: " + PN);
+    			} else {
+    			    // Handle the case where no PN is found
+    			    logger.warning("No PN found for transaction: " + transaction + ", WO: " + traxWoNumber);
+    			}
 
 	            if (errorCode != null && errorCode.equalsIgnoreCase("53")) {
 
@@ -142,31 +157,18 @@ public class CreationU_RFO_Data {
 	                    logger.info("Successfully executed update for WO: " + traxWoNumber);
 
 	                    psDeleteError.setString(1, traxWoNumber);
-	                    psDeleteError.setString(2, sapSvo);
+	                    psDeleteError.setString(2,  PN);
 	                    psDeleteError.executeUpdate();
 
 	                    // Log deletion of previous errors
+	                    logger.warning("Deleted previous errors for WO: " + traxWoNumber + ", PN: " + PN);
 	                    logger.info("Deleted previous errors for WO: " + traxWoNumber);
 	                }
-	            } else if (errorCode != null) {
+	            } else if (traxWoNumber != null && sapSvo != null && errorCode != null && remarks != null) {
 
-	                if (traxWoNumber != null && sapSvo != null && errorCode != null && remarks != null) {
+	               
 	                    executed = "Request WO: " + traxWoNumber + ", Error Code: " + errorCode + ", Remarks: " + remarks + ", SVO: " + sapSvo;
 	                    CreationU_RFO_Controller.addError(executed);
-	                    
-	                    pn.setString(1, request.getTransaction());
-	                    pn.setString(2, request.getTraxWoNumber());
-	                    pn.setString(3, request.getTcNumber());
-		    			ResultSet rs = pn.executeQuery();
-		    			
-		    			// Check if a result is returned
-		    			String PN = null;
-		    			if (rs.next()) {
-		    			    PN = rs.getString(1); // Get the first column (PN)
-		    			} else {
-		    			    // Handle the case where no PN is found
-		    			    logger.warning("No PN found for transaction: " + transaction + ", WO: " + traxWoNumber);
-		    			}
 	                    
 	                    psInsertError.setString(1, request.getTraxWoNumber());
 	                    psInsertError.setString(2, PN);
@@ -177,7 +179,7 @@ public class CreationU_RFO_Data {
 
 	                    // Log the insertion of the error into the audit table
 	                    logger.info("Inserted error for WO: " + traxWoNumber + ", Error Code: " + errorCode);
-	                }
+	           
 
 	                if (transaction != null && traxWoNumber != null && tcNumber != null) {
 	                	pstmt3.setString(1, transaction);
@@ -193,7 +195,7 @@ public class CreationU_RFO_Data {
 	            } else {
 	                if (traxWoNumber != null && sapSvo != null) {
 	                    psDeleteError.setString(1, traxWoNumber);
-	                    psDeleteError.setString(2, sapSvo);
+	                    psDeleteError.setString(2, PN);
 	                    psDeleteError.executeUpdate();
 
 	                    // Log the deletion of the error

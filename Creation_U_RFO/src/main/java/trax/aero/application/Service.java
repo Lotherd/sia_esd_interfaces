@@ -148,7 +148,6 @@ CreationU_RFO_Data data = new CreationU_RFO_Data("mark");
 		    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getSapSvo() + ", Error Code: " +input.getErrorCode());
 		    	CreationU_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getSapSvo() + ", Error Code: " +input.getErrorCode());
 		    	executed = data.markTransaction(input);
-		    	executed = data.markTransaction(input);
 		    	executed = "Issue found";
 		    }
 			if(executed == null || !executed.equalsIgnoreCase("OK")) {
