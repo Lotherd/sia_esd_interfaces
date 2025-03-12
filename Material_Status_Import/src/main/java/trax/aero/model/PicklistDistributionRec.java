@@ -89,6 +89,8 @@ public class PicklistDistributionRec implements Serializable {
 
 	@Column(name="TRANSFER_TO_BIN")
 	private String transferToBin;
+	
+	private BigDecimal picklist_batch;
 
 	//bi-directional many-to-one association to PicklistDistribution
 	@ManyToOne
@@ -293,6 +295,15 @@ public class PicklistDistributionRec implements Serializable {
 
 	public void setTransferToBin(String transferToBin) {
 		this.transferToBin = transferToBin;
+	}
+
+
+	public BigDecimal getPicklist_batch() {
+		return picklist_batch;
+	}
+
+	public void setPicklist_batch(BigDecimal picklist_batch) {
+		this.picklist_batch = picklist_batch;
 	}
 
 	public PicklistDistribution getPicklistDistribution() {
