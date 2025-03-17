@@ -159,7 +159,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 			pnInventoryDetail = getPnInventoryDetail(input,picklistHeader);
 			List<PnInventoryDetail> pnInventoryDetails = getPnInventoryDetails(input, picklistHeader); // Get list of inventory details
 	        double totalQtyReserved = pnInventoryDetails.stream().mapToDouble(p -> p.getQtyReserved().doubleValue()).sum(); // Calculate sum of qty_reserved
-	        		
+	        logger.info("QTY_CHECK: Total Reserved=" + totalQtyReserved + ", Requested=" + picklistDistributionREQ.getQty().doubleValue());
+
 			
 				if( picklistDistributionREQ.getQty().doubleValue() > totalQtyReserved ) {
 					throw new Exception("QTY requested is more than QTY reserved " + totalQtyReserved);
@@ -198,10 +199,16 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 						if(picklist.getBatch() != null && input.getPN().equalsIgnoreCase(picklist.getPn()) ) {					
 							PnInventoryDetail pnInvDet = em.find(PnInventoryDetail.class, picklist.getBatch().longValue());
 							if(pnInvDet != null  ) {
+								logger.info("MAIN_PN: Batch=" + pnInvDet.getBatch() + 
+						                   ", Before=" + pnInvDet.getQtyReserved() + 
+						                   ", QtyPicked=" + picklist.getQtyPicked());
+								
 								pnInvDet.setQtyReserved(pnInvDet.getQtyReserved().subtract( picklist.getQtyPicked()));
 								if (pnInvDet.getQtyReserved().compareTo(BigDecimal.ZERO) < 0) {
 									pnInvDet.setQtyReserved(BigDecimal.ZERO);
 								}
+								
+								logger.info("MAIN_PN: After=" + pnInvDet.getQtyReserved());
 								pnInvDet.setModifiedBy("TRAX_IFACE");
 								pnInvDet.setModifiedDate(new Date());
 							}
@@ -210,11 +217,16 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 						}else { // Altertive PN provided totalQtyReserved
 							
 							double totalQtyPick = picklist.getQtyPicked().doubleValue();
-							
+							 logger.info("ALT_PN: TotalQtyPick=" + totalQtyPick);
 							for(PnInventoryDetail pnInvDet: pnInventoryDetails) {
 								if(! pnInvDet.getLocation().equalsIgnoreCase(location) ) {
 									
 									double qty_Reserve = 0;
+									
+									logger.info("ALT_PN: Batch=" + pnInvDet.getBatch() + 
+						                       ", Before=" + qty_Reserve + 
+						                       ", Remaining=" + totalQtyPick);
+									
 									if (pnInvDet.getQtyReserved() != null)
 									{
 										qty_Reserve = pnInvDet.getQtyReserved().doubleValue();
@@ -229,6 +241,8 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 										totalQtyPick = 0;
 									}
 									pnInvDet.setQtyReserved(new BigDecimal( qty_Reserve));
+									
+									logger.info("ALT_PN: After=" + qty_Reserve + ", Remaining=" + totalQtyPick);
 									
 									if (pnInvDet.getQtyReserved().compareTo(BigDecimal.ZERO) < 0) {
 										pnInvDet.setQtyReserved(BigDecimal.ZERO);
@@ -304,8 +318,15 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 					}			
 				}
 				
-							
-		}else 
+				PnInventoryDetail resultDetail = em.find(PnInventoryDetail.class, pih.getId().getBatch());
+		        if (resultDetail != null) {
+		            logger.info("Calling updateRelatedRecordsWithBatch at the end of process for batch: " + resultDetail.getBatch());
+		            updateRelatedRecordsWithBatch(picklistDistributionREQ, resultDetail);
+		        } else {
+		            logger.severe("Could not find PnInventoryDetail with batch: " + pih.getId().getBatch());
+		        }
+		        
+		    }else 
 		{
 			exceuted = "Can not update Material: "+ input.getPN() +" as ERROR: Material is null or does not have minimum values";
 			logger.severe(exceuted);
@@ -1023,45 +1044,49 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 				PnInventoryDetail stockTransfer = setPnInevtoryDetail(pnInventoryDetail,parameter,pick);
 				pnInventoryHistory.setGoodsRcvdBatch(stockTransfer.getGoodsRcvdBatch());
 				pnInventoryHistory.getId().setBatch(stockTransfer.getBatch());
-				resultDetail = stockTransfer;
 		}else {
 				pnInventoryDetail	= setPnInevtoryDetailSN(pnInventoryDetail,parameter,pick);
 				pnInventoryHistory.setGoodsRcvdBatch(pnInventoryDetail.getGoodsRcvdBatch());
 				pnInventoryHistory.getId().setBatch(pnInventoryDetail.getBatch());
-				resultDetail = pnInventoryDetail;
 		}		
+	
+		System.out.println("INSERTING pnInventoryHistory: " + parameter.getPN());
+		insertData(pnInventoryHistory);
 		
-		//UPDATE BATCH FOR PICKLIST_DISTRIBUTION AND PICKLIST_DISTRIBUTON_REC
-		try {
+		return pnInventoryHistory;
+	}
+	
+	
+	private void updateRelatedRecordsWithBatch(PicklistDistribution pick, PnInventoryDetail resultDetail) {
+	    try {
+	        logger.info("STARTING batch propagation to related tables for batch: " + resultDetail.getBatch());
 	        
 	        pick.setBatch(new BigDecimal(resultDetail.getBatch()));
 	        logger.info("COPYING batch to picklist_distribution: " + resultDetail.getBatch());
 	        insertData(pick);
 	        
-	        
 	        String oppositeTransaction = pick.getId().getTransaction().equals("REQUIRE") ? "DISTRIBU" : "REQUIRE";
 	        if (oppositeTransaction.equals("DISTRIBU")) {
-	        try {
-	            PicklistDistribution otherPick = em.createQuery(
-	                    "SELECT p FROM PicklistDistribution p WHERE p.id.picklist = :pic " +
-	                    "AND p.id.picklistLine = :line " +
-	                    "AND p.id.transaction = :trans", 
-	                    PicklistDistribution.class)
-	                    .setParameter("pic", pick.getId().getPicklist())
-	                    .setParameter("line", pick.getId().getPicklistLine())
-	                    .setParameter("trans", oppositeTransaction)
-	                    .getSingleResult();
-	            
-	            otherPick.setBatch(new BigDecimal(resultDetail.getBatch()));
-	            logger.info("COPYING batch to " + oppositeTransaction + " picklist_distribution: " + resultDetail.getBatch());
-	            insertData(otherPick);
-	        } catch (Exception e) {
-	            logger.info("No " + oppositeTransaction + " record found to update batch: " + e.getMessage());
-	        }
+	            try {
+	                PicklistDistribution otherPick = em.createQuery(
+	                        "SELECT p FROM PicklistDistribution p WHERE p.id.picklist = :pic " +
+	                        "AND p.id.picklistLine = :line " +
+	                        "AND p.id.transaction = :trans", 
+	                        PicklistDistribution.class)
+	                        .setParameter("pic", pick.getId().getPicklist())
+	                        .setParameter("line", pick.getId().getPicklistLine())
+	                        .setParameter("trans", oppositeTransaction)
+	                        .getSingleResult();
+	                
+	                otherPick.setBatch(new BigDecimal(resultDetail.getBatch()));
+	                logger.info("COPYING batch to " + oppositeTransaction + " picklist_distribution: " + resultDetail.getBatch());
+	                insertData(otherPick);
+	            } catch (Exception e) {
+	                logger.info("No " + oppositeTransaction + " record found to update batch: " + e.getMessage());
+	            }
 	        }
 	        
 	        updatePicklistDistributionRec(pick, resultDetail);
-	        
 	        
 	        try {
 	            PicklistDistribution otherPick = em.createQuery(
@@ -1078,15 +1103,12 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 	        } catch (Exception e) {
 	            logger.info("No " + oppositeTransaction + " record found for picklist_distribution_rec update");
 	        }
+	        
+	        logger.info("COMPLETED batch propagation to related tables for batch: " + resultDetail.getBatch());
 	    } catch (Exception e) {
 	        logger.severe("Error propagating batch to related tables: " + e.toString());
 	        e.printStackTrace();
 	    }
-		
-		System.out.println("INSERTING pnInventoryHistory: " + parameter.getPN());
-		insertData(pnInventoryHistory);
-		
-		return pnInventoryHistory;
 	}
 	
 	private void updatePicklistDistributionRec(PicklistDistribution pick, PnInventoryDetail inventoryDetail) {
