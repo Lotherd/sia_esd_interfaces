@@ -686,6 +686,7 @@ public class Unit_Price_RFO_Data {
 	            "AND (W.MOD_NO IS NOT NULL OR ParentWO.MOD_NO IS NOT NULL) " +
 	            "AND WA.GET_PRICE = 'Y' " + 
 	            "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL " +
+	            "AND PDR.LEGACY_BATCH IS NOT NULL " +
 	            "AND WA.TRASACTION_CATEGORY = 'MATERIAL' ";
 
 	    String markPrice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? ";
