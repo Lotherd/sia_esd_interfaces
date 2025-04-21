@@ -106,7 +106,7 @@ public class Unit_Price_RFO_Data {
 
 		String pridedone2 = "UPDATE wo_actuals_material_temp SET GET_PRICE = 'N' WHERE WO = ? and wo_actual_transaction = ? and trasaction_category = 'MATERIAL' ";
 	    
-	    String getcurrency = "SELECT DISTINCT CCH.CURRENCY_MATERIAL FROM CUSTOMER_CONTRACT_HEADER CCH, CUSTOMER_ORDER_HEADER COH WHERE COH.ORDER_NUMBER = ? AND COH.CONTRACT_NUMBER = CCH.CONTRACT_NUMBER; ";
+	    String getcurrency = "SELECT DISTINCT CCH.CURRENCY_MATERIAL FROM CUSTOMER_CONTRACT_HEADER CCH, CUSTOMER_ORDER_HEADER COH WHERE COH.ORDER_NUMBER = ? AND COH.CONTRACT_NUMBER = CCH.CONTRACT_NUMBER ";
 	    
 	    String setpriceUSD = "update wo_actuals set unit_cost = ?, qty = ?, total_cost = ?, unit_sell = ?, total_sell = ?  where wo = ? and pn = ? ";
 	    
@@ -674,22 +674,35 @@ public class Unit_Price_RFO_Data {
 	    ArrayList<Operation_SND> orlist = new ArrayList<>();
 	    String lastWO = "";
 
-	    String sqlPRICE = "SELECT DISTINCT W.WO, COALESCE(W.MOD_NO, ParentWO.MOD_NO) AS MOD_NO, W.RFO_NO, PDR.LEGACY_BATCH, WA.PN " +
-	            "FROM WO W " +
-	    		"LEFT JOIN WO ParentWO ON W.NH_WO = ParentWO.WO AND ParentWO.MOD_NO IS NOT NULL " +
-	            "JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
-	            "JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
-	            "JOIN PICKLIST_HEADER PH ON W.WO = PH.WO AND WA.TASK_CARD = PH.TASK_CARD AND PH.STATUS = 'CLOSED' " +
-	            "JOIN PICKLIST_DISTRIBUTION PD ON PH.PICKLIST = PD.PICKLIST AND WA.TASK_CARD = PD.TASK_CARD AND WA.PN = PD.PN " +
-	            "INNER JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
-	            "WHERE W.RFO_NO IS NOT NULL " +
-	            "AND (W.MOD_NO IS NOT NULL OR ParentWO.MOD_NO IS NOT NULL) " +
-	            "AND WA.GET_PRICE = 'Y' " + 
-	            "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL " +
-	            "AND PDR.LEGACY_BATCH IS NOT NULL " +
-	            "AND WA.TRASACTION_CATEGORY = 'MATERIAL' ";
+	    String sqlPRICE = "SELECT DISTINCT " +
+                "W.WO, " +
+                "COALESCE(W.MOD_NO, ParentWO.MOD_NO) AS MOD_NO, " +
+                "W.RFO_NO, " +
+                "CASE " +
+                "  WHEN PH.PICKLIST IS NOT NULL AND (RH.REQUISITION IS NULL OR RDR.LEGACY_BATCH IS NULL) THEN PDR.LEGACY_BATCH " +
+                "  WHEN RH.REQUISITION IS NOT NULL AND RDR.LEGACY_BATCH IS NOT NULL THEN RDR.LEGACY_BATCH " +
+                "  ELSE NULL END AS LEGACY_BATCH, " +
+                "WA.PN " +
+                "FROM WO W " +
+                "LEFT JOIN WO ParentWO ON W.NH_WO = ParentWO.WO AND ParentWO.MOD_NO IS NOT NULL " +
+                "LEFT JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
+                "LEFT JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
+                "LEFT JOIN PICKLIST_HEADER PH ON W.WO = PH.WO AND WA.TASK_CARD = PH.TASK_CARD " +
+                "LEFT JOIN PICKLIST_DISTRIBUTION PD ON PH.PICKLIST = PD.PICKLIST AND WA.TASK_CARD = PD.TASK_CARD AND WA.PN = PD.PN AND PD.STATUS = 'CLOSED' AND PD.TRANSACTION = 'DISTRIBU' " +
+                "LEFT JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
+                "LEFT JOIN REQUISITION_HEADER RH ON W.WO = RH.WO AND WA.TASK_CARD = RH.TASK_CARD " +
+                "LEFT JOIN REQUISITION_DETAIL_REC RDR ON RH.REQUISITION = RDR.REQUISITION " +
+                "LEFT JOIN REQUISITION_DETAIL RD ON RH.REQUISITION = RD.REQUISITION AND WA.PN = RD.PN AND RD.STATUS = 'CLOSED' " +
+                "WHERE W.RFO_NO IS NOT NULL " +
+                "AND (W.MOD_NO IS NOT NULL OR ParentWO.MOD_NO IS NOT NULL) " +
+                "AND WA.GET_PRICE = 'Y' " +
+                "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL " +
+                "AND WA.TRASACTION_CATEGORY = 'MATERIAL' " +
+                "AND ((PH.PICKLIST IS NOT NULL AND PD.PICKLIST IS NOT NULL AND PDR.LEGACY_BATCH IS NOT NULL) " +
+                "OR (RH.REQUISITION IS NOT NULL AND RD.REQUISITION IS NOT NULL AND RDR.LEGACY_BATCH IS NOT NULL))";
 
-	    String markPrice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? ";
+
+	    String markPrice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? AND PN = ?";
 
 	    if (MaxRecord != null && !MaxRecord.isEmpty()) {
 	        sqlPRICE = "SELECT * FROM (" + sqlPRICE;
@@ -717,6 +730,7 @@ public class Unit_Price_RFO_Data {
 	            INT27_SND req = null; // Define outside the loop to accumulate operations
 	            while (rs1.next()) {
 	                String currentWO = rs1.getString(1); // Current WO (Work Order)
+	                String currentPN = rs1.getString(5);
 
 	                if (req == null || !currentWO.equals(lastWO)) {
 	                    // Add the previous req to the list (if it's not the first iteration)
@@ -746,6 +760,7 @@ public class Unit_Price_RFO_Data {
 
 	                // Mark the price as processed
 	                pstmt2.setString(1, currentWO);
+	                pstmt2.setString(2, currentPN);
 	                pstmt2.executeUpdate();
 	            }
 
