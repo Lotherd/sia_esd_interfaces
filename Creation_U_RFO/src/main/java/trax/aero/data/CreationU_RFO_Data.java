@@ -136,6 +136,7 @@ public class CreationU_RFO_Data {
     			    logger.warning("PN found for transaction: " + transaction + ", PN: " + PN);
     			} else {
     			    // Handle the case where no PN is found
+    				
     			    logger.warning("No PN found for transaction: " + transaction + ", WO: " + traxWoNumber);
     			}
     			
