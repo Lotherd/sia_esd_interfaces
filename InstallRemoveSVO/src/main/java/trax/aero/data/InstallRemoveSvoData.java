@@ -148,20 +148,20 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		try 
 		{
 				openCon();
-				pstmt2 = con.prepareStatement(sqlDate);
 				
-				pstmt2.setString(1, request.getEsdSvo());
-				
-				pstmt2.setString(2, request.getTransaction());
-				
-				pstmt2.executeQuery();
-				
+				logger.info("ExceptionID = " + request.getExceptionId());
+				if(request.getExceptionId().equalsIgnoreCase("53")) {
+					pstmt2 = con.prepareStatement(sqlDate);
+					pstmt2.setString(1, request.getEsdSvo());
+					pstmt2.setString(2, request.getTransaction());
+					pstmt2.executeQuery();
+				}
 				
 				logger.info("ExceptionID = " + request.getExceptionId());
 				if(!request.getExceptionId().equalsIgnoreCase("53")) {
 					pstmt1 = con.prepareStatement(retry);
 					pstmt1.setString(1, request.getTransaction());
-					pstmt2.executeQuery();
+					pstmt1.executeQuery();
 				}
 				
 				
@@ -176,8 +176,10 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
             logger.severe(exceuted);
             
 		}finally {
-			if(pstmt2 != null && !pstmt2.isClosed())
-				pstmt2.close();
+			if(pstmt1 != null && !pstmt1.isClosed())
+		        pstmt1.close();
+		    if(pstmt2 != null && !pstmt2.isClosed())
+		        pstmt2.close();
 		}
 		
 		return exceuted;
