@@ -267,9 +267,14 @@ public class MaterialStatusImportData implements IMaterialStatusImportData {
 						
 						//LOCATION TRANSFER
 						for( Transfer_order to: input.getTransfer_order()) {
-							if(picklist.getQtyPicked().compareTo(to.getTRANSFER_ORDER_QUANTITY()) == 0) {
+							/*if(picklist.getQtyPicked().compareTo(to.getTRANSFER_ORDER_QUANTITY()) == 0) {
 								setCustTo(picklist,to);
-							}
+							}*/
+							setCustTo(picklist, to);
+						  
+						    if (pnInventoryDetail != null) {
+						        updateRelatedRecordsWithBatch(picklistDistributionREQ, pnInventoryDetail);
+						    }
 						}		
 						logger.info("UPDATING picklistDistribution Distribution Line: " + picklist.getId().getDistributionLine());
 						insertData(picklist);
