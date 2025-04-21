@@ -81,20 +81,20 @@ public class Run implements Runnable{
 							    marshaller.marshal(input,sw);
 							    logger.info("Input: " + sw.toString());
 							    if(input.getErrorCode() != null && !input.getErrorCode().isEmpty() && input.getErrorCode().equalsIgnoreCase("53")) {
-							    	executed = data.markTransaction(input);
-							    } else {
-							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getSapSvo() + ", Error Code: " +input.getErrorCode());
-							    	CreationU_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getSapSvo() + ", Error Code: " +input.getErrorCode());
-							    	executed = data.markTransaction(input);
-							    	executed = "Issue found";
+		                            executed = data.markTransaction(input);
+		                        } else {
+		                        	logger.severe("Received Response with Remarks: " + input.getRemarks() +", Transaction: "+input.getTransaction() + ", Error Code: " +input.getErrorCode());
+		                            CreationU_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", Transaction: "+input.getTransaction() + ", Error Code: " +input.getErrorCode());
+		                            executed = data.markTransaction(input);
+		                            CreationU_RFO_Controller.sendEmailRequest(ArrayReq);
 							    }
-							    if(executed == null || !executed.equalsIgnoreCase("OK")) {
-							    	executed = "Issue found";
-					        		throw new Exception("Issue found");
-							    }
+							    if(executed == null) {
+		                            executed = "Issue found";
+		                            throw new Exception("Issue found - executed result is null");
+		                        }
 			        		 
 			        	 }catch(Exception e) {
-			        		
+			        		 logger.severe("Error processing request: " + e.toString());
 			        		 CreationU_RFO_Controller.addError(e.toString());
 			        		 CreationU_RFO_Controller.sendEmailRequest(ArrayReq);
 							

@@ -113,7 +113,7 @@ public class CreationU_RFO_Data {
 	    	 PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
 	         PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError)) {
 
-	        if (request.getTraxWoNumber() != null && !request.getTraxWoNumber().isEmpty() && !request.getErrorCode().equalsIgnoreCase("51")) {
+	        if (request.getTraxWoNumber() != null && !request.getTraxWoNumber().isEmpty()) {
 	            String errorCode = request.getErrorCode();
 	            String traxWoNumber = request.getTraxWoNumber();
 	            String sapSvo = request.getSapSvo();
@@ -138,6 +138,8 @@ public class CreationU_RFO_Data {
     			    // Handle the case where no PN is found
     			    logger.warning("No PN found for transaction: " + transaction + ", WO: " + traxWoNumber);
     			}
+    			
+    			logger.info("Processing request with ErrorCode: " + errorCode + " for transaction: " + transaction);
 
 	            if (errorCode != null && errorCode.equalsIgnoreCase("53")) {
 
@@ -164,33 +166,42 @@ public class CreationU_RFO_Data {
 	                    logger.warning("Deleted previous errors for WO: " + traxWoNumber + ", PN: " + PN);
 	                    logger.info("Deleted previous errors for WO: " + traxWoNumber);
 	                }
-	            } else if (traxWoNumber != null && sapSvo != null && errorCode != null && remarks != null) {
+	            } else if (errorCode != null && errorCode.equalsIgnoreCase("51")) {
 
 	               
-	                    executed = "Request WO: " + traxWoNumber + ", Error Code: " + errorCode + ", Remarks: " + remarks + ", SVO: " + sapSvo;
-	                    CreationU_RFO_Controller.addError(executed);
+	            	executed = "Request WO: " + traxWoNumber + ", Error Code: " + errorCode + ", Remarks: " + remarks + ", PN: " + PN;
+	                CreationU_RFO_Controller.addError(executed);
 	                    
+	                try {
+	                    logger.info("Inserting error on interface_audit for WO: " + traxWoNumber);
 	                    psInsertError.setString(1, request.getTraxWoNumber());
 	                    psInsertError.setString(2, PN);
 	                    psInsertError.setString(3, errorCode);
 	                    psInsertError.setString(4, remarks);
 	                    psInsertError.setString(5, transaction);
-	                    psInsertError.executeUpdate();
+	                    int rowsInserted = psInsertError.executeUpdate();
+	                    logger.info("Error inserted, row affected: " + rowsInserted);
+	                } catch (SQLException e) {
+	                    logger.severe("Error inserting interface_audit: " + e.getMessage());
+	                   
+	                }
 
-	                    // Log the insertion of the error into the audit table
-	                    logger.info("Inserted error for WO: " + traxWoNumber + ", Error Code: " + errorCode);
-	           
-
+	                
 	                if (transaction != null && traxWoNumber != null && tcNumber != null) {
-	                	pstmt3.setString(1, transaction);
-	                	pstmt3.setString(2, traxWoNumber);
-	                	pstmt3.setString(3, tcNumber);
-
-	                	// Use executeUpdate here as well
-	                	pstmt3.executeUpdate();
-
-	                    // Log the execution of the error unmarking
-	                    logger.info("Executed error unmark for WO: " + traxWoNumber);
+	                    try {
+	                        logger.info("Executing unMark for Transaction: " + transaction + ", WO: " + traxWoNumber + ", TC: " + tcNumber);
+	                        pstmt3.setString(1, transaction);
+	                        pstmt3.setString(2, traxWoNumber);
+	                        pstmt3.setString(3, tcNumber);
+	                        int rowsUpdated = pstmt3.executeUpdate();
+	                        logger.info("unMark excecuted, row updated: " + rowsUpdated);
+	                    } catch (SQLException e) {
+	                        logger.severe("Error excecuting unMark: " + e.getMessage());
+	                        executed = e.toString();
+	                    }
+	                } else {
+	                    logger.warning("Cannot excute unMark - required values missing. Transaction: " + transaction + 
+	                                  ", WO: " + traxWoNumber + ", TC: " + tcNumber);
 	                }
 	            } else {
 	                if (traxWoNumber != null && sapSvo != null) {
@@ -209,7 +220,7 @@ public class CreationU_RFO_Data {
 	        CreationU_RFO_Controller.addError(e.toString());
 	        logger.severe("SQL Exception: " + e.toString());
 	    }
-
+	    logger.info("markTransaction completed with result: " + executed);
 	    return executed;
 	}
 	
