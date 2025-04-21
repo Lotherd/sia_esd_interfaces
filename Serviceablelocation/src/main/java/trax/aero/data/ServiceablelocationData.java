@@ -329,7 +329,7 @@ public class ServiceablelocationData implements IServiceablelocationData {
 					
 					ms_pn.s_employee = request.getRelationCode();
 					
-					ms_pn.s_message ="SERVICETAG";
+					ms_pn.s_message ="SERVICETAGESD";
 				
 					poster.addJobToJMSQueueService("emroDS", "w_pn_identification_tag_print"
 							, "pn identification tag print"
