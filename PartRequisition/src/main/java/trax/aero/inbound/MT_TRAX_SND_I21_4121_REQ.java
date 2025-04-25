@@ -1,153 +1,147 @@
-
-
 package trax.aero.inbound;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Objects;
 
-
-
-
-@XmlRootElement(name="MT_TRAX_SND_I21_4121_REQ", namespace="http://singaporeair.com/mro/ESDTRAX")
+@XmlRootElement(name = "MT_TRAX_SND_I21_4121_REQ", namespace = "http://singaporeair.com/mro/ESDTRAX")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class MT_TRAX_SND_I21_4121_REQ {
 
-	@XmlElement(name = "Trax_repair_order")
-	private String Trax_repair_order;
+    @XmlElement(name = "Trax_repair_order")
+    private String Trax_repair_order;
 
-	public String getTrax_repair_order() {
-		return Trax_repair_order;
-	}
+    @XmlElement(name = "Trax_repair_order_line")
+    private String Trax_repair_order_line;
 
-	public String getTrax_repair_order_line() {
-		return Trax_repair_order_line;
-	}
+    @XmlElement(name = "Trax_WO_location")
+    private String Trax_WO_location;
 
-	public String getTrax_WO_location() {
-		return Trax_WO_location;
-	}
+    @XmlElement(name = "ESN")
+    private String ESN;
 
-	public String getESN() {
-		return ESN;
-	}
+    @XmlElement(name = "WO")
+    private String WO;
 
-	public String getWO() {
-		return WO;
-	}
+    @XmlElement(name = "Material")
+    private String Material;
 
-	public String getMaterial() {
-		return Material;
-	}
+    @XmlElement(name = "Quantity")
+    private String Quantity;
 
-	public String getQuantity() {
-		return Quantity;
-	}
+    // dd-mm-yyyy
+    @XmlElement(name = "Delivery_date")
+    private String Delivery_date;
 
-	public String getDelivery_date() {
-		return Delivery_date;
-	}
+    @XmlElement(name = "item_text")
+    private String item_text;
 
-	public String getItem_text() {
-		return item_text;
-	}
+    // Getters y setters
+    public String getTrax_repair_order() {
+        return Trax_repair_order;
+    }
 
-	public void setTrax_repair_order(String trax_repair_order) {
-		Trax_repair_order = trax_repair_order;
-	}
+    public void setTrax_repair_order(String trax_repair_order) {
+        Trax_repair_order = trax_repair_order;
+    }
 
-	public void setTrax_repair_order_line(String trax_repair_order_line) {
-		Trax_repair_order_line = trax_repair_order_line;
-	}
+    public String getTrax_repair_order_line() {
+        return Trax_repair_order_line;
+    }
 
-	public void setTrax_WO_location(String trax_WO_location) {
-		Trax_WO_location = trax_WO_location;
-	}
+    public void setTrax_repair_order_line(String trax_repair_order_line) {
+        Trax_repair_order_line = trax_repair_order_line;
+    }
 
-	public void setESN(String eSN) {
-		ESN = eSN;
-	}
+    public String getTrax_WO_location() {
+        return Trax_WO_location;
+    }
 
-	public void setWO(String wO) {
-		WO = wO;
-	}
+    public void setTrax_WO_location(String trax_WO_location) {
+        Trax_WO_location = trax_WO_location;
+    }
 
-	public void setMaterial(String material) {
-		Material = material;
-	}
+    public String getESN() {
+        return ESN;
+    }
 
-	public void setQuantity(String quantity) {
-		Quantity = quantity;
-	}
+    public void setESN(String ESN) {
+        this.ESN = ESN;
+    }
 
-	public void setDelivery_date(String delivery_date) {
-		Delivery_date = delivery_date;
-	}
+    public String getWO() {
+        return WO;
+    }
 
-	public void setItem_text(String item_text) {
-		this.item_text = item_text;
-	}
+    public void setWO(String WO) {
+        this.WO = WO;
+    }
 
-	@XmlElement(name = "Trax_repair_order_line")
-	private String Trax_repair_order_line;
-	
-	@XmlElement(name = "Trax_WO_location")
-	private String Trax_WO_location;
+    public String getMaterial() {
+        return Material;
+    }
+
+    public void setMaterial(String material) {
+        Material = material;
+    }
+
+    public String getQuantity() {
+        return Quantity;
+    }
+
+    public void setQuantity(String quantity) {
+        Quantity = quantity;
+    }
+
+    public String getDelivery_date() {
+        return Delivery_date;
+    }
+
+    public void setDelivery_date(String delivery_date) {
+        Delivery_date = delivery_date;
+    }
+
+    public String getItem_text() {
+        return item_text;
+    }
+
+    public void setItem_text(String item_text) {
+        this.item_text = item_text;
+    }
+
     
-	@XmlElement(name = "ESN")
-	private String ESN;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        
+        MT_TRAX_SND_I21_4121_REQ other = (MT_TRAX_SND_I21_4121_REQ) obj;
+        
+        return Objects.equals(Trax_repair_order, other.Trax_repair_order)
+            && Objects.equals(Trax_repair_order_line, other.Trax_repair_order_line)
+            && Objects.equals(Trax_WO_location, other.Trax_WO_location)
+            && Objects.equals(ESN, other.ESN)
+            && Objects.equals(WO, other.WO)
+            && Objects.equals(Material, other.Material)
+            && Objects.equals(Quantity, other.Quantity)
+            && Objects.equals(Delivery_date, other.Delivery_date)
+            && Objects.equals(item_text, other.item_text);
+    }
 
-	@XmlElement(name = "WO")
-	private String WO;
-
-	@XmlElement(name = "Material")
-	private String Material;
-	
-	@XmlElement(name = "Quantity")
-	private String Quantity;
-	
-	//dd-mm-yyyy
-	@XmlElement(name = "Delivery_date")
-	private String Delivery_date;
-	
-	@XmlElement(name = "item_text")
-	private String item_text;
-	
-	
-	 @Override
-	    public boolean equals(Object obj) {
-	        // TODO Auto-generated method stub
-	        if(obj instanceof MT_TRAX_SND_I21_4121_REQ)
-	        {
-	        	MT_TRAX_SND_I21_4121_REQ temp = (MT_TRAX_SND_I21_4121_REQ) obj;
-	            if(this.Trax_repair_order.equals(temp.Trax_repair_order) &&
-	            		this.Trax_repair_order_line.equals(temp.Trax_repair_order_line) &&	
-	            		this.Trax_WO_location.equals(temp.Trax_WO_location) &&
-	            		this.ESN.equals(temp.ESN) &&
-	            		this.WO.equals(temp.WO) &&
-	            		this.Material.equals(temp.Material) &&
-	            		this.Quantity.equals(temp.Quantity) &&
-	            		this.Delivery_date.equals(temp.Delivery_date) &&
-	            		this.item_text.equals(temp.item_text))
-	                return true;
-	        }
-	        return false;
-	    }
-
-	    @Override
-	    public int hashCode() {
-	        // TODO Auto-generated method stub
-	        
-	        return (this.Trax_repair_order.hashCode() +
-	        		this.Trax_repair_order_line.hashCode() +	
-	        		this.Trax_WO_location.hashCode() +
-	        		this.ESN.hashCode() +
-	        		this.WO.hashCode() +
-	        		this.Material.hashCode() +
-	        		this.Quantity.hashCode() +
-	        		this.Delivery_date.hashCode() +
-	        		this.item_text.hashCode());        
-	    }
-	
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+            Trax_repair_order, 
+            Trax_repair_order_line, 
+            Trax_WO_location, 
+            ESN, 
+            WO, 
+            Material, 
+            Quantity, 
+            Delivery_date, 
+            item_text
+        );
+    }
 }
