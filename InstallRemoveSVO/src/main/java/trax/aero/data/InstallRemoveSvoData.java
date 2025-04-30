@@ -142,8 +142,15 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 		String retry = 
 				"UPDATE PN_INVENTORY_HISTORY SET STATUS = 'CLOSED', INTERFACE_TRANSFER_FLAG = 'R', PN_INVENTORY_HISTORY.MADE_AS_CCS = null WHERE PN_INVENTORY_HISTORY.TRANSACTION_NO = ?";
 		
+		String sqlInsertError = "INSERT INTO interface_audit (TRANSACTION, TRANSACTION_TYPE, ORDER_NUMBER, EO, TRANSACTION_OBJECT, TRANSACTION_DATE, CREATED_BY, MODIFIED_BY, EXCEPTION_ID, EXCEPTION_BY_TRAX, EXCEPTION_DETAIL, EXCEPTION_CLASS_TRAX, CREATED_DATE, MODIFIED_DATE, ORDER_NUMBER_REFERENCE) "
+                + "SELECT seq_interface_audit.NEXTVAL, 'ERROR', ?, ?, 'I19', sysdate, 'TRAX_IFACE', 'TRAX_IFACE', ?, 'Y', ?, 'InstallRemoveSVO I19', sysdate, sysdate, ? FROM dual";
+    
+    String sqlDeleteError = "DELETE FROM interface_audit WHERE ORDER_NUMBER = ? AND EO = ?";
+		
 		PreparedStatement pstmt2 = null; 
 		PreparedStatement pstmt1 = null; 
+		PreparedStatement psInsertError = con.prepareStatement(sqlInsertError);
+        PreparedStatement psDeleteError = con.prepareStatement(sqlDeleteError);
 
 		try 
 		{
@@ -155,6 +162,14 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					pstmt2.setString(1, request.getEsdSvo());
 					pstmt2.setString(2, request.getTransaction());
 					pstmt2.executeQuery();
+					
+					psDeleteError.setString(1, request.getWo());
+                    psDeleteError.setString(2,  request.getPn());
+                    psDeleteError.executeUpdate();
+
+                    // Log deletion of previous errors
+                    logger.warning("Deleted previous errors for WO: " + request.getWo() + ", PN: " + request.getPn());
+                    logger.info("Deleted previous errors for WO: " + request.getWo());
 				}
 				
 				logger.info("ExceptionID = " + request.getExceptionId());
@@ -162,6 +177,15 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
 					pstmt1 = con.prepareStatement(retry);
 					pstmt1.setString(1, request.getTransaction());
 					pstmt1.executeQuery();
+					
+					logger.info("Inserting error on interface_audit for WO: " + request.getWo());
+                    psInsertError.setString(1, request.getWo());
+                    psInsertError.setString(2, request.getPn());
+                    psInsertError.setString(3, request.getExceptionId());
+                    psInsertError.setString(4, request.getExceptionDetail());
+                    psInsertError.setString(5, request.getTransaction());
+                    int rowsInserted = psInsertError.executeUpdate();
+                    logger.info("Error inserted, row affected: " + rowsInserted);
 				}
 				
 				
