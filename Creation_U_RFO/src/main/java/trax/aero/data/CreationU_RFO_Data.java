@@ -96,7 +96,7 @@ public class CreationU_RFO_Data {
 	public String markTransaction(INT22_TRAX request) {
 	    executed = "OK";
 
-	    String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE, SVO_NO = ?, RFO_NO = ?, INTERFACE_TRANSFER_FLAG = 'Y', Z_PRINTSTATUS = ? WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ? ";
+	    String update = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_DATE = SYSDATE, RFO_NO = ?, INTERFACE_TRANSFER_FLAG = 'Y', Z_PRINTSTATUS = ? WHERE TRANSACTION_NO = ? ";
 	    
 	    String errorunmark = " UPDATE PN_INVENTORY_HISTORY SET MADE_AS_CCS = NULL, interface_transfer_flag = 'X' WHERE TRANSACTION_NO = ? AND  WO = ? AND TASK_CARD = ? ";
 	    
@@ -120,6 +120,7 @@ public class CreationU_RFO_Data {
 	            String transaction = request.getTransaction();
 	            String tcNumber = request.getTcNumber();
 	            String remarks = request.getRemarks();
+	            String saprfo = request.getSapRepairRfo();
 
 	            // Log the request object to inspect its state
 	            logger.info("Request Object: " + request.toString());
@@ -146,15 +147,12 @@ public class CreationU_RFO_Data {
 
 	                // Check if all necessary values are non-null before proceeding
 	                if (transaction != null && sapSvo != null && traxWoNumber != null && tcNumber != null) {
-	                	pstmt2.setString(1, sapSvo);
-	                	pstmt2.setString(2, request.getSapRepairRfo());
-	                	pstmt2.setString(3, request.getPrintStatus()); 
-	                	pstmt2.setString(4, transaction);
-	                	pstmt2.setString(5, traxWoNumber);
-	                	pstmt2.setString(6, tcNumber);
-
-	                	// Use executeUpdate for update queries
+	                	pstmt2.setString(1, saprfo);
+	                	pstmt2.setString(2, request.getPrintStatus()); 
+	                	pstmt2.setString(3, transaction);
 	                	pstmt2.executeUpdate();
+
+	                	
 	                    
 	                    // Log success of the update
 	                    logger.info("Successfully executed update for WO: " + traxWoNumber);
