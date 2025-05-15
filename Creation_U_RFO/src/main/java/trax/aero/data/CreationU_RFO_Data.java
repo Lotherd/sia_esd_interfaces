@@ -120,7 +120,19 @@ public class CreationU_RFO_Data {
 	            String transaction = request.getTransaction();
 	            String tcNumber = request.getTcNumber();
 	            String remarks = request.getRemarks();
-	            String saprfo = request.getSapRepairRfo();
+	            
+	            String saprfoStr = request.getSapRepairRfo();
+	            BigDecimal saprfo = null;
+	            if (saprfoStr != null && !saprfoStr.isEmpty()) {
+	                try {
+	                    saprfo = new BigDecimal(saprfoStr);
+	                    logger.info("Successfully converted saprfo to BigDecimal: " + saprfo);
+	                } catch (NumberFormatException e) {
+	                    logger.severe("Error converting saprfo to BigDecimal: " + e.getMessage());
+	                    logger.severe("Invalid saprfo value: " + saprfoStr);
+	                    
+	                }
+	            }
 
 	            // Log the request object to inspect its state
 	            logger.info("Request Object: " + request.toString());
@@ -147,7 +159,7 @@ public class CreationU_RFO_Data {
 
 	                // Check if all necessary values are non-null before proceeding
 	                if (transaction != null && sapSvo != null && traxWoNumber != null && tcNumber != null) {
-	                	pstmt2.setString(1, saprfo);
+	                	pstmt2.setBigDecimal(1, saprfo);
 	                	pstmt2.setString(2, request.getPrintStatus()); 
 	                	pstmt2.setString(3, transaction);
 	                	pstmt2.executeUpdate();
