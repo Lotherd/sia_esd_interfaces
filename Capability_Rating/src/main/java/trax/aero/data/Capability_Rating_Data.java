@@ -353,6 +353,10 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
                 e.printStackTrace();
             }
             
+            
+            if (element.getQltyStatus().equalsIgnoreCase("Current") || element.getQltyStatus().equalsIgnoreCase("Update")) {
+            	
+            
             System.out.println("CHECKING PN_TYPE: " + element.getClcfNo() + " into the Trax DataBase");
 	        try {
 	            String checkPnTypeStr = "SELECT COUNT(*) FROM SYSTEM_TRAN_CODE WHERE SYSTEM_TRANSACTION = 'PNTYPE' AND SYSTEM_CODE = ?";
@@ -454,22 +458,29 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            System.out.println("Error occurred while checking or inserting/updating SYSTEM_TRAN_CODE");
 	            e.printStackTrace();
 	        }
+            }
 	        
+           
 	        System.out.println("Updating PN_MASTER " + element.getPartNo() + " into the Trax DataBase");
-	        System.out.println("TECH_CONTROL: " + auth.getTechControl() + " PN_TYPE: " + auth.getPnType());
+	        System.out.println("TECH_CONTROL: " + translateCategory(element.getCatCategory()) + " PN_TYPE: " + element.getClcfNo());
+	        if (!element.getQltyStatus().equalsIgnoreCase("Terminated")) {
 	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ? WHERE (PN = ? OR PN LIKE ?)";
 	        Query updatePN = em.createNativeQuery(updatePnMaster);
-	        updatePN.setParameter(1, auth.getTechControl());
-	        updatePN.setParameter(2, auth.getPnType());
+	        updatePN.setParameter(1, translateCategory(element.getCatCategory()));
+	        updatePN.setParameter(2, element.getClcfNo());
 	        updatePN.setParameter(3, auth.getId().getPn());
 	        updatePN.setParameter(4, auth.getId().getPn() + ":%");
 	        updatePN.executeUpdate();
 	        System.out.println("Successfully updated PN_MASTER");
-	        
+	        }
 	        System.out.println("INSERTING Authority: " + authType + " and PN: " + element.getPartNo() + " into the Trax DataBase");
 	        insertData(auth);
 	        
-	        boolean isActive = (!auth.getAuthorityDate().equalsIgnoreCase("null") && !element.getQltyStatus().equalsIgnoreCase("Terminated"));
+	        boolean isActive = (auth.getAuthorityDate() != null && 
+	        					!auth.getAuthorityDate().trim().isEmpty() && 
+	        					!auth.getAuthorityDate().equalsIgnoreCase("null") &&  
+	        					!element.getQltyStatus().equalsIgnoreCase("Terminated"));
+	        
 	        String activeStatus = isActive ? "Y" : "N";
 	        System.out.println("Preparing to check and insert/update PN_AUTHORITY_APPROVAL with ACTIVE: " + activeStatus);
 	        
@@ -556,10 +567,11 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            e.printStackTrace();
 	        }
 
-
+            
             
             return item;
-        } catch (Exception e) {
+        
+        }catch (Exception e) {
             System.out.println("An error occurred during the import process.");
             e.printStackTrace();
             return item;
