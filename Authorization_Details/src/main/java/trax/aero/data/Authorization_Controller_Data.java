@@ -288,6 +288,12 @@ public class Authorization_Controller_Data {
             for (Object[] skillMapping : skillMappings) {
                 String skill = (String) skillMapping[0];  // First column is the skill
                 String skillName = (String) skillMapping[1];  // Second column is the skill_name
+                
+                // Truncate skillName to a max of 45 char
+                if (skillName != null && skillName.length() > 45) {
+                    skillName = skillName.substring(0, 45);
+                    logger.info("Skill description truncated to 45 characters for skill: " + skill);
+                }
 
                 // Check if the skill already exists in the skill_master table
                 Long count = ((Number) em.createNativeQuery("SELECT COUNT(*) FROM skill_master WHERE skill = :skill")
