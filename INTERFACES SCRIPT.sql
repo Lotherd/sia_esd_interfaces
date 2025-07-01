@@ -380,6 +380,9 @@ ADD INTERFACE_ESD_UP_TRANSFERRED_FLAG VARCHAR2(1 CHAR);
 ALTER TABLE WO_ACTUALS 
 ADD BILLED_PRICE NUMBER(16,2);
 
+ALTER TABLE WO_ACTUALS 
+ADD INTERFACE_MODIFIED_FLAG VARCHAR2(1 CHAR);
+
 -- --------------------------------------------------------
 -- Table: PICKLIST_DISTRIBUTION
 -- --------------------------------------------------------
