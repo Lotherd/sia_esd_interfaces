@@ -232,9 +232,9 @@ public class Import_TC_MHR_Data {
 		            }
 		        }
 		    } catch (SQLException e) {
-		        executed = e.toString();
-		        Import_TC_MHR_Controller.addError(e.toString());
-		        logger.severe(e.toString());
+		    	    executed = "ERROR_DB";
+		    	    Import_TC_MHR_Controller.addError("Database error while marking transaction");
+		    	    logger.log(Level.SEVERE, "Error en markTransaction", e);
 		    }
 		    return executed;
 		}
