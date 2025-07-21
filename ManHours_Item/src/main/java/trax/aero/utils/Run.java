@@ -60,13 +60,15 @@ public class Run implements Runnable {
 
                             // Send the XML content
                             success = poster.post(ArrayRequest, url);
-                            String markSendResult;
-                        
-  			        	  markSendResult = data.markSendData();
-                            if ("OK".equals(markSendResult)) {
-        			            success = true;
-        			            break;
-        			        	  }
+                            
+                            // MAIN CHANGE: COMPLETELY REMOVED these lines
+                            // String markSendResult;
+                            // markSendResult = data.markSendData();
+                            // if ("OK".equals(markSendResult)) {
+                            //     success = true;
+                            //     break;
+                            // }
+                            
                             if (success) {
                                 logger.info("POST successful for Work Order: " + ArrayRequest.getWO());
 
@@ -83,14 +85,21 @@ public class Run implements Runnable {
                                 marshaller.marshal(input, sw);
                                 logger.info("Input: " + sw.toString());
 
+                                // CHANGE: Now we ALWAYS call markTransaction
+                                // The retry logic for error 51 is INSIDE markTransaction
+                                executed = data.markTransaction(input);
+                                
+                                // CHANGE: Simplified logic - markTransaction handles everything
                                 if (input.getError_code() != null && !input.getError_code().isEmpty() && input.getError_code().equalsIgnoreCase("53")) {
-                                    executed = data.markTransaction(input);
-                                } else {
+                                    // Success case
+                                    logger.info("Transaction successful for WO: " + input.getWO_number());
+                                }  else {
+                                    // Other errors
                                     logger.severe("Received Response with Remarks: " + input.getRemarks() + ", Order Number: " + input.getRFO() + ", Error Code: " + input.getError_code());
                                     ManHours_Item_Controller.addError("Received Response with Remarks: " + input.getRemarks() + ", Order Number: " + input.getRFO() + ", Error Code: " + input.getError_code());
-                                    executed = data.markTransaction(input);
                                     executed = "Issue found";
                                 }
+                                
                                 if (executed == null || !executed.equalsIgnoreCase("OK")) {
                                     executed = "Issue found";
                                     throw new Exception("Issue found");
