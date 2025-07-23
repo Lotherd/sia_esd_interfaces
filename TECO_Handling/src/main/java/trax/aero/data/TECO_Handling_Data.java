@@ -519,59 +519,68 @@ public String markTransaction(INT15_TRAX request) {
 
 	    ArrayList<INT15_SND> list = new ArrayList<>();
 
-	    String sqlRFO ="SELECT DISTINCT " +
-                "w.rfo_no, " +
-                "w.wo, " +
-                "TO_CHAR(w.completion_date, 'DD-MM-YYYY') AS completion_date, " +
-                "TO_CHAR(w.completion_date, 'HH24:MI:SS') AS completion_time, " +
-                "CASE " +
-                "    WHEN w.status = 'CLOSED' " +
-                "         AND NOT EXISTS ( " +
-                "        SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL') " +
-                "    ) " +
-                "         AND ( " +
-                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
-                "             OR " +
-                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y') " +
-                "         ) THEN 'CLOSED' " +
-                "    WHEN w.status = 'CLOSED' " +
-                "         AND NOT EXISTS ( " +
-                "        SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL' " +
-                "    ) " +
-                "         AND ( " +
-                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
-                "             OR " +
-                "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y') " +
-                "         ) THEN 'CANCEL' " +
-                "    ELSE w.status " +
-                "END AS status, " +
-                "w.reopen_reason, " +
-                "w.source_ref, " +
-                "w.source_type " +
-                "FROM wo w " +
-                "JOIN wo_task_card wt ON w.wo = wt.wo " +
-                "JOIN wo_Actuals wa ON w.wo = wa.wo " +
-                "LEFT JOIN pn_inventory_history ath ON w.wo = ath.wo AND wt.task_card = ath.task_card " +
-                "WHERE w.rfo_no IS NOT NULL AND (w.SVO_USED IS NULL or w.SVO_USED = 'Y') " +
-                "AND ( " +
-                "    (w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND WA.INVOICED_FLAG = 'Y' " +
-                "    AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL')) " +
-                "    AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
-                "    OR (ath.svo_no IS NOT NULL AND ath.INTERFACE_TRANSFER_FLAG_TECO = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
-                "    AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.INTERFACE_TRANSFER_FLAG_TECO = 'N')))) " +
-                ") " +
-                "OR " +
-                "(w.status = 'CLOSED' AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) AND WA.INVOICED_FLAG IS NULL " +
-                "AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL') " +
-                "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
-                "OR (ath.svo_no IS NOT NULL AND ath.INTERFACE_TRANSFER_FLAG_TECO = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
-                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.INTERFACE_TRANSFER_FLAG_TECO = 'N')))) " +
-                "OR " +
-                "(w.status = 'OPEN' AND w.reopen_reason IS NOT NULL AND (w.interface_teco_flag = 'Y' OR w.interface_teco_flag IS NULL) " +
-                "AND (NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL'))) " +
-                "AND ((ath.svo_no IS NULL OR ath.transaction_type IS NOT NULL) " +
-                "OR (ath.svo_no IS NOT NULL AND ath.INTERFACE_TRANSFER_FLAG_TECO = 'D' AND (ATH.TRANSACTION_TYPE = 'REMOVE' OR ATH.TRANSACTION_TYPE = 'INSTALL' ) " +
-                "AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.INTERFACE_TRANSFER_FLAG_TECO = 'N'))))";
+
+		String sqlRFO = "SELECT DISTINCT " +
+		    "w.rfo_no, " +
+		    "w.wo, " +
+		    "TO_CHAR(w.completion_date, 'DD-MM-YYYY') AS completion_date, " +
+		    "TO_CHAR(w.completion_date, 'HH24:MI:SS') AS completion_time, " +
+		    "CASE " +
+		    "    WHEN w.status = 'CLOSED' " +
+		    "         AND NOT EXISTS ( " +
+		    "        SELECT 1 FROM wo_task_card wt_inner " +
+		    "        WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL') " +
+		    "    ) " +
+		    "         AND ( " +
+		    "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+		    "             OR " +
+		    "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y') " +
+		    "         ) THEN 'CLOSED' " +
+		    "    WHEN w.status = 'CLOSED' " +
+		    "         AND NOT EXISTS ( " +
+		    "        SELECT 1 FROM wo_task_card wt_inner " +
+		    "        WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL' " +
+		    "    ) " +
+		    "         AND ( " +
+		    "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent IS NULL) " +
+		    "             OR " +
+		    "             NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.svo_sent = 'Y') " +
+		    "         ) THEN 'CANCEL' " +
+		    "    ELSE w.status " +
+		    "END AS status, " +
+		    "w.reopen_reason, " +
+		    "w.source_ref, " +
+		    "w.source_type " +
+		    "FROM wo w " +
+		    "WHERE w.rfo_no IS NOT NULL " +
+		    "  AND (w.SVO_USED IS NULL OR w.SVO_USED = 'Y') " +
+		    "  AND EXISTS (SELECT 1 FROM wo_task_card wt WHERE wt.wo = w.wo) " +
+		    "  AND EXISTS (SELECT 1 FROM wo_Actuals wa WHERE wa.wo = w.wo) " +
+		    "  AND ( " +
+		    "    (w.status = 'CLOSED' " +
+		    "     AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) " +
+		    "     AND EXISTS (SELECT 1 FROM wo_Actuals wa WHERE wa.wo = w.wo AND wa.INVOICED_FLAG = 'Y') " +
+		    "     AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL')) " +
+		    "     AND (NOT EXISTS (SELECT 1 FROM pn_inventory_history ath WHERE ath.wo = w.wo AND ath.svo_no IS NOT NULL AND ath.transaction_type IS NULL) " +
+		    "          OR (EXISTS (SELECT 1 FROM pn_inventory_history ath WHERE ath.wo = w.wo AND ath.svo_no IS NOT NULL AND ath.INTERFACE_TRANSFER_FLAG_TECO = 'D' AND ath.TRANSACTION_TYPE IN ('REMOVE', 'INSTALL')) " +
+		    "              AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.INTERFACE_TRANSFER_FLAG_TECO = 'N')))) " +
+		    "    OR " +
+		    "    (w.status = 'CLOSED' " +
+		    "     AND (w.interface_teco_flag = 'D' OR w.interface_teco_flag IS NULL) " +
+		    "     AND EXISTS (SELECT 1 FROM wo_Actuals wa WHERE wa.wo = w.wo AND wa.INVOICED_FLAG IS NULL) " +
+		    "     AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status != 'CANCEL') " +
+		    "     AND (NOT EXISTS (SELECT 1 FROM pn_inventory_history ath WHERE ath.wo = w.wo AND ath.svo_no IS NOT NULL AND ath.transaction_type IS NULL) " +
+		    "          OR (EXISTS (SELECT 1 FROM pn_inventory_history ath WHERE ath.wo = w.wo AND ath.svo_no IS NOT NULL AND ath.INTERFACE_TRANSFER_FLAG_TECO = 'D' AND ath.TRANSACTION_TYPE IN ('REMOVE', 'INSTALL')) " +
+		    "              AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.INTERFACE_TRANSFER_FLAG_TECO = 'N')))) " +
+		    "    OR " +
+		    "    (w.status = 'OPEN' " +
+		    "     AND w.reopen_reason IS NOT NULL " +
+		    "     AND (w.interface_teco_flag = 'Y' OR w.interface_teco_flag IS NULL) " +
+		    "     AND NOT EXISTS (SELECT 1 FROM wo_task_card wt_inner WHERE wt_inner.wo = w.wo AND wt_inner.status NOT IN ('CLOSED', 'CANCEL')) " +
+		    "     AND (NOT EXISTS (SELECT 1 FROM pn_inventory_history ath WHERE ath.wo = w.wo AND ath.svo_no IS NOT NULL AND ath.transaction_type IS NULL) " +
+		    "          OR (EXISTS (SELECT 1 FROM pn_inventory_history ath WHERE ath.wo = w.wo AND ath.svo_no IS NOT NULL AND ath.INTERFACE_TRANSFER_FLAG_TECO = 'D' AND ath.TRANSACTION_TYPE IN ('REMOVE', 'INSTALL')) " +
+		    "              AND NOT EXISTS (SELECT 1 FROM pn_inventory_history ath_inner WHERE ath_inner.wo = w.wo AND ath_inner.INTERFACE_TRANSFER_FLAG_TECO = 'N')))) " +
+		    "  )";
 
 	    String sqlMark = "UPDATE PN_INVENTORY_HISTORY SET INTERFACE_TRANSFER_FLAG_TECO = 'Y' WHERE WO = ?";
 	    String sqlMark2 = "UPDATE WO SET INTERFACE_TECO_FLAG = CASE " +
