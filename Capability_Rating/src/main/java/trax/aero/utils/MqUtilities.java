@@ -23,18 +23,18 @@ public class MqUtilities {
     private static final String APP_PASSWORD = System.getProperty("CapabilityRating_password"); // Password that the application uses to connect to MQ
     private static final String QUEUE_NAME_SENDER = System.getProperty("CapabilityRating_send"); // Queue that the application uses to put and get messages to and from
     private static final String QUEUE_NAME_RECEIVE = System.getProperty("CapabilityRating_receive");
-    //private static final String CIPHER_SUITE = System.getProperty("CapabilityRating_CipherSuite"); // Cipher suite for SSL/TLS
+    private static final String CIPHER_SUITE = System.getProperty("CapabilityRating_CipherSuite"); // Cipher suite for SSL/TLS
     
-    //private static final String TRUSTSTORE_PATH = System.getProperty("CapabilityRating_trustStore");
-    //private static final String TRUSTSTORE_PASSWORD = System.getProperty("CapabilityRating_trustStorePassword");
-    //private static final String TRUSTSTORE_TYPE = System.getProperty("CapabilityRating_trustStoreType", "JKS");
+    private static final String TRUSTSTORE_PATH = System.getProperty("CapabilityRating_trustStore");
+    private static final String TRUSTSTORE_PASSWORD = System.getProperty("CapabilityRating_trustStorePassword");
+    private static final String TRUSTSTORE_TYPE = System.getProperty("CapabilityRating_trustStoreType", "JKS");
     
     public static MQQueueConnectionFactory createMQQueueConnectionFactory() throws JMSException {
-    	/*if (TRUSTSTORE_PATH != null && TRUSTSTORE_PASSWORD != null) {
+    	if (TRUSTSTORE_PATH != null && TRUSTSTORE_PASSWORD != null) {
             System.setProperty("javax.net.ssl.trustStore", TRUSTSTORE_PATH);
            System.setProperty("javax.net.ssl.trustStorePassword", TRUSTSTORE_PASSWORD);
             System.setProperty("javax.net.ssl.trustStoreType", TRUSTSTORE_TYPE);
-        }*/
+        }
     	
     	MQQueueConnectionFactory mqQueueConnectionFactory = new MQQueueConnectionFactory();
 	    mqQueueConnectionFactory.setHostName(HOST);
@@ -45,7 +45,7 @@ public class MqUtilities {
        
         mqQueueConnectionFactory.setStringProperty(WMQConstants.USERID, APP_USER); 
         mqQueueConnectionFactory.setStringProperty(WMQConstants.PASSWORD,APP_PASSWORD );
-        //mqQueueConnectionFactory.setStringProperty(WMQConstants.WMQ_SSL_CIPHER_SUITE, CIPHER_SUITE); // Set the cipher suite
+        mqQueueConnectionFactory.setStringProperty(WMQConstants.WMQ_SSL_CIPHER_SUITE, CIPHER_SUITE); // Set the cipher suite
 	    return mqQueueConnectionFactory;
     }
     
