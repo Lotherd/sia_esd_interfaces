@@ -258,6 +258,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "AND A1.MODULE = 'SHOP' " +
                 "AND A1.RFO_NO IS NOT NULL " +
                 "AND ( A3.STATE_OF_PART = 'UNSERVICEABLE' or  A3.STATE_OF_PART = 'SERVICEABLE' )" +
+                "AND A1.SOURCE_TYPE = '1P' " +
                 "AND ( " +
                 "   (PM.CATEGORY IN ('B', 'C', 'D') " +
                 "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
