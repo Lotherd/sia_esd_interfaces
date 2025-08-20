@@ -76,18 +76,16 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
         }
         
         String authType = element.getAuthorityType();
-        if (authType.length() > 8) {
-            try {
-                String checkAuthMappingStr = "SELECT AUTHORITY_MODIFIED FROM ESD_AUTHORITY_MAPPING WHERE AUTHORITY_ORIGINAL = ?";
-                Query checkAuthMapping = em.createNativeQuery(checkAuthMappingStr);
-                checkAuthMapping.setParameter(1, authType);
-                String modifiedAuth = (String) checkAuthMapping.getSingleResult();
-                if (modifiedAuth != null) {
-                    authType = modifiedAuth;
-                }
-            } catch (NoResultException ex) {
-                // No mapping found, use original value
+        try {
+            String checkAuthMappingStr = "SELECT AUTHORITY_MODIFIED FROM ESD_AUTHORITY_MAPPING WHERE AUTHORITY_ORIGINAL = ?";
+            Query checkAuthMapping = em.createNativeQuery(checkAuthMappingStr);
+            checkAuthMapping.setParameter(1, authType);
+            String modifiedAuth = (String) checkAuthMapping.getSingleResult();
+            if (modifiedAuth != null) {
+                authType = modifiedAuth;
             }
+        } catch (NoResultException ex) {
+            // No mapping found, use original value
         }
 
         PartAuthorityESD_PK primaryKey = new PartAuthorityESD_PK();
@@ -464,7 +462,7 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	        System.out.println("Updating PN_MASTER " + element.getPartNo() + " into the Trax DataBase");
 	        System.out.println("TECH_CONTROL: " + translateCategory(element.getCatCategory()) + " PN_TYPE: " + element.getClcfNo());
 	        if (!element.getQltyStatus().equalsIgnoreCase("Terminated")) {
-	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ? WHERE (PN = ? OR PN LIKE ?)";
+	        String updatePnMaster = "UPDATE PN_MASTER SET ENGINE = ?, PN_TYPE = ?, MODIFIED_DATE = sysdate, MODIFIED_BY = 'IFACEESD' WHERE (PN = ? OR PN LIKE ?)";
 	        Query updatePN = em.createNativeQuery(updatePnMaster);
 	        updatePN.setParameter(1, translateCategory(element.getCatCategory()));
 	        updatePN.setParameter(2, element.getClcfNo());
@@ -472,6 +470,33 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	        updatePN.setParameter(4, auth.getId().getPn() + ":%");
 	        updatePN.executeUpdate();
 	        System.out.println("Successfully updated PN_MASTER");
+	        
+	     // Insert into PN_MASTER_AUDIT
+	        try {
+	            // First, select current values from PN_MASTER
+	            String selectPnMasterQuery = "SELECT PN_DESCRIPTION, CATEGORY FROM PN_MASTER WHERE PN = ?";
+	            Query selectPnMasterQueryObj = em.createNativeQuery(selectPnMasterQuery);
+	            selectPnMasterQueryObj.setParameter(1, auth.getId().getPn());
+	            Object[] result = (Object[]) selectPnMasterQueryObj.getSingleResult();
+	            
+	            String pnDescription = (String) result[0];
+	            String pnCategory = (String) result[1];
+	            
+	            String insertAuditQuery = "INSERT INTO PN_MASTER_AUDIT (PN, PN_DESCRIPTION, CATEGORY, ENGINE, PN_TYPE, MODIFIED_DATE, MODIFIED_BY) " +
+	                                     "VALUES (?, ?, ?, ?, ?, sysdate, 'IFACEESD')";
+	            Query insertAuditQueryObj = em.createNativeQuery(insertAuditQuery);
+	            insertAuditQueryObj.setParameter(1, auth.getId().getPn());
+	            insertAuditQueryObj.setParameter(2, pnDescription);
+	            insertAuditQueryObj.setParameter(3, pnCategory);
+	            insertAuditQueryObj.setParameter(4, translateCategory(element.getCatCategory()));
+	            insertAuditQueryObj.setParameter(5, element.getClcfNo());
+	            insertAuditQueryObj.executeUpdate();
+	            System.out.println("Successfully inserted into PN_MASTER_AUDIT for PN: " + auth.getId().getPn());
+	        } catch (Exception e) {
+	            System.out.println("Error occurred while inserting into PN_MASTER_AUDIT");
+	            e.printStackTrace();
+	        }
+	        
 	        }
 	        System.out.println("INSERTING Authority: " + authType + " and PN: " + element.getPartNo() + " into the Trax DataBase");
 	        insertData(auth);
