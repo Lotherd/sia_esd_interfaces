@@ -675,43 +675,47 @@ public class Unit_Price_RFO_Data {
 	    String lastWO = "";
 
 	    String sqlPRICE = "SELECT DISTINCT " +
-                "W.WO, " +
-                "COALESCE(W.MOD_NO, ParentWO.MOD_NO) AS MOD_NO, " +
-                "W.RFO_NO, " +
-                "MAX(COALESCE(PDR.LEGACY_BATCH, RDR.LEGACY_BATCH)) AS LEGACY_BATCH, " +
-                "WA.PN " +
-                "FROM WO W " +
-                "LEFT JOIN WO ParentWO ON W.NH_WO = ParentWO.WO AND ParentWO.MOD_NO IS NOT NULL " +
-                "LEFT JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
-                "LEFT JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
-                "LEFT JOIN PICKLIST_HEADER PH ON W.WO = PH.WO AND WA.TASK_CARD = PH.TASK_CARD " +
-                "LEFT JOIN PICKLIST_DISTRIBUTION PD ON PH.PICKLIST = PD.PICKLIST " +
-                    "AND WA.TASK_CARD = PD.TASK_CARD " +
-                    "AND WA.PN = PD.PN " +
-                    "AND PD.STATUS = 'CLOSED' " +
-                    "AND PD.TRANSACTION = 'DISTRIBU' " +
-                "LEFT JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST " +
-                "LEFT JOIN REQUISITION_HEADER RH ON W.WO = RH.WO AND WA.TASK_CARD = RH.TASK_CARD " +
-                "LEFT JOIN REQUISITION_DETAIL_REC RDR ON RH.REQUISITION = RDR.REQUISITION " +
-                "LEFT JOIN REQUISITION_DETAIL RD ON RH.REQUISITION = RD.REQUISITION " +
-                    "AND WA.PN = RD.PN " +
-                    "AND RD.STATUS = 'CLOSED' " +
-                "WHERE W.RFO_NO IS NOT NULL " +
-                    "AND (W.MOD_NO IS NOT NULL OR ParentWO.MOD_NO IS NOT NULL) " +
-                    "AND WA.GET_PRICE = 'Y' " +
-                    "AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL " +
-                    "AND WA.TRASACTION_CATEGORY = 'MATERIAL' " +
-                    "AND ((PH.PICKLIST IS NOT NULL " +
-                          "AND PD.PICKLIST IS NOT NULL " +
-                          "AND PDR.LEGACY_BATCH IS NOT NULL) " +
-                         "OR (RH.REQUISITION IS NOT NULL " +
-                             "AND RD.REQUISITION IS NOT NULL " +
-                             "AND RDR.LEGACY_BATCH IS NOT NULL)) " +
-                "GROUP BY " +
-                    "W.WO, " +
-                    "COALESCE(W.MOD_NO, ParentWO.MOD_NO), " +
-                    "W.RFO_NO, " +
-                    "WA.PN";
+	            "    W.WO, " +
+	            "    COALESCE(W.MOD_NO, ParentWO.MOD_NO) AS MOD_NO, " +
+	            "    W.RFO_NO, " +
+	            "    MAX(COALESCE(PDR.LEGACY_BATCH, RDR.LEGACY_BATCH)) AS LEGACY_BATCH, " +
+	            "    WA.PN " +
+	            "FROM WO W " +
+	            "LEFT JOIN WO ParentWO ON W.NH_WO = ParentWO.WO AND ParentWO.MOD_NO IS NOT NULL " +
+	            "LEFT JOIN WO_SHOP_DETAIL WSD ON W.WO = WSD.WO " +
+	            "LEFT JOIN WO_ACTUALS WA ON W.WO = WA.WO " +
+	            "LEFT JOIN PICKLIST_HEADER PH ON W.WO = PH.WO AND WA.TASK_CARD = PH.TASK_CARD " +
+	            "LEFT JOIN PICKLIST_DISTRIBUTION PD ON PH.PICKLIST = PD.PICKLIST " +
+	            "    AND WA.TASK_CARD = PD.TASK_CARD " +
+	            "    AND WA.PN = PD.PN " +
+	            "    AND PD.STATUS = 'CLOSED' " +
+	            "    AND PD.TRANSACTION = 'DISTRIBU' " +
+	            "LEFT JOIN PICKLIST_DISTRIBUTION_REC PDR ON PH.PICKLIST = PDR.PICKLIST AND PD.STATUS = 'CLOSED' " +
+	            "LEFT JOIN REQUISITION_HEADER RH ON W.WO = RH.WO AND WA.TASK_CARD = RH.TASK_CARD " +
+	            "LEFT JOIN REQUISITION_DETAIL RD ON RH.REQUISITION = RD.REQUISITION " +
+	            "    AND WA.PN = RD.PN " +
+	            "    AND RD.STATUS = 'CLOSED' " +
+	            "LEFT JOIN REQUISITION_DETAIL_REC RDR ON RH.REQUISITION = RDR.REQUISITION AND RD.STATUS = 'CLOSED' " +
+	            "WHERE W.RFO_NO IS NOT NULL " +
+	            "    AND (W.MOD_NO IS NOT NULL OR ParentWO.MOD_NO IS NOT NULL) " +
+	            "    AND WA.GET_PRICE = 'Y' " +
+	            "    AND WA.INTERFACE_ESD_UP_TRANSFERRED_FLAG IS NULL " +
+	            "    AND WA.TRASACTION_CATEGORY = 'MATERIAL' " +
+	            "    AND (WA.PN = RD.PN OR WA.PN = PD.PN) " +
+	            "    AND (WA.WO = RH.WO OR WA.WO = PH.WO) " +
+	            "    AND (WA.TASK_CARD = RH.TASK_CARD OR WA.TASK_CARD = PH.TASK_CARD) " +
+	            "    AND (PD.STATUS = 'CLOSED' OR RD.STATUS = 'CLOSED') " +
+	            "    AND ((PH.PICKLIST IS NOT NULL " +
+	            "          AND PD.PICKLIST IS NOT NULL " +
+	            "          AND PDR.LEGACY_BATCH IS NOT NULL) " +
+	            "         OR (RH.REQUISITION IS NOT NULL " +
+	            "             AND RD.REQUISITION IS NOT NULL " +
+	            "             AND RDR.LEGACY_BATCH IS NOT NULL)) " +
+	            "GROUP BY " +
+	            "    W.WO, " +
+	            "    COALESCE(W.MOD_NO, ParentWO.MOD_NO), " +
+	            "    W.RFO_NO, " +
+	            "    WA.PN";
 
 
 	    String markPrice = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = 'Y' WHERE WO = ? AND PN = ?";
