@@ -235,7 +235,7 @@ public class ManHours_Item_Data {
 	                    ManHours_Item_Controller.addError(executed);
 	                    logger.severe(executed);
 	                }
-	            } else {
+	            }else {
 	                psDeleteError.setString(1, request.getWO_number());
 	                psDeleteError.executeUpdate();
 	            }
@@ -311,7 +311,7 @@ public class ManHours_Item_Data {
                 "    task_card_item, created_by ORDER BY work_accomplished_line DESC) AS rn FROM " +
                 "    wo_task_card_item_wrk_acmplshd) WHERE rn = 1) wka1 ON wti.wo = wka1.wo AND " +
                 "    wti.task_card = wka1.task_card AND wti.task_card_item = wka1.task_card_item AND " +
-                "    wti.inspected_by = wka1.created_by " +
+                "    (wti.inspected_by = wka1.created_by or wti.mechanic_comp_by = wka1.created_by) " +
                 "LEFT JOIN (SELECT wo, task_card, task_card_item, work_accomplished_line, work_accomplished, " +
                 "    created_by, created_date FROM (SELECT wo, task_card, task_card_item, work_accomplished_line, " +
                 "    work_accomplished, created_by, created_date, ROW_NUMBER() OVER (PARTITION BY wo, task_card, " +
@@ -334,7 +334,7 @@ public class ManHours_Item_Data {
                 "    task_card_item, created_by ORDER BY work_accomplished_line DESC) AS rn FROM " +
                 "    wo_task_card_item_wrk_acmplshd) WHERE rn = 1) wka ON wti.wo = wka.wo AND " +
                 "    wti.task_card = wka.task_card AND wti.task_card_item = wka.task_card_item AND " +
-                "    wti.inspected_by = wka.created_by " +
+                "    (wti.inspected_by = wka.created_by or wti.mechanic_comp_by = wka.created_by) " +
                 "JOIN employee_control ec ON ec.employee = wka.created_by " +
                 "WHERE wti.wo = ? AND wti.task_card = ? AND wt.non_routine = 'N' AND wa.employee IS NOT NULL " +
                 "AND wa.transaction_date = (SELECT MAX(transaction_date) FROM wo_actuals wa2 WHERE wa2.wo = wti.wo) " +
