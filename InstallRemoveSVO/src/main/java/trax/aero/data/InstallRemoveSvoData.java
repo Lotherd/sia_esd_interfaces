@@ -248,6 +248,7 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "JOIN PN_INVENTORY_DETAIL A5 ON A5.BATCH = A3.BATCH " +
                 "JOIN WO A1 ON A1.WO = A3.WO " +
                 "JOIN WO_SHOP_DETAIL A4 ON A4.WO = A1.WO " +
+                "JOIN SYSTEM_TRAN_CODE S ON A1.SOURCE_TYPE = S.SYSTEM_CODE " +
                 "LEFT JOIN PN_MASTER PM ON A3.PN = PM.PN " +
                 "WHERE A3.SVO_NO IS NULL " +
                 "AND A3.WO IS NOT NULL " +
@@ -258,7 +259,8 @@ public class InstallRemoveSvoData implements IInstallRemoveSvoData {
                 "AND A1.MODULE = 'SHOP' " +
                 "AND A1.RFO_NO IS NOT NULL " +
                 "AND ( A3.STATE_OF_PART = 'UNSERVICEABLE' or  A3.STATE_OF_PART = 'SERVICEABLE' )" +
-                "AND A1.SOURCE_TYPE = '1P' " +
+                "AND S.SYSTEM_TRANSACTION = 'SOURCETYPE' " +
+                "AND S.PARTY = '1P' " +
                 "AND ( " +
                 "   (PM.CATEGORY IN ('B', 'C', 'D') " +
                 "    AND NOT EXISTS (SELECT 1 FROM ZEPARTSER_MASTER Z " +
