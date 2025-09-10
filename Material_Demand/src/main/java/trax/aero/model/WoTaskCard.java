@@ -816,6 +816,9 @@ public class WoTaskCard implements Serializable {
 
 	@Column(name="XML_STATUS")
 	private String xmlStatus;
+	
+	@Column(name="OPS_NO")
+	private String opsNo;
 
 	private String zonal;
 
@@ -3109,6 +3112,14 @@ public class WoTaskCard implements Serializable {
 
 	public void setWoBean(Wo woBean) {
 		this.woBean = woBean;
+	}
+	
+	public String getOpsNo() {
+		return opsNo;
+	}
+
+	public void setOpsNo(String opsNo) {
+		this.opsNo = opsNo;
 	}
 
 	public List<WoTaskCardItem> getWoTaskCardItems() {

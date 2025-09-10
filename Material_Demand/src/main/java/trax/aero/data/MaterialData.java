@@ -164,9 +164,7 @@ public class MaterialData implements IMaterialData {
 						
 						try {
 							if(card != null) {
-								if(card.getWoTaskCardItems() != null && !card.getWoTaskCardItems().isEmpty()) {
-									c.setOperationNumber(card.getWoTaskCardItems().get(0).getOpsNo());
-								}
+									c.setOperationNumber(card.getOpsNo());
 							}
 						}catch(Exception e) {
 							logger.info("No item found");
@@ -328,9 +326,7 @@ public class MaterialData implements IMaterialData {
 												
 						try {
 							if(card != null) {
-								if(card.getWoTaskCardItems() != null && !card.getWoTaskCardItems().isEmpty()) {
-									c.setOperationNumber(card.getWoTaskCardItems().get(0).getOpsNo());
-								}
+								c.setOperationNumber(card.getOpsNo());
 							}
 						}catch(Exception e) {
 							logger.info("No item found");
