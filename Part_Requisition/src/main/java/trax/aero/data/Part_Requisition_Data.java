@@ -248,7 +248,7 @@ public class Part_Requisition_Data {
 
 	    ArrayList<INT13_SND> list = new ArrayList<INT13_SND>();
 	    String sqlRequisition ="SELECT DISTINCT RD.REQUISITION, RD.REQUISITION_LINE, RD.PN, WS.PN_SN, RD.QTY_REQUIRE, R.WO, R.TASK_CARD, W.LOCATION, \r\n" +
-	                           "W.RFO_NO, (SELECT WTI.OPS_NO FROM WO_TASK_CARD_ITEM WTI WHERE WTI.WO = R.WO AND WTI.TASK_CARD = R.TASK_CARD FETCH FIRST ROW ONLY) AS OPS_NO, \r\n" + 
+	                           "W.RFO_NO, WT.OPS_NO, \r\n" + 
 	                           "RD.PR_NO, RD.PR_ITEM, W.SITE FROM REQUISITION_DETAIL RD INNER JOIN REQUISITION_HEADER R ON R.REQUISITION = RD.REQUISITION \r\n" +
 	                           "INNER JOIN WO W ON W.WO = R.WO INNER JOIN WO_TASK_CARD WT ON WT.WO = R.WO AND WT.TASK_CARD = R.TASK_CARD \r\n" +
 	                           "INNER JOIN WO_TASK_CARD_ITEM WTI ON WTI.WO = R.WO AND WT.TASK_CARD = R.TASK_CARD INNER JOIN WO_SHOP_DETAIL WS ON WS.WO = W.WO \r\n" + 
