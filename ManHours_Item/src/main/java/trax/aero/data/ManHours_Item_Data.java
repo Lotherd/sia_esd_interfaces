@@ -271,7 +271,7 @@ public class ManHours_Item_Data {
 	    	    "    SELECT DISTINCT " +
 	    	    "        w.wo, " +
 	    	    "        w.rfo_no, " +
-	    	    "        wti.ops_no, " +
+	    	    "        wt.ops_no, " +
 	    	    "        wt.task_card, " +
 	    	    "        wt.task_card_category, " +
 	    	    "        wt.task_card_description, " +
@@ -282,13 +282,11 @@ public class ManHours_Item_Data {
 	    	    "    JOIN " +
 	    	    "        wo_task_card wt ON w.wo = wt.wo " +
 	    	    "    JOIN " +
-	    	    "        wo_task_card_item wti ON w.wo = wti.wo AND wt.task_card = wti.task_card " +
-	    	    "    JOIN " +
 	    	    "        wo_actuals wa ON w.wo = wa.wo AND wt.task_card = wa.task_card " +
 	    	    "    WHERE " +
 	    	    "        w.source_type NOT IN ( 'E8', 'X3' ) " +
 	    	    "        AND w.rfo_no IS NOT NULL " +
-	    	    "        AND wti.ops_no IS NOT NULL " +
+	    	    "        AND wt.ops_no IS NOT NULL " +
 	    	    "        AND wt.status = 'CLOSED' " +
 	    	    "        AND ((wt.INTERFACE_14_TRANSFERRED_FLAG IS NULL)OR (wt.INTERFACE_14_TRANSFERRED_FLAG = 'R' AND wt.interface_step = '1' " +
 	    	    "        AND NOT EXISTS (SELECT 1 FROM WO_ACTUALS WA2 WHERE WA2.WO = W.WO AND WA2.TASK_CARD = WT.TASK_CARD AND (wa2.invoiced_flag IS NULL OR wa2.invoiced_flag != 'Y') " +

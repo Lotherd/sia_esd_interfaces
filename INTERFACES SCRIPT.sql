@@ -327,6 +327,12 @@ ADD SVO_SENT VARCHAR2(2 CHAR);
 ALTER TABLE WO_TASK_CARD 
 ADD INTERFACE_14_TRANSFERRED_FLAG VARCHAR2(10 CHAR);
 
+ALTER TABLE WO_TASK_CARD 
+ADD OPS_NO VARCHAR2(4 CHAR);
+
+ALTER TABLE WO_TASK_CARD_ADUIT 
+ADD OPS_NO VARCHAR2(4 CHAR);
+
 -- --------------------------------------------------------
 -- Table: WO_TASK_CARD_ADUIT
 -- --------------------------------------------------------
