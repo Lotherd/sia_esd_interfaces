@@ -163,13 +163,21 @@ public class MaterialData implements IMaterialData {
 						
 						
 						try {
-							if(card != null) {
-									c.setOperationNumber(card.getOpsNo());
-							}
-						}catch(Exception e) {
-							logger.info("No item found");
+						    if(card != null) {
+						        String opsNo = em.createQuery(
+						            "SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card", 
+						            String.class)
+						            .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
+						            .setParameter("card",  detail.getPicklistHeader().getTaskCard())
+						            .getSingleResult();
+						        
+						        c.setOperationNumber(opsNo);
+						        logger.info("OpsNo retrieved directly: " + opsNo);
+						    }
+						} catch(Exception e) {
+						    logger.severe("Error getting operation number: " + e.getMessage());
+						    e.printStackTrace();
 						}
-						
 						
 												
 						String pn = detail.getPn();
@@ -325,11 +333,20 @@ public class MaterialData implements IMaterialData {
 					if(ord.getSAP_OrderNumber() != null) {
 												
 						try {
-							if(card != null) {
-								c.setOperationNumber(card.getOpsNo());
-							}
-						}catch(Exception e) {
-							logger.info("No item found");
+						    if(card != null) {
+						        String opsNo = em.createQuery(
+						            "SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card", 
+						            String.class)
+						            .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
+						            .setParameter("card",  detail.getPicklistHeader().getTaskCard())
+						            .getSingleResult();
+						        
+						        c.setOperationNumber(opsNo);
+						        logger.info("OpsNo retrieved directly: " + opsNo);
+						    }
+						} catch(Exception e) {
+						    logger.severe("Error getting operation number: " + e.getMessage());
+						    e.printStackTrace();
 						}
 						
 					}else {
