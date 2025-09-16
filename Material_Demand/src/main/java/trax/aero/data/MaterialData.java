@@ -165,10 +165,13 @@ public class MaterialData implements IMaterialData {
 						try {
 						    if(card != null) {
 						        String opsNo = em.createQuery(
-						            "SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card", 
+						            "SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card AND w.id.pn = :taskPn"
+						        		+ " and w.id.pnSn = :taskSn ",
 						            String.class)
 						            .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
 						            .setParameter("card",  detail.getPicklistHeader().getTaskCard())
+						            .setParameter("taskPn", detail.getPicklistHeader().getTaskCardPn())
+						            .setParameter("taskSn", detail.getPicklistHeader().getTaskCardSn())
 						            .getSingleResult();
 						        
 						        c.setOperationNumber(opsNo);
@@ -335,11 +338,14 @@ public class MaterialData implements IMaterialData {
 						try {
 						    if(card != null) {
 						        String opsNo = em.createQuery(
-						            "SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card", 
-						            String.class)
-						            .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
-						            .setParameter("card",  detail.getPicklistHeader().getTaskCard())
-						            .getSingleResult();
+						        		"SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card AND w.id.pn = :taskPn"
+								        		+ " and w.id.pnSn = :taskSn ",
+								            String.class)
+								            .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
+								            .setParameter("card",  detail.getPicklistHeader().getTaskCard())
+								            .setParameter("taskPn", gf_nvl(detail.getPicklistHeader().getTaskCardPn()),"                                   ")
+								            .setParameter("taskSn", gf_nvl(detail.getPicklistHeader().getTaskCardSn()),"                                   ")
+								            .getSingleResult();
 						        
 						        c.setOperationNumber(opsNo);
 						        logger.info("OpsNo retrieved directly: " + opsNo);
@@ -954,6 +960,15 @@ public class MaterialData implements IMaterialData {
 			throw e;
 		}
 		
+	}
+	
+	public <T> T gf_nvl(T a, T b) {
+		if (a == null)
+			return b;
+		else if (a != null && (a instanceof String) && ((String) a).trim().length() == 0)
+			return b;
+		else
+			return a;
 	}
 	
 }
