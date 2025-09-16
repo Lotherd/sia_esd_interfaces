@@ -163,13 +163,24 @@ public class MaterialData implements IMaterialData {
 						
 						
 						try {
-							if(card != null) {
-									c.setOperationNumber(card.getOpsNo());
-							}
-						}catch(Exception e) {
-							logger.info("No item found");
+						    if(card != null) {
+						        String opsNo = em.createQuery(
+						        	"SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card AND w.id.pn = :taskPn"
+								      + " and w.id.pnSn = :taskSn ",
+								     String.class)
+								    .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
+								    .setParameter("card",  detail.getPicklistHeader().getTaskCard())
+								    .setParameter("taskPn", gf_nvl(detail.getPicklistHeader().getTaskCardPn(),"                                   "))
+								    .setParameter("taskSn", gf_nvl(detail.getPicklistHeader().getTaskCardSn(),"                                   "))
+						            .getSingleResult();
+						        
+						        c.setOperationNumber(opsNo);
+						        logger.info("OpsNo retrieved directly: " + opsNo);
+						    }
+						} catch(Exception e) {
+						    logger.severe("Error getting operation number: " + e.getMessage());
+						    e.printStackTrace();
 						}
-						
 						
 												
 						String pn = detail.getPn();
@@ -325,11 +336,23 @@ public class MaterialData implements IMaterialData {
 					if(ord.getSAP_OrderNumber() != null) {
 												
 						try {
-							if(card != null) {
-								c.setOperationNumber(card.getOpsNo());
-							}
-						}catch(Exception e) {
-							logger.info("No item found");
+						    if(card != null) {
+						        String opsNo = em.createQuery(
+						        		"SELECT w.opsNo FROM WoTaskCard w WHERE w.id.wo = :wo AND w.id.taskCard = :card AND w.id.pn = :taskPn"
+								        		+ " and w.id.pnSn = :taskSn ",
+								            String.class)
+								            .setParameter("wo", detail.getPicklistHeader().getWo().longValue())
+								            .setParameter("card",  detail.getPicklistHeader().getTaskCard())
+								            .setParameter("taskPn", gf_nvl(detail.getPicklistHeader().getTaskCardPn(),"                                   "))
+								            .setParameter("taskSn", gf_nvl(detail.getPicklistHeader().getTaskCardSn(),"                                   "))
+								            .getSingleResult();
+						        
+						        c.setOperationNumber(opsNo);
+						        logger.info("OpsNo retrieved directly: " + opsNo);
+						    }
+						} catch(Exception e) {
+						    logger.severe("Error getting operation number: " + e.getMessage());
+						    e.printStackTrace();
 						}
 						
 					}else {
@@ -937,6 +960,15 @@ public class MaterialData implements IMaterialData {
 			throw e;
 		}
 		
+	}
+	
+	public <T> T gf_nvl(T a, T b) {
+		if (a == null)
+			return b;
+		else if (a != null && (a instanceof String) && ((String) a).trim().length() == 0)
+			return b;
+		else
+			return a;
 	}
 	
 }
