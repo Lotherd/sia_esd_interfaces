@@ -77,7 +77,7 @@ public class MaterialData implements IMaterialData {
 		try
 		{
 					
-			headers = em.createQuery("SELECT p FROM PicklistHeader p where p.createdDate >= :date")
+			headers = em.createQuery("SELECT p FROM PicklistHeader p, Wo w where p.createdDate >= :date and w.wo = p.wo and w.rfoNo IS NOT NULL")
 					.setParameter("date", cal.getTime())
 					.getResultList();
 			
