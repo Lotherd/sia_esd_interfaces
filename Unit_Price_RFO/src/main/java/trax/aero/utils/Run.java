@@ -84,7 +84,7 @@ public class Run implements Runnable{
 							    } else {
 							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", WO: "+input.getWO() + ", Error Code: " +input.getError_code());
 							    	Unit_Price_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getWO() + ", Error Code: " +input.getError_code());
-							    	executed = data.markTransaction(input);
+							    	executed = data.markTransactionForError(input);
 							    	executed = "Issue found";
 							    }
 							    if(executed == null || !executed.equalsIgnoreCase("OK")) {

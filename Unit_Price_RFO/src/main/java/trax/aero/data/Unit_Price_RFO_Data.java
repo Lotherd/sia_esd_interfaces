@@ -99,6 +99,98 @@ public class Unit_Price_RFO_Data {
 	}
 	private static Map<String, Integer> attemptCounts = new HashMap<>();
 	
+	public String markTransactionForError(INT27_TRAX request) {
+	    executed = "OK";
+	    
+	    String resetFlag = "UPDATE WO_ACTUALS SET INTERFACE_ESD_UP_TRANSFERRED_FLAG = NULL, GET_PRICE = 'N' WHERE WO = ? AND PN = ?";
+	    String resetTempFlag = "UPDATE wo_actuals_material_temp SET GET_PRICE = 'N' WHERE WO = ? AND wo_actual_transaction = ? AND trasaction_category = 'MATERIAL'";
+	    String selectActuals = "SELECT wo_actual_transaction FROM wo_actuals WHERE wo = ? AND PN = ? AND trasaction_category = 'MATERIAL'";
+	    String insertTempActuals = "INSERT INTO wo_actuals_material_temp (wo_actual_transaction, trasaction_category, wo, get_price, qty, unit_cost, total_cost, add_bill_currency, add_bill_curr_amount, unit_sell_b, variance_price) " +
+	                              "VALUES (?, 'MATERIAL', ?, 'N', ?, ?, ?, ?, ?, ?, ?)";
+	    String checkTempExists = "SELECT COUNT(*) FROM wo_actuals_material_temp WHERE wo = ? AND wo_actual_transaction = ? AND trasaction_category = 'MATERIAL'";
+	    
+	    try (PreparedStatement resetStmt = con.prepareStatement(resetFlag);
+	         PreparedStatement resetTempStmt = con.prepareStatement(resetTempFlag);
+	         PreparedStatement selectStmt = con.prepareStatement(selectActuals);
+	         PreparedStatement insertTempStmt = con.prepareStatement(insertTempActuals);
+	         PreparedStatement checkTempStmt = con.prepareStatement(checkTempExists)) {
+	        
+	        for (Operation_TRAX o : request.getOperation()) {
+	            if (request.getWO() != null && !request.getWO().isEmpty()) {
+	                
+	                // Get transaction number for temp table operations
+	                selectStmt.setString(1, request.getWO());
+	                selectStmt.setString(2, o.getMaterial());
+	                ResultSet rs = selectStmt.executeQuery();
+	                
+	                String transaction = null;
+	                if (rs.next()) {
+	                    transaction = rs.getString(1);
+	                }
+	                
+	                // Reset the main WO_ACTUALS table flags
+	                resetStmt.setString(1, request.getWO());
+	                resetStmt.setString(2, o.getMaterial());
+	                resetStmt.executeUpdate();
+	                
+	                // Handle temp table operations if transaction exists
+	                if (transaction != null) {
+	                    // Check if record exists in temp table
+	                    checkTempStmt.setString(1, request.getWO());
+	                    checkTempStmt.setString(2, transaction);
+	                    ResultSet checkRs = checkTempStmt.executeQuery();
+	                    
+	                    boolean tempRecordExists = false;
+	                    if (checkRs.next()) {
+	                        tempRecordExists = checkRs.getInt(1) > 0;
+	                    }
+	                    
+	                    if (tempRecordExists) {
+	                        // Update existing temp record
+	                        resetTempStmt.setString(1, request.getWO());
+	                        resetTempStmt.setString(2, transaction);
+	                        resetTempStmt.executeUpdate();
+	                        logger.info("Updated existing temp record for WO: " + request.getWO() + ", Transaction: " + transaction);
+	                    } else {
+	                        // Insert new temp record with default/error values
+	                        insertTempStmt.setString(1, transaction);
+	                        insertTempStmt.setString(2, request.getWO());
+	                        
+	                        // Use available data from the response or set defaults for error cases
+	                        String qty = (o.getQty() != null && !o.getQty().isEmpty()) ? o.getQty() : "0";
+	                        String unitCost = "0"; // Default for error cases
+	                        String totalCost = "0"; // Default for error cases
+	                        String currency = (o.getCurrency() != null && !o.getCurrency().isEmpty()) ? o.getCurrency() : "";
+	                        String sellTotalPrice = (o.getSell_Total_Price() != null && !o.getSell_Total_Price().isEmpty()) ? o.getSell_Total_Price() : "0";
+	                        String unitSellB = "0"; // Default for error cases
+	                        String variancePrice = "0"; // Default for error cases
+	                        
+	                        insertTempStmt.setString(3, qty);
+	                        insertTempStmt.setString(4, unitCost);
+	                        insertTempStmt.setString(5, totalCost);
+	                        insertTempStmt.setString(6, currency);
+	                        insertTempStmt.setString(7, sellTotalPrice);
+	                        insertTempStmt.setString(8, unitSellB);
+	                        insertTempStmt.setString(9, variancePrice);
+	                        
+	                        insertTempStmt.executeUpdate();
+	                        logger.info("Inserted new temp record for WO: " + request.getWO() + ", Transaction: " + transaction + " with error defaults");
+	                    }
+	                }
+	                
+	                logger.info("Processed error response for WO: " + request.getWO() + ", Material: " + o.getMaterial() + " due to error code: " + request.getError_code());
+	            }
+	        }
+	        
+	    } catch (SQLException e) {
+	        executed = e.toString();
+	        Unit_Price_RFO_Controller.addError(executed);
+	        logger.severe("Error processing error response: " + executed);
+	    }
+	    
+	    return executed;
+	}
+	
 	public String markTransaction(INT27_TRAX request) {
 	    executed = "OK";
 

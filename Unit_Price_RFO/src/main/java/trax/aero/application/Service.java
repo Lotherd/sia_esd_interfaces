@@ -146,9 +146,7 @@ Unit_Price_RFO_Data data = new Unit_Price_RFO_Data("mark");
 		    } else {
 		    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", Material: "+input.getWO() + ", Error Code: " +input.getError_code());
 		    	Unit_Price_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", Material: "+input.getWO() + ", Error Code: " +input.getError_code());
-		    	executed = data.markTransaction(input);
-		    	executed = data.markTransaction(input);
-		    	executed = "Issue found";
+		    	executed = data.markTransactionForError(input);
 		    }
 			if(executed == null || !executed.equalsIgnoreCase("OK")) {
 		    	executed = "Issue found";
