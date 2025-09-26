@@ -84,19 +84,24 @@ public class Unit_Price_RFO_Data {
 		return con;
 	}
 	
-	public String markSendData() throws JAXBException
+	/*public String markSendData() throws JAXBException
 	{
 	  INT27_TRAX request = new INT27_TRAX();
 	  try {
+		  if (request.getError_code() != null && !request.getError_code().isEmpty() && request.getError_code().equalsIgnoreCase("53")) {
 	        markTransaction(request);
 	        logger.info("markTransaction completed successfully.");
+		  }else {
+			  markTransactionForError(request);
+			  logger.info("markTransaction completed successfully.");
+		  }
 	        return "OK";
 	    } catch (Exception e) {
 	    	logger.log(Level.SEVERE, "Error executing markTransaction", e);
 	    	e.printStackTrace();
 	        return null; 
 	    }
-	}
+	}*/
 	private static Map<String, Integer> attemptCounts = new HashMap<>();
 	
 	public String markTransactionForError(INT27_TRAX request) {
