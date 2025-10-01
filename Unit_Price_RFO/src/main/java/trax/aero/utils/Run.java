@@ -78,15 +78,15 @@ public class Run implements Runnable{
 						        sw = new StringWriter();
 							    marshaller.marshal(input,sw);
 							    logger.info("Input: " + sw.toString());
-							    if(input.getError_code() != null && !input.getError_code().isEmpty() && input.getError_code().equalsIgnoreCase("53")) {
+							    if(input.getError_code() != null && !input.getError_code().isEmpty() && input.getError_code().equalsIgnoreCase("53"))  {
 							    	executed = data.markTransaction(input);
 							    } else {
-							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", WO: "+input.getWO() + ", Error Code: " +input.getError_code());
-							    	Unit_Price_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", SVO: "+input.getWO() + ", Error Code: " +input.getError_code());
+							    	logger.severe("Received Response with Remarks: " + input.getRemarks() +", Material: "+input.getWO() + ", Error Code: " +input.getError_code());
 							    	executed = data.markTransactionForError(input);
-							    	executed = "Issue found";
+							    	logger.info("Execute: " + executed );
+							    	Unit_Price_RFO_Controller.addError("Received Response with Remarks: " + input.getRemarks() +", Material: "+input.getWO() + ", Error Code: " +input.getError_code());
 							    }
-							    if(executed == null || !executed.equalsIgnoreCase("OK")) {
+								if(executed == null || !executed.equalsIgnoreCase("OK")) {
 							    	executed = "Issue found";
 					        		throw new Exception("Issue found");
 							    }
