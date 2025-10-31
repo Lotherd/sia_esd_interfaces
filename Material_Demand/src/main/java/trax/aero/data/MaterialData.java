@@ -197,7 +197,7 @@ public class MaterialData implements IMaterialData {
 						}
 						
 						c.setMaterialNumber(pn);
-						c.setsHOP_WO_SN(detail.getSn());
+						c.setsHOP_WO_SN(detail.getTaskCardSN());
 						if(c.getsHOP_WO_SN() == null) {
 							c.setsHOP_WO_SN("");
 						}
@@ -393,7 +393,7 @@ public class MaterialData implements IMaterialData {
 					c.setTrax_PicklistLine(String.valueOf(detail.getId().getPicklistLine()));
 					
 					c.setMaterialNumber(pn);
-					c.setsHOP_WO_SN(detail.getSn());
+					c.setsHOP_WO_SN(detail.getTaskCardSN());
 					if(c.getsHOP_WO_SN() == null) {
 						c.setsHOP_WO_SN("");
 					}
