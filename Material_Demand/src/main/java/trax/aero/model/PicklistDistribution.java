@@ -133,6 +133,12 @@ public class PicklistDistribution implements Serializable {
 
 	@Column(name="TASK_CARD")
 	private String taskCard;
+	
+	@Column(name="TASK_CARD_PN")
+	private String taskCardPN;
+	
+	@Column(name="TASK_CARD_SN")
+	private String taskCardSN;
 
 	//bi-directional many-to-one association to PicklistHeader
 	@ManyToOne
@@ -456,6 +462,22 @@ public class PicklistDistribution implements Serializable {
 
 	public void setTaskCard(String taskCard) {
 		this.taskCard = taskCard;
+	}
+
+	public String getTaskCardPN() {
+		return taskCardPN;
+	}
+
+	public void setTaskCardPN(String taskCardPN) {
+		this.taskCardPN = taskCardPN;
+	}
+
+	public String getTaskCardSN() {
+		return taskCardSN;
+	}
+
+	public void setTaskCardSN(String taskCardSN) {
+		this.taskCardSN = taskCardSN;
 	}
 
 	public PicklistHeader getPicklistHeader() {
