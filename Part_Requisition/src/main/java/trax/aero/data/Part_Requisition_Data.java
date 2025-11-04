@@ -308,7 +308,7 @@ public class Part_Requisition_Data {
 	                InboundC.setRequisition(rs1.getString(1) != null ? rs1.getString(1) : "");
 	                InboundC.setRequisitionLine(rs1.getString(2) != null ? rs1.getString(2) : "");
 	                InboundC.setACT(rs1.getString(10) != null ? rs1.getString(10) : "");
-	                InboundC.setGoodsRecipient(rs1.getString(13));
+	                InboundC.setGoodsRecipient(rs1.getString(8));
 	                InboundC.setTC_number(rs1.getString(7) != null ? rs1.getString(7) : "");
 	                InboundC.setMaterialPartNumber(rs1.getString(3));
 	                InboundC.setWoSN(rs1.getString(4) != null ? rs1.getString(4) : "");
