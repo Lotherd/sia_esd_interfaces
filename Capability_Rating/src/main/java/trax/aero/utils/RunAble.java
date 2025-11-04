@@ -42,10 +42,25 @@ public class RunAble implements Runnable {
     }
     
     public void run() {
+        String notificationType = "I25";
         try {
-            process();
-        } catch(Exception e) {
+            if (data.lockAvailable(notificationType)) {
+                data.lockTable(notificationType);
+
+                try {
+                    process();
+                } finally {
+                    data.unlockTable(notificationType);
+                }
+            }
+        } catch (Exception e) {
             e.printStackTrace();
-        }        
+
+            try {
+                data.unlockTable(notificationType);
+            } catch (Exception unlockEx) {
+                logger.severe("Failed to unlock after error: " + unlockEx.getMessage());
+            }
+        }
     }
 }
