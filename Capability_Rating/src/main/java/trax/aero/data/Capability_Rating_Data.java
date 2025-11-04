@@ -473,7 +473,6 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	        
 	     // Insert into PN_MASTER_AUDIT
 	        try {
-	            // First, select current values from PN_MASTER
 	            String selectPnMasterQuery = "SELECT PN_DESCRIPTION, CATEGORY FROM PN_MASTER WHERE PN = ?";
 	            Query selectPnMasterQueryObj = em.createNativeQuery(selectPnMasterQuery);
 	            selectPnMasterQueryObj.setParameter(1, auth.getId().getPn());
@@ -482,18 +481,33 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	            String pnDescription = (String) result[0];
 	            String pnCategory = (String) result[1];
 	            
-	            String insertAuditQuery = "INSERT INTO PN_MASTER_AUDIT (PN, PN_DESCRIPTION, CATEGORY, ENGINE, PN_TYPE, MODIFIED_DATE, MODIFIED_BY) " +
-	                                     "VALUES (?, ?, ?, ?, ?, sysdate, 'IFACEESD')";
-	            Query insertAuditQueryObj = em.createNativeQuery(insertAuditQuery);
-	            insertAuditQueryObj.setParameter(1, auth.getId().getPn());
-	            insertAuditQueryObj.setParameter(2, pnDescription);
-	            insertAuditQueryObj.setParameter(3, pnCategory);
-	            insertAuditQueryObj.setParameter(4, translateCategory(element.getCatCategory()));
-	            insertAuditQueryObj.setParameter(5, element.getClcfNo());
-	            insertAuditQueryObj.executeUpdate();
-	            System.out.println("Successfully inserted into PN_MASTER_AUDIT for PN: " + auth.getId().getPn());
+	            // Use MERGE instead of INSERT
+	            String mergeAuditQuery = "MERGE INTO PN_MASTER_AUDIT target " +
+	                                    "USING (SELECT ? AS pn FROM DUAL) source " +
+	                                    "ON (target.PN = source.pn) " +
+	                                    "WHEN MATCHED THEN " +
+	                                    "  UPDATE SET PN_DESCRIPTION = ?, CATEGORY = ?, ENGINE = ?, " +
+	                                    "             PN_TYPE = ?, MODIFIED_DATE = sysdate, MODIFIED_BY = 'IFACEESD' " +
+	                                    "WHEN NOT MATCHED THEN " +
+	                                    "  INSERT (PN, PN_DESCRIPTION, CATEGORY, ENGINE, PN_TYPE, MODIFIED_DATE, MODIFIED_BY) " +
+	                                    "  VALUES (?, ?, ?, ?, ?, sysdate, 'IFACEESD')";
+	            
+	            Query mergeAuditQueryObj = em.createNativeQuery(mergeAuditQuery);
+	            mergeAuditQueryObj.setParameter(1, auth.getId().getPn());
+	            mergeAuditQueryObj.setParameter(2, pnDescription);
+	            mergeAuditQueryObj.setParameter(3, pnCategory);
+	            mergeAuditQueryObj.setParameter(4, translateCategory(element.getCatCategory()));
+	            mergeAuditQueryObj.setParameter(5, element.getClcfNo());
+	            mergeAuditQueryObj.setParameter(6, auth.getId().getPn());
+	            mergeAuditQueryObj.setParameter(7, pnDescription);
+	            mergeAuditQueryObj.setParameter(8, pnCategory);
+	            mergeAuditQueryObj.setParameter(9, translateCategory(element.getCatCategory()));
+	            mergeAuditQueryObj.setParameter(10, element.getClcfNo());
+	            mergeAuditQueryObj.executeUpdate();
+	            
+	            System.out.println("Successfully merged into PN_MASTER_AUDIT for PN: " + auth.getId().getPn());
 	        } catch (Exception e) {
-	            System.out.println("Error occurred while inserting into PN_MASTER_AUDIT");
+	            System.out.println("Error occurred while merging into PN_MASTER_AUDIT");
 	            e.printStackTrace();
 	        }
 	        
