@@ -20,8 +20,11 @@ import trax.aero.pojo.DATARequest;
 public interface ICapability_Rating_Data {
 	
 	public DATAMasterResponse importAuth(DATA input);
-
-
 	
+	public boolean lockAvailable(String notificationType);
+    
+    public void lockTable(String notificationType);
+    
+    public void unlockTable(String notificationType);
 
 }

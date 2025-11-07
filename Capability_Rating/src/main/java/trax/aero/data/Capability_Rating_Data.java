@@ -20,6 +20,7 @@ import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 
 import trax.aero.interfaces.ICapability_Rating_Data;
@@ -471,31 +472,8 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
 	        updatePN.executeUpdate();
 	        System.out.println("Successfully updated PN_MASTER");
 	        
-	     // Insert into PN_MASTER_AUDIT
-	        try {
-	            // First, select current values from PN_MASTER
-	            String selectPnMasterQuery = "SELECT PN_DESCRIPTION, CATEGORY FROM PN_MASTER WHERE PN = ?";
-	            Query selectPnMasterQueryObj = em.createNativeQuery(selectPnMasterQuery);
-	            selectPnMasterQueryObj.setParameter(1, auth.getId().getPn());
-	            Object[] result = (Object[]) selectPnMasterQueryObj.getSingleResult();
-	            
-	            String pnDescription = (String) result[0];
-	            String pnCategory = (String) result[1];
-	            
-	            String insertAuditQuery = "INSERT INTO PN_MASTER_AUDIT (PN, PN_DESCRIPTION, CATEGORY, ENGINE, PN_TYPE, MODIFIED_DATE, MODIFIED_BY) " +
-	                                     "VALUES (?, ?, ?, ?, ?, sysdate, 'IFACEESD')";
-	            Query insertAuditQueryObj = em.createNativeQuery(insertAuditQuery);
-	            insertAuditQueryObj.setParameter(1, auth.getId().getPn());
-	            insertAuditQueryObj.setParameter(2, pnDescription);
-	            insertAuditQueryObj.setParameter(3, pnCategory);
-	            insertAuditQueryObj.setParameter(4, translateCategory(element.getCatCategory()));
-	            insertAuditQueryObj.setParameter(5, element.getClcfNo());
-	            insertAuditQueryObj.executeUpdate();
-	            System.out.println("Successfully inserted into PN_MASTER_AUDIT for PN: " + auth.getId().getPn());
-	        } catch (Exception e) {
-	            System.out.println("Error occurred while inserting into PN_MASTER_AUDIT");
-	            e.printStackTrace();
-	        }
+	        insertPnMasterAudit(auth.getId().getPn(), translateCategory(element.getCatCategory()), element.getClcfNo());
+	       
 	        
 	        }
 	        System.out.println("INSERTING Authority: " + authType + " and PN: " + element.getPartNo() + " into the Trax DataBase");
@@ -616,67 +594,108 @@ public class Capability_Rating_Data implements ICapability_Rating_Data {
         return (data != null && !data.isEmpty());
     }
 
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public boolean lockAvailable(String notificationType) {
-        InterfaceLockMaster lock;
-        try {
-            lock = em.createQuery("SELECT i FROM InterfaceLockMaster i WHERE i.interfaceType = :type", InterfaceLockMaster.class)
-                    .setParameter("type", notificationType)
-                    .getSingleResult();
-            em.refresh(lock);
-        } catch (NoResultException e) {
-            lock = new InterfaceLockMaster();
-            lock.setInterfaceType(notificationType);
-            lock.setLocked(new BigDecimal(0));
-            insertData(lock);
-            return true;
-        }
+        InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i WHERE i.interfaceType = :type", InterfaceLockMaster.class)
+                .setParameter("type", notificationType).getSingleResult();
+        em.refresh(lock);
 
-        if (lock.getLocked().intValue() == 1) {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime lockTime = LocalDateTime.ofInstant(lock.getLockedDate().toInstant(), ZoneId.systemDefault());
-            Duration duration = Duration.between(lockTime, now);
-            if (duration.getSeconds() >= lock.getMaxLock().longValue()) {
-                lock.setLocked(new BigDecimal(0));
-                insertData(lock);
+        if (lock.getLocked().intValue() == 1) {                
+            LocalDateTime today = LocalDateTime.now();
+            LocalDateTime locked = LocalDateTime.ofInstant(lock.getLockedDate().toInstant(), ZoneId.systemDefault());
+            Duration diff = Duration.between(locked, today);
+
+            if (diff.getSeconds() >= lock.getMaxLock().longValue()) {
+               
                 return true;
             }
+            
             return false;
         } else {
-            lock.setLocked(new BigDecimal(1));
-            insertData(lock);
+            
             return true;
         }
     }
 
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void lockTable(String notificationType) {
-        em.getTransaction().begin();
-        InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-                .setParameter("type", notificationType)
-                .getSingleResult();
+        InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i WHERE i.interfaceType = :type", InterfaceLockMaster.class)
+                .setParameter("type", notificationType).getSingleResult();
         lock.setLocked(new BigDecimal(1));
+        
         lock.setLockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
         InetAddress address = null;
-
         try {
             address = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
             logger.info(e.getMessage());
         }
-
         lock.setCurrentServer(address.getHostName());
         em.merge(lock);
-        em.getTransaction().commit();
+        em.flush();
     }
 
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void unlockTable(String notificationType) {
-        em.getTransaction().begin();
-        InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i where i.interfaceType = :type", InterfaceLockMaster.class)
-                .setParameter("type", notificationType)
-                .getSingleResult();
-        lock.setLocked(new BigDecimal(0));
-        lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-
-        em.merge(lock);
-        em.getTransaction().commit();
+        try {
+            InterfaceLockMaster lock = em.createQuery("SELECT i FROM InterfaceLockMaster i WHERE i.interfaceType = :type", InterfaceLockMaster.class)
+                    .setParameter("type", notificationType).getSingleResult();
+            
+            lock.setLocked(new BigDecimal(0));
+            lock.setUnlockedDate(Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
+            
+            em.merge(lock);
+            em.flush();
+            
+            logger.info("Successfully unlocked table for notification type: " + notificationType);
+        } catch (Exception e) {
+            logger.severe("Error unlocking table for notification type: " + notificationType + " - " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    
+    public void insertPnMasterAudit(String pn, String engine, String pnType) {
+        try {
+            String selectPnMasterQuery = "SELECT PN_DESCRIPTION, CATEGORY FROM PN_MASTER WHERE PN = ?";
+            Query selectPnMasterQueryObj = em.createNativeQuery(selectPnMasterQuery);
+            selectPnMasterQueryObj.setParameter(1, pn);
+            Object[] result = (Object[]) selectPnMasterQueryObj.getSingleResult();
+            
+            String pnDescription = (String) result[0];
+            String pnCategory = (String) result[1];
+            
+            try {
+                Thread.sleep(1000); 
+                System.out.println("delay for PN: " + pn);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                System.out.println("Thread interrupted during delay for PN: " + pn);
+            }
+            
+            String insertAuditQuery = "INSERT INTO PN_MASTER_AUDIT (PN, PN_DESCRIPTION, CATEGORY, ENGINE, PN_TYPE, MODIFIED_DATE, MODIFIED_BY) " +
+                                     "VALUES (?, ?, ?, ?, ?, SYSTIMESTAMP, 'IFACEESD')";
+            Query insertAuditQueryObj = em.createNativeQuery(insertAuditQuery);
+            insertAuditQueryObj.setParameter(1, pn);
+            insertAuditQueryObj.setParameter(2, pnDescription);
+            insertAuditQueryObj.setParameter(3, pnCategory);
+            insertAuditQueryObj.setParameter(4, engine);
+            insertAuditQueryObj.setParameter(5, pnType);
+            insertAuditQueryObj.executeUpdate();
+            System.out.println("Successfully inserted into PN_MASTER_AUDIT for PN: " + pn);
+            
+        } catch (Exception e) {
+        
+            if (e.getMessage() != null && 
+                (e.getMessage().contains("P_PN_MASTER_AUDIT") || 
+                 e.getMessage().contains("unique constraint") || 
+                 e.getMessage().contains("ORA-00001"))) {
+                System.out.println("Audit record with same PN/timestamp already exists for PN: " + pn + " - skipping duplicate insert");
+            } else {
+                System.out.println("Non-critical error while inserting into PN_MASTER_AUDIT for PN: " + pn);
+                e.printStackTrace();
+            }
+            
+        }
     }
 }
